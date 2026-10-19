@@ -242,6 +242,9 @@ void CheckNoSl()
 //+------------------------------------------------------------------+
 void Sync()
   {
+   // not logged in at the broker: history would be empty, so keep the last good data
+   if(!TerminalInfoInteger(TERMINAL_CONNECTED) || AccountInfoInteger(ACCOUNT_LOGIN) == 0)
+      return;
    string payload = BuildPayload();
    if(payload == "")
       return;

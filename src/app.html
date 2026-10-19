@@ -747,7 +747,7 @@ function renderMt5(){
   const id=state.settings.mt5Gist||"", st=$("#mt5State");
   $("#mt5Id").value=id;$("#mt5Off").hidden=!id;
   if(state.mt5&&id){const up=new Date(state.mt5.updatedAt);st.className="pill on";st.textContent="Verbunden";
-    $("#mt5Note").textContent=`${(state.mt5.trades||[]).length} Trades aus MT5 · letzter Sync ${up.toLocaleDateString("de-CH",{day:"2-digit",month:"2-digit"})} ${up.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"})}`}
+    const a=state.mt5.account||{};$("#mt5Note").textContent=`${a.login?"Konto "+a.login+(a.server?" ("+a.server+")":"")+" · ":""}${(state.mt5.trades||[]).length} Trades aus MT5 · letzter Sync ${up.toLocaleDateString("de-CH",{day:"2-digit",month:"2-digit"})} ${up.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"})}`}
   else{st.className="pill";st.textContent=id?"Wird geladen…":"Nicht verbunden"}
 }
 let mt5At=0,mt5Pause=0;
