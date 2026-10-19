@@ -9,12 +9,12 @@
 //| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.30"
+#property version   "1.31"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
 input int    DaysBack    = 365;  // how many days of history to send
-input int    SyncSeconds = 60;   // check interval in seconds
+input int    SyncSeconds = 15;   // check interval in seconds
 input bool   PushTrades  = true; // push message when a trade opens or closes
 input double DailyLossPct = 3.0; // push when today's loss reaches this % (0 = off)
 input int    MaxTradesDay = 3;   // push when more trades than this are opened today (0 = off)
@@ -49,7 +49,7 @@ int OnInit()
    g_gist = GistId;
    if(g_gist == "")
       g_gist = ReadSavedId();
-   EventSetTimer(SyncSeconds < 15 ? 15 : SyncSeconds);
+   EventSetTimer(SyncSeconds < 10 ? 10 : SyncSeconds);
    if(FeedMinutes > 0) FetchNews();
    Sync();
    return(INIT_SUCCEEDED);
