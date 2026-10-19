@@ -143,6 +143,13 @@ textarea{background:var(--surface-2);border:1px solid var(--line);color:var(--fg
 .hl.g .hx{font-weight:600}
 .hl.g .ht{color:var(--accent)}
 .hl.new{background:color-mix(in srgb,var(--accent) 8%,transparent);border-radius:6px}
+/* onboarding */
+.welcome{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.welcome input{width:130px;flex:none}
+.share{display:block;width:100%;padding:10px;margin-top:4px}
+.guide ol{padding-left:20px;margin:12px 0;display:grid;gap:10px;font-size:14px}
+.guide a{color:var(--accent)}
+.guide code{font:12px var(--font-num);background:var(--surface-2);padding:1px 5px;border-radius:4px}
 /* weeks */
 .filt{gap:8px 16px}
 .filt>span{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -270,10 +277,13 @@ td.r,th.r{text-align:right}
 <main class="wrap">
 <!-- DASHBOARD -->
 <section id="view-dash" class="grid">
-  <div id="setupBanner" class="banner" hidden>
-    <span>Startkapital für <b id="acctNameB">dein Konto</b> setzen, damit der Kontostand stimmt:</span>
-    <input id="startBal" type="number" step="0.01" placeholder="z. B. 10000">
-    <button class="btn pri sm" id="saveStart">Speichern</button>
+  <div id="setupBanner" class="banner welcome" hidden>
+    <b style="flex-basis:100%">Willkommen bei Bullion Monkey 🐒</b>
+    <span style="flex-basis:100%">Am besten verbindest du dein MT5, dann kommen Kontostand und Trades automatisch. Oder gib nur dein Startkapital ein.</span>
+    <button class="btn pri sm" type="button" data-guide>MT5 verbinden: Anleitung</button>
+    <span class="sp" style="flex:1"></span>
+    <input id="startBal" type="number" inputmode="decimal" step="0.01" placeholder="Startkapital">
+    <button class="btn sm" id="saveStart">Speichern</button>
   </div>
   <div class="grid kpis">
     <div class="panel kpi hero"><div class="lbl" id="kBalL">Kontostand</div><div class="v num" id="kBal">–</div><div class="s" id="kBalS"></div></div>
@@ -326,7 +336,7 @@ td.r,th.r{text-align:right}
   </div>
 
   <div class="panel" id="mt5Panel">
-    <div class="ph"><h2>MT5-Verbindung</h2><span class="sp"></span><span class="pill" id="mt5State">Nicht verbunden</span></div>
+    <div class="ph"><h2>MT5-Verbindung</h2><span class="sp"></span><button class="btn sm" type="button" data-guide>Anleitung</button><span class="pill" id="mt5State">Nicht verbunden</span></div>
     <form class="mt5f" id="mt5Form">
       <label>Gist-ID aus MT5<input id="mt5Id" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="z. B. 3f2a9c…"></label>
       <button class="btn pri" type="submit">Verbinden</button>
@@ -345,6 +355,7 @@ td.r,th.r{text-align:right}
     <div class="tbl"><table><thead><tr><th>Datum</th><th>Trade</th><th class="r">PnL</th><th class="r">R</th><th class="r hm">Trades</th><th></th></tr></thead><tbody id="tradeRows"></tbody></table></div>
     <p class="note" id="saveState"></p>
   </div>
+  <button class="btn share" id="shareApp" type="button">🐒 Bullion Monkey mit Freunden teilen</button>
 </section>
 
 <!-- NEWS -->
@@ -437,6 +448,21 @@ td.r,th.r{text-align:right}
   </div>
 </section>
 </main>
+<dialog id="guideDlg" class="sheet guide">
+  <div class="ph"><h2>MT5 verbinden</h2><span class="sp"></span><button class="btn sm" type="button" id="guideX" aria-label="Schliessen">✕</button></div>
+  <p class="note" style="margin-top:-6px">Einmalig, am Computer mit MT5 (Mac oder Windows). Dauert etwa 10 Minuten. Deine Daten landen in deinem eigenen, geheimen GitHub-Gist und nur dein Handy liest sie.</p>
+  <ol>
+    <li><b>GitHub-Konto</b> erstellen, falls du keins hast: <a href="https://github.com/signup" target="_blank" rel="noopener">github.com/signup</a></li>
+    <li><b>Token erstellen:</b> <a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=Bullion%20Monkey%20MT5" target="_blank" rel="noopener">diesen Link öffnen</a>, bei Ablauf „No expiration“ wählen, ganz unten „Generate token“. Den Code <code>ghp_…</code> kopieren und niemandem schicken.</li>
+    <li><b>Expert Advisor holen:</b> am Computer <a href="https://raw.githubusercontent.com/tradingrouven/Mullion-monkeyy/main/mt5/BullionMonkeySync.mq5" target="_blank" rel="noopener">diesen Code</a> öffnen, alles markieren und kopieren.</li>
+    <li>In MT5 <b>IDE</b> (F4) öffnen → Datei → Neu → Expert Advisor (Vorlage) → Name <code>BullionMonkeySync</code> → Fertig. Alles darin ersetzen durch den kopierten Code, dann <b>Kompilieren</b> (0 errors).</li>
+    <li>In MT5 <b>Extras → Optionen → Expert Advisors</b>: „Algorithmischen Handel erlauben“ und „WebRequest erlauben“ anhaken, darunter <code>https://api.github.com</code> und <code>https://www.financialjuice.com</code> hinzufügen.</li>
+    <li>Im Navigator unter <b>Experten</b> „BullionMonkeySync“ auf einen Chart ziehen, bei <b>Eingaben</b> im Feld GitHubToken deinen Token einfügen, OK.</li>
+    <li>Es erscheint die Meldung „Verbunden. Gist-ID für die App“. Auf dem Handy <a href="https://gist.github.com" target="_blank" rel="noopener">gist.github.com</a> öffnen, „Bullion Monkey MT5“ antippen, den Link kopieren und hier im Dashboard bei <b>MT5-Verbindung</b> einfügen.</li>
+    <li>Optional für Push-Nachrichten: MetaQuotes ID aus der MT5-App am Handy (Einstellungen → Nachrichten) in MT5 am Computer unter Extras → Optionen → Benachrichtigungen eintragen.</li>
+  </ol>
+  <p class="note">MT5 muss am Computer laufen, damit Trades, Positionen und Schlagzeilen aktuell bleiben. News-Kalender, Checkliste und Lot-Rechner gehen auch ohne.</p>
+</dialog>
 <dialog id="noteDlg" class="sheet">
   <form method="dialog" id="noteForm">
     <div class="ph"><h2 id="noteTitle">Trade-Notiz</h2><span class="sp"></span><button class="btn sm" type="button" id="noteX" aria-label="Schliessen">✕</button></div>
@@ -595,7 +621,7 @@ function renderDash(){
     const up=state.mt5.updatedAt?new Date(state.mt5.updatedAt):null;
     $("#kBalS").innerHTML=`Equity ${plain(+acc.equity)} · Stand ${up?up.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"}):"–"}`;$("#setupBanner").hidden=true}
   else if(typeof sb==="number"){$("#kBal").textContent=plain(sb+allP)+" "+cur;$("#kBalS").innerHTML=`Start ${plain(sb)} · <span class="${cls(allP)}">${fmt(allP)}</span> total`;$("#setupBanner").hidden=true}
-  else{$("#kBal").textContent="–";$("#kBalS").textContent="Startkapital fehlt";$("#setupBanner").hidden=false;$("#acctNameB").textContent=state.settings.name||"dein Konto"}
+  else{$("#kBal").textContent="–";$("#kBalS").textContent="Startkapital fehlt";$("#setupBanner").hidden=false}
   const ws=monday(new Date()),we=new Date(ws);we.setDate(we.getDate()+6);
   const wk=Object.entries(byDay(TT)).filter(([k])=>k>=ymd(ws)&&k<=ymd(we));
   const wP=wk.reduce((a,[,v])=>a+v.pnl,0),wR=wk.reduce((a,[,v])=>a+v.r,0);
@@ -653,12 +679,7 @@ $("#todayM").onclick=()=>{const t=new Date();state.month=new Date(t.getFullYear(
 
 /* ---------- persistence (on this device) ---------- */
 const KEY="bm-data-v1";
-const SEED={settings:{name:"RoboForex 773",currency:"USD",startBalance:911.53},trades:[
-  {id:"s20261005",date:"2026-10-05",asset:"XAUUSD",strategy:"Markterfahrung",pnl:123.69,r:2.73,count:2,note:"Tagessumme aus Obsidian"},
-  {id:"s20261008",date:"2026-10-08",asset:"XAUUSD",strategy:"Markterfahrung",pnl:-46.6,r:-1,count:1,note:"Tagessumme aus Obsidian"},
-  {id:"s20261009",date:"2026-10-09",asset:"XAUUSD",strategy:"Markterfahrung",pnl:261.3,r:5.24,count:5,note:"Tagessumme aus Obsidian"},
-  {id:"s20261013",date:"2026-10-13",asset:"XAUUSD",strategy:"Markterfahrung",pnl:24.07,r:2.02,count:1,note:"Tagessumme aus Obsidian"},
-  {id:"s20261014",date:"2026-10-14",asset:"XAUUSD",strategy:"Markterfahrung",pnl:59.58,r:3.69,count:2,note:"Tagessumme aus Obsidian"}]};
+const SEED={settings:{currency:"USD"},trades:[]};   /* new users start empty; their data stays on their phone */
 function setSave(msg){$("#saveState").textContent=msg}
 function load(){const d=LS.get(KEY,null)||SEED;state.trades=d.trades||[];state.settings=d.settings||{}}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify({settings:state.settings,trades:state.trades}))}catch(e){setSave("Speichern fehlgeschlagen: kein Speicherplatz auf dem Gerät.")}}
@@ -760,6 +781,13 @@ async function syncMt5(){
 $("#mt5Form").onsubmit=e=>{e.preventDefault();const id=$("#mt5Id").value.trim().replace(/^.*gist\.github\.com\/[^/]+\//,"");if(!id)return;
   state.settings.mt5Gist=id;persist();mt5Etag="";state.mt5=null;renderMt5();syncMt5()};
 $("#mt5Off").onclick=()=>{delete state.settings.mt5Gist;persist();state.mt5=null;LS.set("bm-mt5",null);mt5Etag="";renderMt5();renderDash()};
+
+/* ---------- onboarding + sharing ---------- */
+document.querySelectorAll("[data-guide]").forEach(b=>b.onclick=()=>$("#guideDlg").showModal());
+$("#guideX").onclick=()=>$("#guideDlg").close();
+$("#shareApp").onclick=async()=>{const url=location.origin+location.pathname;
+  try{if(navigator.share){await navigator.share({title:"Bullion Monkey",text:"Mein Trading-Dashboard für Gold: News, Lot-Rechner, MT5-Sync.",url});return}}catch(e){if(e.name==="AbortError")return}
+  try{await navigator.clipboard.writeText(url);$("#shareApp").textContent="Link kopiert ✓"}catch(e){prompt("Link zum Teilen:",url)}};
 
 /* ---------- trade notes ---------- */
 let noteId=null;
