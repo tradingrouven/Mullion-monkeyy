@@ -109,6 +109,10 @@ td.r,th.r{text-align:right}
 @media (max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.two{grid-template-columns:minmax(0,1fr)}form.add{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:520px){.stats{grid-template-columns:1fr}.row:nth-last-child(2){border-bottom:1px solid var(--line)}.kpi .v{font-size:20px}}
 .ps{display:none}
+.tag{font:600 11px var(--font-num);color:var(--accent);border:1px solid var(--line);border-radius:5px;padding:2px 6px}
+.mt5f{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.mt5f label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted);flex:1 1 220px;min-width:0}
+#mt5State.on{background:var(--win-bg);color:var(--win)}
 @media (max-width:640px){
   body{-webkit-text-size-adjust:100%}
   main{padding-block:12px 40px}
@@ -131,6 +135,10 @@ td.r,th.r{text-align:right}
   .wk .d{font-size:11px}
   .wk .p,.wk .t{display:inline;font-size:12px}
   .wk .ps{display:none}
+.tag{font:600 11px var(--font-num);color:var(--accent);border:1px solid var(--line);border-radius:5px;padding:2px 6px}
+.mt5f{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.mt5f label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted);flex:1 1 220px;min-width:0}
+#mt5State.on{background:var(--win-bg);color:var(--win)}
   .legend{gap:10px}
   .calhead h2,.calhead #monPill{flex-basis:100%}
   .calhead #monPill{flex-basis:auto}
@@ -203,6 +211,16 @@ td.r,th.r{text-align:right}
       <div class="ph"><h2>Kumulierte Ergebnisentwicklung</h2><span class="sp"></span><span class="lbl" id="curLbl">USD</span></div>
       <div id="chart"></div>
     </div>
+  </div>
+
+  <div class="panel" id="mt5Panel">
+    <div class="ph"><h2>MT5-Verbindung</h2><span class="sp"></span><span class="pill" id="mt5State">Nicht verbunden</span></div>
+    <form class="mt5f" id="mt5Form">
+      <label>Gist-ID aus MT5<input id="mt5Id" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="z. B. 3f2a9c…"></label>
+      <button class="btn pri" type="submit">Verbinden</button>
+      <button class="btn" type="button" id="mt5Off" hidden>Trennen</button>
+    </form>
+    <p class="note" id="mt5Note">Der Expert Advisor „BullionMonkeySync“ in MT5 zeigt dir die Gist-ID beim ersten Start an.</p>
   </div>
 
   <div class="panel">
@@ -288,14 +306,23 @@ function tick(){const d=new Date();$("#clock").textContent=d.toLocaleDateString(
 tick();setInterval(()=>{tick();renderNews();renderNewsKpi()},30000);
 
 /* ---------- dashboard ---------- */
-function filtered(){return state.trades.filter(t=>(state.fA==="Alle"||t.asset===state.fA)&&(state.fS==="Alle"||(t.strategy||"Nicht zugeordnet")===state.fS))}
+const MT5_FILE="bullion-monkey.json";
+function allTrades(){
+  if(!state.mt5)return state.trades;
+  const own=state.trades.filter(t=>!String(t.id).startsWith("s2026"));  /* seeded screenshot totals are in the MT5 history too */
+  const mt=(state.mt5.trades||[]).map(t=>({id:t.id,date:ymd(new Date(t.closeUtc)),asset:t.asset,strategy:"",pnl:+t.pnl||0,r:t.r,count:1,note:(t.side==="buy"?"Buy ":"Sell ")+t.volume+" Lot",src:"mt5"}));
+  return own.concat(mt);
+}
+function filtered(){return allTrades().filter(t=>(state.fA==="Alle"||t.asset===state.fA)&&(state.fS==="Alle"||(t.strategy||"Nicht zugeordnet")===state.fS))}
 function byDay(list){const m={};for(const t of list){const k=t.date;(m[k]=m[k]||{pnl:0,r:0,n:0});m[k].pnl+=+t.pnl||0;m[k].r+=+t.r||0;m[k].n+=+t.count||1}return m}
 function chipRow(el,vals,cur,set){el.innerHTML="";["Alle",...vals].forEach(v=>{const b=document.createElement("button");b.className="chip";b.textContent=v;b.setAttribute("aria-pressed",v===cur);b.onclick=()=>{set(v);renderDash()};el.appendChild(b)})}
 
 function renderDash(){
-  const cur=state.settings.currency||"USD";
-  const assets=[...new Set(state.trades.map(t=>t.asset).filter(Boolean))].sort();
-  const strats=[...new Set(state.trades.map(t=>t.strategy||"Nicht zugeordnet"))].sort();
+  const acc=state.mt5&&state.mt5.account;
+  const cur=(acc&&acc.currency)||state.settings.currency||"USD";
+  const TT=allTrades();
+  const assets=[...new Set(TT.map(t=>t.asset).filter(Boolean))].sort();
+  const strats=[...new Set(TT.map(t=>t.strategy||"Nicht zugeordnet"))].sort();
   chipRow($("#fAsset"),assets,state.fA,v=>state.fA=v);
   chipRow($("#fStrat"),strats,state.fS,v=>state.fS=v);
   $("#assetList").innerHTML=assets.map(a=>`<option value="${esc(a)}">`).join("");
@@ -331,13 +358,16 @@ function renderDash(){
   cal.innerHTML=h;
 
   /* KPIs */
-  const allP=state.trades.reduce((a,t)=>a+(+t.pnl||0),0);
+  const allP=TT.reduce((a,t)=>a+(+t.pnl||0),0);
   const sb=state.settings.startBalance;
   $("#kBalL").textContent="Kontostand"+(state.settings.name?" · "+state.settings.name:"");
-  if(typeof sb==="number"){$("#kBal").textContent=plain(sb+allP)+" "+cur;$("#kBalS").innerHTML=`Start ${plain(sb)} · <span class="${cls(allP)}">${fmt(allP)}</span> total`;$("#setupBanner").hidden=true}
+  if(acc){$("#kBalL").textContent="Kontostand · MT5 "+acc.login;$("#kBal").textContent=plain(+acc.balance)+" "+cur;
+    const up=state.mt5.updatedAt?new Date(state.mt5.updatedAt):null;
+    $("#kBalS").innerHTML=`Equity ${plain(+acc.equity)} · Stand ${up?up.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"}):"–"}`;$("#setupBanner").hidden=true}
+  else if(typeof sb==="number"){$("#kBal").textContent=plain(sb+allP)+" "+cur;$("#kBalS").innerHTML=`Start ${plain(sb)} · <span class="${cls(allP)}">${fmt(allP)}</span> total`;$("#setupBanner").hidden=true}
   else{$("#kBal").textContent="–";$("#kBalS").textContent="Startkapital fehlt";$("#setupBanner").hidden=false;$("#acctNameB").textContent=state.settings.name||"dein Konto"}
   const ws=monday(new Date()),we=new Date(ws);we.setDate(we.getDate()+6);
-  const wk=Object.entries(byDay(state.trades)).filter(([k])=>k>=ymd(ws)&&k<=ymd(we));
+  const wk=Object.entries(byDay(TT)).filter(([k])=>k>=ymd(ws)&&k<=ymd(we));
   const wP=wk.reduce((a,[,v])=>a+v.pnl,0),wR=wk.reduce((a,[,v])=>a+v.r,0);
   $("#kWeek").className="v num "+cls(wP);$("#kWeek").textContent=fmt(wP)+" "+cur;
   $("#kWeekS").textContent=`KW ${isoWeek(new Date())} · ${fmt(wR)} R · ${wk.length} Handelstag${wk.length===1?"":"e"}`;
@@ -364,8 +394,8 @@ function renderDash(){
   drawChart(monthDays);
 
   /* table */
-  const tb=$("#tradeRows");const sorted=state.trades.slice().sort((a,b)=>b.date.localeCompare(a.date));
-  tb.innerHTML=sorted.length?sorted.slice(0,60).map(t=>`<tr><td class="num">${dd(t.date)}${t.date.slice(0,4)}</td><td>${esc(t.asset)}</td><td class="hm">${esc(t.strategy||"–")}</td><td class="r num ${cls(+t.pnl)}">${fmt(+t.pnl)}</td><td class="r num ${cls(+t.r||0)}">${t.r!=null&&t.r!==""?fmt(+t.r):"–"}</td><td class="r num hm">${t.count||1}</td><td class="mut hm">${esc(t.note||"")}</td><td><button class="btn sm" data-del="${esc(t.id)}" aria-label="Eintrag löschen">✕</button></td></tr>`).join(""):`<tr><td colspan="8" class="empty">Noch keine Trades. Erfasse oben deinen ersten Trade oder importiere eine CSV.</td></tr>`;
+  const tb=$("#tradeRows");const sorted=TT.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  tb.innerHTML=sorted.length?sorted.slice(0,60).map(t=>`<tr><td class="num">${dd(t.date)}${t.date.slice(0,4)}</td><td>${esc(t.asset)}</td><td class="hm">${esc(t.strategy||"–")}</td><td class="r num ${cls(+t.pnl)}">${fmt(+t.pnl)}</td><td class="r num ${cls(+t.r||0)}">${t.r!=null&&t.r!==""?fmt(+t.r):"–"}</td><td class="r num hm">${t.count||1}</td><td class="mut hm">${esc(t.note||"")}</td><td>${t.src==="mt5"?`<span class="tag">MT5</span>`:`<button class="btn sm" data-del="${esc(t.id)}" aria-label="Eintrag löschen">✕</button>`}</td></tr>`).join(""):`<tr><td colspan="8" class="empty">Noch keine Trades. Erfasse oben deinen ersten Trade oder importiere eine CSV.</td></tr>`;
   tb.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>delTrade(b.dataset.del));
 }
 
@@ -482,11 +512,38 @@ function renderSessions(){
   el.innerHTML=h;$("#sessTicks").innerHTML=[0,4,8,12,16,20,24].map(x=>`<span>${pad(x%24)}h</span>`).join("");
 }
 
+/* ---------- MT5 sync (secret gist written by the EA) ---------- */
+let mt5Etag="";
+function renderMt5(){
+  const id=state.settings.mt5Gist||"", st=$("#mt5State");
+  $("#mt5Id").value=id;$("#mt5Off").hidden=!id;
+  if(state.mt5&&id){const up=new Date(state.mt5.updatedAt);st.className="pill on";st.textContent="Verbunden";
+    $("#mt5Note").textContent=`${(state.mt5.trades||[]).length} Trades aus MT5 · letzter Sync ${up.toLocaleDateString("de-CH",{day:"2-digit",month:"2-digit"})} ${up.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"})}`}
+  else{st.className="pill";st.textContent=id?"Wird geladen…":"Nicht verbunden"}
+}
+async function syncMt5(){
+  const id=state.settings.mt5Gist;if(!id)return;
+  try{
+    const r=await fetch("https://api.github.com/gists/"+encodeURIComponent(id),{headers:mt5Etag?{"If-None-Match":mt5Etag}:{} ,cache:"no-store"});
+    if(r.status===304)return;
+    if(r.status===404){$("#mt5Note").textContent="Diese Gist-ID gibt es nicht. Prüfe die ID aus MT5.";return}
+    if(!r.ok){$("#mt5Note").textContent="GitHub antwortet gerade nicht ("+r.status+"). Ich versuche es gleich nochmal.";return}
+    mt5Etag=r.headers.get("ETag")||"";
+    const g=await r.json(),f=g.files&&g.files[MT5_FILE];if(!f){$("#mt5Note").textContent="Im Gist fehlen die MT5-Daten.";return}
+    const txt=f.truncated?await (await fetch(f.raw_url)).text():f.content;
+    state.mt5=JSON.parse(txt);LS.set("bm-mt5",state.mt5);renderMt5();renderDash();
+  }catch(e){$("#mt5Note").textContent="Keine Verbindung. Angezeigt wird der letzte Stand."}
+}
+$("#mt5Form").onsubmit=e=>{e.preventDefault();const id=$("#mt5Id").value.trim().replace(/^.*gist\.github\.com\/[^/]+\//,"");if(!id)return;
+  state.settings.mt5Gist=id;persist();mt5Etag="";state.mt5=null;renderMt5();syncMt5()};
+$("#mt5Off").onclick=()=>{delete state.settings.mt5Gist;persist();state.mt5=null;LS.set("bm-mt5",null);mt5Etag="";renderMt5();renderDash()};
+
 /* ---------- boot ---------- */
-load();renderDash();renderNews();renderNewsKpi();renderSessions();
+load();if(state.settings.mt5Gist)state.mt5=LS.get("bm-mt5",null);renderMt5();renderDash();renderNews();renderNewsKpi();renderSessions();
 async function loadNews(){try{const r=await fetch("news.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;state.news=await r.json()}catch(e){if(!state.news)state.news={events:[]}}renderNewsFilters();renderNews();renderNewsKpi()}
 loadNews();
-document.addEventListener("visibilitychange",()=>{if(!document.hidden){loadNews();renderDash()}});
+syncMt5();setInterval(()=>{if(!document.hidden)syncMt5()},90000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){loadNews();syncMt5();renderDash()}});
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 })();
 </script>

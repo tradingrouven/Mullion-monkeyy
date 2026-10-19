@@ -6,4 +6,5 @@ Trades und Iistellige bliibed lokal uf em Grät (localStorage), kei Login. Backu
 - `src/app.html`: de ganz App-Code (HTML, CSS, JS in einere Datei)
 - `sh build.sh`: baut `docs/index.html` us `src/app.html`
 - `docs/`: d Website, wo GitHub Pages usliferet
+- `mt5/`: Expert Advisor für MT5 und Aaleitig (ANLEITUNG.md)
 - `docs/news.json`: Forex-Factory-Kalender vo dere Wuche, wird vom Workflow `.github/workflows/news.yml` zwöimol am Tag aktualisiert
