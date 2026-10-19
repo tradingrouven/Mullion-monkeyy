@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-10-19T09:49:23Z",
+  "fetchedAt": "2026-10-19T20:41:05Z",
   "events": [
     {
       "title": "IMF Meetings",
@@ -279,7 +279,7 @@
       "country": "USD",
       "date": "2026-10-20T10:00:00-04:00",
       "impact": "Low",
-      "forecast": "-0.4%",
+      "forecast": "-0.7%",
       "previous": "0.3%"
     },
     {
@@ -319,7 +319,7 @@
       "country": "JPY",
       "date": "2026-10-20T19:50:00-04:00",
       "impact": "Low",
-      "forecast": "-0.21T",
+      "forecast": "-0.26T",
       "previous": "-0.84T"
     },
     {
