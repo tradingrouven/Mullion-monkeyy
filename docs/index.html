@@ -55,7 +55,7 @@ main{padding-block:20px 48px}
 .ph{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
 .ph .sp{flex:1}
 .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600}
-.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+.kpis{grid-template-columns:2fr 1fr 1fr}
 .kpi .v{font-size:24px;font-weight:600;margin-top:4px}
 .kpi .s{font-size:12px;color:var(--muted);margin-top:2px}
 .btn{border:1px solid var(--line);background:var(--surface-2);color:var(--fg);font:500 13px var(--font-ui);padding:6px 11px;border-radius:8px;cursor:pointer}
@@ -68,23 +68,32 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .pill{display:inline-block;font:600 12px var(--font-num);padding:3px 9px;border-radius:999px}
 .pill.pos{background:var(--win-bg)} .pill.neg{background:var(--loss-bg)}
-/* calendar */
-.calwrap{overflow-x:auto}
-.cal{display:grid;grid-template-columns:repeat(7,minmax(74px,1fr)) minmax(96px,1.15fr);gap:6px;min-width:700px}
-.cal .hd{font-size:11px;letter-spacing:.09em;color:var(--muted);text-align:center;font-weight:600;padding-bottom:2px}
-.day{min-height:86px;border:1px solid var(--line);border-radius:9px;padding:7px 8px;background:var(--surface-2);font-size:12px;display:flex;flex-direction:column;gap:1px}
-.day.out{opacity:.35}
-.day.blank{background:transparent;border-style:dashed;opacity:.35}
-.day .d{font-weight:600;color:var(--muted)}
-.day.win{background:var(--win-bg);border-color:color-mix(in srgb,var(--win) 45%,transparent)}
-.day.loss{background:var(--loss-bg);border-color:color-mix(in srgb,var(--loss) 45%,transparent)}
-.day.today{box-shadow:inset 0 0 0 2px var(--accent)}
-.day .p{font:600 14px var(--font-num);margin-top:2px}
-.day .t{color:var(--muted)}
-.wk{text-align:center;justify-content:center;align-items:center}
-.wk .d{font-size:11px;letter-spacing:.06em}
-.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--muted)}
-.legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:-1px;background:var(--c)}
+/* weeks */
+.filt{gap:8px 16px}
+.filt>span{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.weeks{display:grid;gap:10px}
+.wkc{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface-2);box-shadow:inset 3px 0 0 var(--line)}
+.wkc.win{box-shadow:inset 3px 0 0 var(--win)}
+.wkc.loss{box-shadow:inset 3px 0 0 var(--loss)}
+.wkc.now{border-color:color-mix(in srgb,var(--accent) 60%,transparent)}
+.wkh{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.wkh b{font-family:var(--font-brand);font-size:15px}
+.wkh .sp{flex:1}
+.wdr{font-size:12px}
+.wp{font-size:18px;font-weight:600}
+.wnone{font-size:12px}
+.wks{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:2px}
+.wkd{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:6px;margin-top:10px}
+.dc{border:1px solid var(--line);border-radius:9px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:1px;background:var(--surface);min-width:0}
+.dc .dw{font-size:10px;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.dc .dn{font-weight:600;font-size:13px}
+.dc .dp{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;letter-spacing:-.02em}
+.dc.win{background:var(--win-bg);border-color:color-mix(in srgb,var(--win) 45%,transparent)}
+.dc.loss{background:var(--loss-bg);border-color:color-mix(in srgb,var(--loss) 45%,transparent)}
+.dc.out{opacity:.4}
+.dc.today{box-shadow:inset 0 0 0 2px var(--accent)}
+.grow.next{background:color-mix(in srgb,var(--accent) 10%,transparent);box-shadow:inset 3px 0 0 var(--accent);padding-left:8px;border-radius:6px}
+.kpi.hero .v{font-size:30px}
 .two{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}
 .stats{display:grid;grid-template-columns:1fr 1fr;column-gap:24px}
 .row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -128,9 +137,8 @@ td.r,th.r{text-align:right}
 .sess .now{position:absolute;top:0;bottom:0;width:2px;background:var(--win)}
 .ticks{display:flex;justify-content:space-between;font:11px var(--font-num);color:var(--muted)}
 .empty{padding:28px;text-align:center;color:var(--muted)}
-@media (max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.two{grid-template-columns:minmax(0,1fr)}form.add{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:520px){.stats{grid-template-columns:1fr}.row:nth-last-child(2){border-bottom:1px solid var(--line)}.kpi .v{font-size:20px}}
-.ps{display:none}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi.hero{grid-column:1/-1}.two{grid-template-columns:minmax(0,1fr)}form.add{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.kpi .v{font-size:20px}}
 .tag{font:600 11px var(--font-num);color:var(--accent);border:1px solid var(--line);border-radius:5px;padding:2px 6px}
 .mt5f{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
 .mt5f label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted);flex:1 1 220px;min-width:0}
@@ -145,23 +153,11 @@ td.r,th.r{text-align:right}
   .tabs{flex-basis:100%;display:grid;grid-template-columns:1fr 1fr}
   .tab{padding:9px 12px}
   .kpi .v{font-size:19px}
-  .calwrap{overflow:visible}
-  .cal{grid-template-columns:repeat(7,minmax(0,1fr));min-width:0;gap:4px}
-  .cal .hd:nth-child(8){display:none}
-  .day{min-height:50px;padding:4px 3px;border-radius:7px;align-items:center;text-align:center}
-  .day .d{font-size:11px}
-  .day .t,.day .p{display:none}
-  .day .ps{display:block;font:600 11px var(--font-num);letter-spacing:-.02em}
-  .day.blank{border:0}
-  .wk{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;justify-content:space-between;min-height:0;padding:6px 10px;gap:4px 12px;margin-bottom:6px}
-  .wk .d{font-size:11px}
-  .wk .p,.wk .t{display:inline;font-size:12px}
-  .wk .ps{display:none}
-.tag{font:600 11px var(--font-num);color:var(--accent);border:1px solid var(--line);border-radius:5px;padding:2px 6px}
-.mt5f{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
-.mt5f label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted);flex:1 1 220px;min-width:0}
-#mt5State.on{background:var(--win-bg);color:var(--win)}
-  .legend{gap:10px}
+  .kpi.hero .v{font-size:28px}
+  .stats{grid-template-columns:1fr 1fr;gap:8px}
+  .stats .row{flex-direction:column;justify-content:flex-start;gap:1px;padding:7px 10px;border:1px solid var(--line)!important;border-radius:9px;background:var(--surface-2)}
+  .stats .row .mut{font-size:11px}
+  .stats .row b{font-size:13px}
   .calhead h2,.calhead #monPill{flex-basis:100%}
   .calhead #monPill{flex-basis:auto}
   .calhead .sp{flex-basis:100%;height:0}
@@ -202,10 +198,9 @@ td.r,th.r{text-align:right}
     <button class="btn pri sm" id="saveStart">Speichern</button>
   </div>
   <div class="grid kpis">
-    <div class="panel kpi"><div class="lbl" id="kBalL">Kontostand</div><div class="v num" id="kBal">–</div><div class="s" id="kBalS"></div></div>
+    <div class="panel kpi hero"><div class="lbl" id="kBalL">Kontostand</div><div class="v num" id="kBal">–</div><div class="s" id="kBalS"></div></div>
     <div class="panel kpi"><div class="lbl">Diese Woche</div><div class="v num" id="kWeek">–</div><div class="s" id="kWeekS"></div></div>
     <div class="panel kpi"><div class="lbl" id="kMonL">Monat</div><div class="v num" id="kMon">–</div><div class="s" id="kMonS"></div></div>
-    <div class="panel kpi"><div class="lbl">Nächste Gold-News</div><div class="v" style="font-size:16px;font-weight:600" id="kNews">–</div><div class="s" id="kNewsS"></div></div>
   </div>
 
   <div class="panel">
@@ -215,19 +210,18 @@ td.r,th.r{text-align:right}
 
   <div class="panel">
     <div class="ph calhead">
-      <h2>Performance-Kalender</h2><span class="pill" id="monPill"></span>
+      <h2>Wochenübersicht</h2><span class="pill" id="monPill"></span>
       <span class="sp"></span>
       <button class="btn sm" id="prevM" aria-label="Vorheriger Monat">←</button>
       <b id="monTitle" style="min-width:120px;text-align:center"></b>
       <button class="btn sm" id="nextM" aria-label="Nächster Monat">→</button>
       <button class="btn sm" id="todayM">Heute</button>
     </div>
-    <div class="ph" style="margin-bottom:12px">
-      <span class="lbl" style="width:70px">Assets</span><div class="chips" id="fAsset"></div>
-      <span class="lbl" style="width:84px;margin-left:8px">Strategien</span><div class="chips" id="fStrat"></div>
+    <div class="ph filt" id="filtRow">
+      <span id="fAssetG"><span class="lbl">Assets</span><span class="chips" id="fAsset"></span></span>
+      <span id="fStratG"><span class="lbl">Strategien</span><span class="chips" id="fStrat"></span></span>
     </div>
-    <div class="calwrap"><div class="cal" id="cal"></div></div>
-    <div class="legend"><span style="--c:var(--win)">Gewinntag</span><span style="--c:var(--loss)">Verlusttag</span><span style="--c:var(--line)">Kein Trade</span><span style="--c:var(--accent)">Heute</span></div>
+    <div class="weeks" id="cal"></div>
   </div>
 
   <div class="grid two">
@@ -339,6 +333,9 @@ function renderDash(){
   const strats=[...new Set(TT.map(t=>t.strategy||"Nicht zugeordnet"))].sort();
   chipRow($("#fAsset"),assets,state.fA,v=>state.fA=v);
   chipRow($("#fStrat"),strats,state.fS,v=>state.fS=v);
+  /* a filter with one choice is noise: hide it */
+  $("#fAssetG").hidden=assets.length<2&&state.fA==="Alle";$("#fStratG").hidden=strats.length<2&&state.fS==="Alle";
+  $("#filtRow").hidden=$("#fAssetG").hidden&&$("#fStratG").hidden;
 
   const list=filtered(), days=byDay(list);
   const y=state.month.getFullYear(), m=state.month.getMonth();
@@ -348,24 +345,26 @@ function renderDash(){
   $("#monTitle").textContent=MON[m]+" "+y;
   const pill=$("#monPill");pill.className="pill "+cls(mp);pill.textContent=fmt(mp)+" "+cur+" · "+fmt(mr)+" R";
 
-  /* calendar */
-  const cal=$("#cal");let h=DOW.map(d=>`<div class="hd">${d}</div>`).join("")+`<div class="hd">KW</div>`;
-  const first=new Date(y,m,1), last=new Date(y,m+1,0), todayK=ymd(new Date());
-  let d=monday(first);
-  while(d<=last){
-    let wp=0,wr=0,wd=0;const wkNo=isoWeek(d);let partial=false;
-    for(let i=0;i<7;i++){
-      const k=ymd(d),inM=d.getMonth()===m,v=days[k];
-      if(!inM){partial=true;h+=`<div class="day blank" aria-hidden="true"></div>`}
-      else{
-        if(v){wp+=v.pnl;wr+=v.r;wd++}
-        const c=v?(v.pnl>0?"win":v.pnl<0?"loss":""):"";
-        h+=`<div class="day ${c} ${k===todayK?"today":""}"><span class="d">${d.getDate()}</span>${v?`<span class="p ${cls(v.pnl)}">${fmt(v.pnl)}</span><span class="ps ${cls(v.pnl)}">${fmt(v.pnl,0)}</span><span class="t">${v.n} Trade${v.n>1?"s":""}</span><span class="t num ${cls(v.r)}">${fmt(v.r)} R</span>`:""}</div>`;
-      }
-      d.setDate(d.getDate()+1);
-    }
-    const wc=wd?(wp>0?"win":wp<0?"loss":""):"";
-    h+=`<div class="day wk ${wc}"><span class="d">KW ${wkNo}${partial?" · Teil":""}</span>${wd?`<span class="p ${cls(wp)}">${fmt(wp)}</span><span class="t num ${cls(wr)}">${fmt(wr)} R</span><span class="t">${wd} Handelstag${wd>1?"e":""}</span>`:""}</div>`;
+  /* weeks: one card per week, Mo–Fr (weekend only when traded) */
+  const cal=$("#cal"), first=new Date(y,m,1), last=new Date(y,m+1,0), todayK=ymd(new Date()), curWk=ymd(monday(new Date()));
+  const dm=k=>k.slice(8)+"."+k.slice(5,7)+".";
+  const wks=[];
+  for(let d=monday(first);d<=last;d.setDate(d.getDate()+7))if(ymd(d)<=curWk)wks.unshift(new Date(d));
+  let h=wks.length?"":`<div class="empty">Dieser Monat hat noch nicht begonnen.</div>`;
+  for(const d of wks){
+    const ds=[...Array(7)].map((_,i)=>{const x=new Date(d);x.setDate(x.getDate()+i);return x});
+    const keys=ds.map(ymd), vs=keys.map(k=>days[k]);
+    const show=ds.map((x,i)=>i<5||!!vs[i]);
+    let wp=0,wr=0,wd=0,ww=0;vs.forEach(v=>{if(v){wp+=v.pnl;wr+=v.r;wd++;if(v.pnl>0)ww++}});
+    const isCur=keys[0]===curWk, wc=wd?(wp>0?"win":wp<0?"loss":""):"";
+    h+=`<div class="wkc ${wc}${isCur?" now":""}"><div class="wkh"><b>KW ${isoWeek(d)}</b><span class="mut wdr">${dm(keys[0])}–${dm(keys[6])}</span>${isCur?`<span class="tag">Diese Woche</span>`:""}<span class="sp"></span>`
+      +(wd?`<span class="wp num ${cls(wp)}">${fmt(wp)}</span>`:`<span class="mut wnone">Keine Trades</span>`)+`</div>`
+      +(wd?`<div class="wks"><span class="num ${cls(wr)}">${fmt(wr)} R</span><span>${ww}/${wd} Gewinntag${wd>1?"e":""}</span><span>${vs.reduce((a,v)=>a+(v?v.n:0),0)} Trades</span></div>`:"")
+      +`<div class="wkd" style="--n:${show.filter(Boolean).length}">`;
+    ds.forEach((x,i)=>{if(!show[i])return;const k=keys[i],v=vs[i];
+      const c=v?(v.pnl>0?"win":v.pnl<0?"loss":"be"):"";
+      h+=`<div class="dc ${c}${x.getMonth()!==m?" out":""}${k===todayK?" today":""}"><span class="dw">${DOW[i]}</span><span class="dn">${x.getDate()}</span><span class="dp num ${v?cls(v.pnl):""}">${v?fmt(v.pnl,0):"·"}</span></div>`});
+    h+=`</div></div>`;
   }
   cal.innerHTML=h;
 
@@ -387,7 +386,7 @@ function renderDash(){
   $("#kMonS").textContent=`${fmt(mr)} R · ${monthDays.length} Handelstage`;
 
   /* stats */
-  $("#statTitle").textContent="Tagesstatistik – "+MON[m]+" "+y;
+  $("#statTitle").textContent="Statistik "+MON[m];
   const n=monthDays.length, wins=monthDays.filter(([,v])=>v.pnl>0).length, be=monthDays.filter(([,v])=>v.pnl===0).length;
   const ents=list.filter(t=>t.date.startsWith(mKey));
   const tr=ents.reduce((a,t)=>a+(+t.count||1),0);
@@ -396,7 +395,7 @@ function renderDash(){
   const dd=k=>k?k.slice(8)+"."+k.slice(5,7)+".":"";
   const rows=[
     ["Handelstage",n],["Trades",tr],
-    ["Day-Win-Rate (inkl. BE)",n?((wins+be)/n*100).toFixed(1)+" %":"–"],["Gewinntage / Verlusttage",`${wins} / ${n-wins-be}`],
+    ["Win-Rate Tage",n?((wins+be)/n*100).toFixed(1)+" %":"–"],["Gewinn- / Verlusttage",`${wins} / ${n-wins-be}`],
     ["Ø Tages-PnL",n?`<span class="${cls(mp/n)}">${fmt(mp/n)} ${cur}</span>`:"–"],["Bester Tag",best?`<span class="${cls(best[1].pnl)}">${fmt(best[1].pnl)} (${dd(best[0])})</span>`:"–"],
     ["Profit-Faktor",gl?(gp/gl).toFixed(2):gp?"∞":"–"],["Schlechtester Tag",worst?`<span class="${cls(worst[1].pnl)}">${fmt(worst[1].pnl)} (${dd(worst[0])})</span>`:"–"],
     ["Gesamt R",`<span class="${cls(mr)}">${fmt(mr)} R</span>`],["Ø R pro Trade",tr?`<span class="${cls(mr/tr)}">${fmt(mr/tr)} R</span>`:"–"],
@@ -407,7 +406,7 @@ function renderDash(){
 
   /* table */
   const tb=$("#tradeRows");const sorted=TT.slice().sort((a,b)=>b.date.localeCompare(a.date));
-  tb.innerHTML=sorted.length?sorted.slice(0,60).map(t=>`<tr><td class="num">${dd(t.date)}${t.date.slice(0,4)}</td><td>${esc(t.asset)}</td><td class="hm">${esc(t.strategy||"–")}</td><td class="r num ${cls(+t.pnl)}">${fmt(+t.pnl)}</td><td class="r num ${cls(+t.r||0)}">${t.r!=null&&t.r!==""?fmt(+t.r):"–"}</td><td class="r num hm">${t.count||1}</td><td class="mut hm">${esc(t.note||"")}</td><td>${t.src==="mt5"?`<span class="tag">MT5</span>`:`<button class="btn sm" data-del="${esc(t.id)}" aria-label="Eintrag löschen">✕</button>`}</td></tr>`).join(""):`<tr><td colspan="8" class="empty">Noch keine Trades. Erfasse oben deinen ersten Trade oder importiere eine CSV.</td></tr>`;
+  tb.innerHTML=sorted.length?sorted.slice(0,60).map(t=>`<tr><td class="num">${dd(t.date)}<span class="hm">${t.date.slice(0,4)}</span></td><td>${esc(t.asset)}</td><td class="hm">${esc(t.strategy||"–")}</td><td class="r num ${cls(+t.pnl)}">${fmt(+t.pnl)}</td><td class="r num ${cls(+t.r||0)}">${t.r!=null&&t.r!==""?fmt(+t.r):"–"}</td><td class="r num hm">${t.count||1}</td><td class="mut hm">${esc(t.note||"")}</td><td>${t.src==="mt5"?`<span class="tag">MT5</span>`:`<button class="btn sm" data-del="${esc(t.id)}" aria-label="Eintrag löschen">✕</button>`}</td></tr>`).join(""):`<tr><td colspan="8" class="empty">Noch keine Trades. Verbinde oben MT5, dann erscheinen sie hier.</td></tr>`;
   tb.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>delTrade(b.dataset.del));
 }
 
@@ -492,20 +491,14 @@ function renderGoldNews(n){
   if(!state.news){el.innerHTML=`<p class="empty">News werden geladen …</p>`;return}
   const today=ymd(n), list=events().filter(x=>isGold(x)&&(x.t>n||ymd(x.t)===today));
   if(!list.length){el.innerHTML=`<p class="empty">Keine wichtigen USD-News mehr diese Woche.</p>`;return}
-  let day="",h="";
-  for(const e of list){const d=ymd(e.t);
+  let day="",h="";const nx=list.find(x=>x.t>n);
+  for(const e of list.slice(0,8)){const d=ymd(e.t);
     if(d!==day){day=d;h+=`<div class="gday">${d===today?"Heute":e.t.toLocaleDateString("de-CH",{weekday:"long",day:"2-digit",month:"2-digit"})}</div>`}
     const past=e.t<=n;
-    h+=`<div class="grow${past?" past":""}"><span class="num gt">${tf(e.t)}</span><span class="imp ${esc(e.impact)}"></span><span class="gtitle">${esc(e.title)}</span><span class="mut gc">${past?"vorbei":countdown(e.t-n)}</span>${e.forecast||e.previous?`<span class="mut gf">${e.forecast?"Prog. "+esc(e.forecast):""}${e.forecast&&e.previous?" · ":""}${e.previous?"Vorh. "+esc(e.previous):""}</span>`:""}</div>`}
+    h+=`<div class="grow${past?" past":""}${e===nx?" next":""}"><span class="num gt">${tf(e.t)}</span><span class="imp ${esc(e.impact)}"></span><span class="gtitle">${esc(e.title)}</span><span class="mut gc">${past?"vorbei":countdown(e.t-n)}</span>${e.forecast||e.previous?`<span class="mut gf">${e.forecast?"Prog. "+esc(e.forecast):""}${e.forecast&&e.previous?" · ":""}${e.previous?"Vorh. "+esc(e.previous):""}</span>`:""}</div>`}
   el.innerHTML=h;
 }
-function renderNewsKpi(){
-  const n=new Date();const e=events().find(x=>isGold(x)&&x.t>n);
-  renderGoldNews(n);
-  if(!state.news){$("#kNews").textContent="–";$("#kNewsS").textContent="";return}
-  if(e){$("#kNews").innerHTML=`<span class="cur">${esc(e.country)}</span> ${esc(e.title)}`;$("#kNewsS").textContent=e.t.toLocaleDateString("de-CH",{weekday:"short"})+" "+tf(e.t)+" · "+countdown(e.t-n)}
-  else{$("#kNews").textContent="Keine mehr diese Woche";$("#kNewsS").textContent=""}
-}
+function renderNewsKpi(){renderGoldNews(new Date())}
 $("#onlyToday").onclick=e=>{state.onlyToday=!state.onlyToday;e.currentTarget.setAttribute("aria-pressed",state.onlyToday);renderNews()};
 
 /* sessions in UTC hours, shown in local time */
