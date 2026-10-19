@@ -124,6 +124,18 @@ textarea{background:var(--surface-2);border:1px solid var(--line);color:var(--fg
 .tn b{color:var(--accent);font-weight:600}
 .nb{padding:3px 7px}
 .pos1 .pn{grid-column:1/-1;font-size:12px;margin-top:2px}
+/* risk */
+.rr{padding:7px 0}
+.rr .rt{display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.rr .rt b{font:600 13px var(--font-num);white-space:nowrap}
+.rr .rb{height:7px;border-radius:4px;background:var(--surface-2);margin-top:5px;overflow:hidden}
+.rr .rb i{display:block;height:100%;border-radius:4px;background:var(--win)}
+.rr.warn .rb i{background:var(--med)} .rr.stop .rb i{background:var(--loss)}
+.rr.stop .rt span{color:var(--loss);font-weight:600}
+#riskState.ok{background:var(--win-bg);color:var(--win)}
+#riskState.warn{background:color-mix(in srgb,var(--med) 18%,transparent);color:var(--med)}
+#riskState.stop{background:var(--loss-bg);color:var(--loss)}
+#riskPanel.stop{border-color:color-mix(in srgb,var(--loss) 60%,transparent)}
 /* weeks */
 .filt{gap:8px 16px}
 .filt>span{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -262,6 +274,12 @@ td.r,th.r{text-align:right}
     <div class="panel kpi"><div class="lbl" id="kMonL">Monat</div><div class="v num" id="kMon">–</div><div class="s" id="kMonS"></div></div>
   </div>
 
+  <div class="panel" id="riskPanel" hidden>
+    <div class="ph"><h2>Risiko-Wächter</h2><span class="sp"></span><span class="pill" id="riskState"></span></div>
+    <div id="riskRows"></div>
+    <p class="note" id="riskNote"></p>
+  </div>
+
   <div class="panel" id="posPanel" hidden>
     <div class="ph"><h2>Offene Positionen</h2><span class="sp"></span><span class="num" id="posTot"></span></div>
     <div id="posList"></div>
@@ -373,6 +391,18 @@ td.r,th.r{text-align:right}
     <div class="ph" style="margin:12px 0 0"><button class="btn sm" id="ckReset" type="button">Neuer Trade</button><span class="sp"></span><button class="btn sm" id="ckEdit" type="button">Regeln bearbeiten</button></div>
   </div>
   <div class="panel">
+    <div class="ph"><h2>Risiko-Grenzen</h2><span class="sp"></span><button class="btn sm" id="rkDef" type="button">Standard</button></div>
+    <div class="cf" id="rkForm">
+      <label>Max. Tagesverlust (%)<input data-rk="day" type="number" inputmode="decimal" step="0.5" min="0"></label>
+      <label>Max. Wochenverlust (%)<input data-rk="week" type="number" inputmode="decimal" step="0.5" min="0"></label>
+      <label>Max. Trades pro Tag<input data-rk="trades" type="number" inputmode="numeric" step="1" min="0"></label>
+      <label>Max. Drawdown vom Hoch (%)<input data-rk="dd" type="number" inputmode="decimal" step="0.5" min="0"></label>
+      <label class="full">Max. offenes Risiko aller Positionen (%)<input data-rk="open" type="number" inputmode="decimal" step="0.25" min="0"></label>
+    </div>
+    <p class="note" style="margin-top:10px">0 schaltet eine Grenze aus. Push-Nachrichten aufs Handy kommen vom Expert Advisor in MT5, dort stellst du Tageslimit und Trades separat ein.</p>
+  </div>
+
+  <div class="panel">
     <div class="ph"><h2>Lot-Rechner</h2><span class="sp"></span><span class="pill" id="cSym">XAUUSD</span></div>
     <div class="cf">
       <label class="full">Kontostand<input id="cBal" type="number" inputmode="decimal" step="0.01"></label>
@@ -427,7 +457,7 @@ const now=new Date();state.month=new Date(now.getFullYear(),now.getMonth(),1);
 
 /* ---------- tabs ---------- */
 const VIEWS=["dash","news","ana","calc"];
-function show(v){if(!VIEWS.includes(v))v="dash";window.scrollTo(0,0);document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.view===v));VIEWS.forEach(x=>$("#view-"+x).hidden=x!==v);LS.set("view",v);if(v==="ana")renderAna();if(v==="calc"){renderCheck();renderCalc()}}
+function show(v){if(!VIEWS.includes(v))v="dash";window.scrollTo(0,0);document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.view===v));VIEWS.forEach(x=>$("#view-"+x).hidden=x!==v);LS.set("view",v);if(v==="ana")renderAna();if(v==="calc"){renderCheck();renderRiskForm();renderCalc()}}
 document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>show(t.dataset.view));
 const showFirst=()=>show({"#news":"news","#dashboard":"dash","#analyse":"ana","#rechner":"calc","#tools":"calc"}[location.hash]||LS.get("view","dash"));
 
@@ -464,7 +494,44 @@ function renderPositions(){
   $("#posNote").textContent="Stand "+up.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"})+(age>5?` (vor ${age} Min., läuft MT5 noch?)`:" · aktualisiert sich etwa jede Minute");
 }
 
+const RK_DEF={day:3,week:6,trades:3,dd:10,open:2};
+function rk(){return {...RK_DEF,...(state.settings.risk||{})}}
+function riskData(){
+  const m=state.mt5;if(!m||!m.account)return null;
+  const bal=+m.account.balance, eq=+m.account.equity||bal, now=new Date(), today=ymd(now), ws=ymd(monday(now));
+  const T=(m.trades||[]).map(t=>({pnl:+t.pnl||0,c:new Date(t.closeUtc),o:new Date(t.openUtc||t.closeUtc)}));
+  const floating=eq-bal;
+  const dayCl=T.filter(t=>ymd(t.c)===today).reduce((a,t)=>a+t.pnl,0), wkCl=T.filter(t=>ymd(t.c)>=ws).reduce((a,t)=>a+t.pnl,0);
+  const pos=m.positions||[], sp=spec();
+  const trades=T.filter(t=>ymd(t.o)===today).length+pos.filter(p=>ymd(new Date(p.openUtc))===today).length;
+  /* balance history from closed trades, to find the high */
+  let b=bal,peak=bal;T.slice().sort((a,b2)=>b2.c-a.c).forEach(t=>{b-=t.pnl;peak=Math.max(peak,b)});
+  const noSl=pos.filter(p=>!(+p.sl)), openRisk=pos.reduce((a,p)=>{if(!(+p.sl))return a;const r=(p.side==="buy"?+p.open-+p.sl:+p.sl-+p.open)*+p.volume*sp.vpl;return a+Math.max(0,r)},0);
+  return {bal,eq,dayStart:bal-dayCl,wkStart:bal-wkCl,day:dayCl+floating,week:wkCl+floating,trades,peak,dd:Math.max(0,peak-eq),noSl,openRisk,cur:m.account.currency||"USD"};
+}
+function renderRisk(){
+  const d=riskData(),panel=$("#riskPanel");panel.hidden=!d;if(!d)return;
+  const L=rk(),rows=[];let worst=0;
+  const add=(label,used,limit,txt)=>{if(!(limit>0))return;const f=used/limit,lv=f>=1?2:f>=0.7?1:0;worst=Math.max(worst,lv);
+    rows.push(`<div class="rr ${["","warn","stop"][lv]}"><div class="rt"><span>${label}</span><b>${txt}</b></div><div class="rb"><i style="width:${Math.min(100,Math.max(2,f*100))}%"></i></div></div>`)};
+  const money=v=>plain(v)+" "+d.cur;
+  add("Heute",Math.max(0,-d.day),d.dayStart*L.day/100,`${fmt(d.day)} / −${money(d.dayStart*L.day/100)}`);
+  add("Diese Woche",Math.max(0,-d.week),d.wkStart*L.week/100,`${fmt(d.week)} / −${money(d.wkStart*L.week/100)}`);
+  add("Trades heute",d.trades,L.trades,`${d.trades} / ${L.trades}`);
+  add("Drawdown vom Hoch",d.dd,d.peak*L.dd/100,`${(d.dd/d.peak*100).toFixed(1)} % / ${L.dd} %`);
+  if((d.openRisk>0||d.noSl.length)&&L.open>0)add("Offenes Risiko",d.noSl.length?d.bal:d.openRisk,d.bal*L.open/100,d.noSl.length?`${d.noSl.length}× ohne SL`:`${money(d.openRisk)} (${(d.openRisk/d.bal*100).toFixed(1)} %)`);
+  $("#riskRows").innerHTML=rows.join("")||`<p class="note">Alle Grenzen sind ausgeschaltet. Stelle sie unter Tools ein.</p>`;
+  const st=$("#riskState");st.className="pill "+["ok","warn","stop"][worst];st.textContent=["Alles im grünen Bereich","Vorsicht","Stopp"][worst];
+  panel.classList.toggle("stop",worst===2);
+  const msgs=[];
+  if(L.day>0&&-d.day>=d.dayStart*L.day/100)msgs.push("Tageslimit erreicht, heute keine neuen Trades mehr.");
+  if(L.trades>0&&d.trades>=L.trades)msgs.push("Maximale Anzahl Trades für heute erreicht.");
+  if(d.noSl.length)msgs.push("Mindestens eine Position hat keinen Stop-Loss.");
+  $("#riskNote").textContent=msgs.join(" ")||"Grenzen änderst du unter Tools → Risiko-Grenzen.";
+}
+
 function renderDash(){
+  renderRisk();
   renderPositions();
   const acc=state.mt5&&state.mt5.account;
   const cur=(acc&&acc.currency)||state.settings.currency||"USD";
@@ -728,6 +795,11 @@ $("#ckList").onkeydown=e=>{if((e.key===" "||e.key==="Enter")&&e.target.classList
 $("#ckReset").onclick=()=>{LS.set("bm-check",{});renderCheck()};
 $("#ckEdit").onclick=()=>{ckEdit=!ckEdit;renderCheck()};
 $("#ckAdd").onsubmit=e=>{e.preventDefault();const v=$("#ckNew").value.trim();if(!v)return;state.settings.checklist=[...ckItems(),v];$("#ckNew").value="";persist();renderCheck()};
+
+/* ---------- risk limits ---------- */
+function renderRiskForm(){const L=rk();document.querySelectorAll("[data-rk]").forEach(i=>{if(document.activeElement!==i)i.value=L[i.dataset.rk]})}
+document.querySelectorAll("[data-rk]").forEach(i=>i.oninput=()=>{const v=parseFloat(i.value.replace(",","."));if(isNaN(v)||v<0)return;state.settings.risk={...rk(),[i.dataset.rk]:v};persist();renderRisk()});
+$("#rkDef").onclick=()=>{delete state.settings.risk;persist();renderRiskForm();renderRisk()};
 
 /* ---------- analyse ---------- */
 const PER={m:"Dieser Monat",q:"3 Monate",a:"Alles"};

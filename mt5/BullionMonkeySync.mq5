@@ -4,14 +4,20 @@
 //| GitHub Gist, which the Bullion Monkey app reads.                 |
 //| Setup: Tools > Options > Expert Advisors > "Allow WebRequest for |
 //| listed URL" and add https://api.github.com                       |
+//| Push messages: Tools > Options > Notifications, enter the        |
+//| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.10"
+#property version   "1.20"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
 input int    DaysBack    = 365;  // how many days of history to send
 input int    SyncSeconds = 60;   // check interval in seconds
+input bool   PushTrades  = true; // push message when a trade opens or closes
+input double DailyLossPct = 3.0; // push when today's loss reaches this % (0 = off)
+input int    MaxTradesDay = 3;   // push when more trades than this are opened today (0 = off)
+input int    NoSlMinutes  = 2;   // push when a position has no stop-loss after this many minutes (0 = off)
 
 #define GIST_FILE "bullion-monkey.json"
 #define ID_FILE   "bullion_monkey_gist.txt"
@@ -20,6 +26,8 @@ input int    SyncSeconds = 60;   // check interval in seconds
 string g_gist = "";
 string g_last = "";     // last uploaded trade/balance payload, to skip unchanged uploads
 bool   g_dirty = true;
+datetime g_lossDay = 0, g_tradesDay = 0;   // day of the last limit push, so each fires once a day
+ulong  g_noSl[];                          // positions already warned about a missing stop-loss
 
 //+------------------------------------------------------------------+
 int OnInit()
@@ -39,14 +47,96 @@ int OnInit()
 
 void OnDeinit(const int reason) { EventKillTimer(); }
 
-void OnTimer() { Sync(); }
+void OnTimer() { CheckNoSl(); Sync(); }
 
 void OnTradeTransaction(const MqlTradeTransaction &trans, const MqlTradeRequest &req, const MqlTradeResult &res)
   {
    if(trans.type == TRADE_TRANSACTION_DEAL_ADD)
      {
+      PushDeal(trans.deal);
       g_dirty = true;
       Sync();
+     }
+  }
+
+//+------------------------------------------------------------------+
+//| Push messages to the MT5 app on the phone                        |
+//+------------------------------------------------------------------+
+void Push(const string msg)
+  {
+   if(!TerminalInfoInteger(TERMINAL_NOTIFICATIONS_ENABLED)) return;
+   if(!SendNotification(StringSubstr(msg, 0, 255)))
+      Print("Bullion Monkey: Push fehlgeschlagen ", GetLastError());
+  }
+
+void PushDeal(const ulong deal)
+  {
+   if(deal == 0 || !HistoryDealSelect(deal)) return;
+   long type = HistoryDealGetInteger(deal, DEAL_TYPE);
+   if(type != DEAL_TYPE_BUY && type != DEAL_TYPE_SELL) return;
+   long entry = HistoryDealGetInteger(deal, DEAL_ENTRY);
+   string sym = HistoryDealGetString(deal, DEAL_SYMBOL);
+   int dg = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);
+   string cur = AccountInfoString(ACCOUNT_CURRENCY);
+
+   // today's result and trade count, in broker time
+   MqlDateTime t; TimeToStruct(TimeTradeServer(), t); t.hour = 0; t.min = 0; t.sec = 0;
+   datetime day = StructToTime(t);
+   double dayPnl = 0; int dayTrades = 0;
+   if(HistorySelect(day, TimeTradeServer() + 60))
+      for(int i = 0; i < HistoryDealsTotal(); i++)
+        {
+         ulong tk = HistoryDealGetTicket(i);
+         long ty = HistoryDealGetInteger(tk, DEAL_TYPE);
+         if(ty != DEAL_TYPE_BUY && ty != DEAL_TYPE_SELL) continue;
+         dayPnl += HistoryDealGetDouble(tk, DEAL_PROFIT) + HistoryDealGetDouble(tk, DEAL_SWAP)
+                 + HistoryDealGetDouble(tk, DEAL_COMMISSION) + HistoryDealGetDouble(tk, DEAL_FEE);
+         if(HistoryDealGetInteger(tk, DEAL_ENTRY) == DEAL_ENTRY_IN) dayTrades++;
+        }
+   HistoryDealSelect(deal);
+
+   if(PushTrades)
+     {
+      if(entry == DEAL_ENTRY_IN)
+         Push(StringFormat("Bullion Monkey: %s %.2f %s @ %s eröffnet (Trade %d heute)",
+              type == DEAL_TYPE_BUY ? "BUY" : "SELL", HistoryDealGetDouble(deal, DEAL_VOLUME), sym,
+              DoubleToString(HistoryDealGetDouble(deal, DEAL_PRICE), dg), dayTrades));
+      else
+        {
+         double p = HistoryDealGetDouble(deal, DEAL_PROFIT) + HistoryDealGetDouble(deal, DEAL_SWAP)
+                  + HistoryDealGetDouble(deal, DEAL_COMMISSION) + HistoryDealGetDouble(deal, DEAL_FEE);
+         Push(StringFormat("Bullion Monkey: %s geschlossen %s%.2f %s · heute %s%.2f %s",
+              sym, p >= 0 ? "+" : "", p, cur, dayPnl >= 0 ? "+" : "", dayPnl, cur));
+        }
+     }
+
+   double startBal = AccountInfoDouble(ACCOUNT_BALANCE) - dayPnl;
+   if(DailyLossPct > 0 && startBal > 0 && dayPnl <= -startBal * DailyLossPct / 100 && g_lossDay != day)
+     {
+      g_lossDay = day;
+      Push(StringFormat("Bullion Monkey: STOPP. Tagesverlust %.2f %s (%.1f %%) hat dein Limit von %.1f %% erreicht.",
+           dayPnl, cur, dayPnl / startBal * 100, DailyLossPct));
+     }
+   if(MaxTradesDay > 0 && entry == DEAL_ENTRY_IN && dayTrades > MaxTradesDay && g_tradesDay != day)
+     {
+      g_tradesDay = day;
+      Push(StringFormat("Bullion Monkey: Achtung, das ist schon dein %d. Trade heute (Limit %d).", dayTrades, MaxTradesDay));
+     }
+  }
+
+void CheckNoSl()
+  {
+   if(NoSlMinutes <= 0) return;
+   for(int i = 0; i < PositionsTotal(); i++)
+     {
+      ulong tk = PositionGetTicket(i);
+      if(tk == 0 || PositionGetDouble(POSITION_SL) > 0) continue;
+      if(TimeCurrent() - (datetime)PositionGetInteger(POSITION_TIME) < NoSlMinutes * 60) continue;
+      bool seen = false;
+      for(int j = 0; j < ArraySize(g_noSl); j++) if(g_noSl[j] == tk) { seen = true; break; }
+      if(seen) continue;
+      int n = ArraySize(g_noSl); ArrayResize(g_noSl, n + 1); g_noSl[n] = tk;
+      Push("Bullion Monkey: " + PositionGetString(POSITION_SYMBOL) + " Position ohne Stop-Loss!");
      }
   }
 
