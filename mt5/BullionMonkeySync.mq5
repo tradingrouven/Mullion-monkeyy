@@ -1,12 +1,12 @@
 //+------------------------------------------------------------------+
 //| BullionMonkeySync.mq5                                            |
-//| Sends closed trades and the account balance to a secret GitHub   |
-//| Gist, which the Bullion Monkey app reads.                        |
+//| Sends closed trades, open positions and the balance to a secret  |
+//| GitHub Gist, which the Bullion Monkey app reads.                 |
 //| Setup: Tools > Options > Expert Advisors > "Allow WebRequest for |
 //| listed URL" and add https://api.github.com                       |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.00"
+#property version   "1.10"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
@@ -79,7 +79,7 @@ string BuildPayload()
    long     pid[];      // position id
    string   sym[];
    double   pnl[], volIn[], entry[], sl[];
-   datetime closeT[];
+   datetime closeT[], openT[];
    int      side[];     // 0 buy, 1 sell
    bool     closed[];
    int n = 0;
@@ -98,9 +98,9 @@ string BuildPayload()
         {
          k = n++;
          ArrayResize(pid, n); ArrayResize(sym, n); ArrayResize(pnl, n); ArrayResize(volIn, n);
-         ArrayResize(entry, n); ArrayResize(sl, n); ArrayResize(closeT, n); ArrayResize(side, n); ArrayResize(closed, n);
+         ArrayResize(entry, n); ArrayResize(sl, n); ArrayResize(closeT, n); ArrayResize(openT, n); ArrayResize(side, n); ArrayResize(closed, n);
          pid[k] = p; sym[k] = HistoryDealGetString(tk, DEAL_SYMBOL); pnl[k] = 0; volIn[k] = 0;
-         entry[k] = 0; sl[k] = 0; closeT[k] = 0; side[k] = 0; closed[k] = false;
+         entry[k] = 0; sl[k] = 0; closeT[k] = 0; openT[k] = 0; side[k] = 0; closed[k] = false;
         }
       long ent = HistoryDealGetInteger(tk, DEAL_ENTRY);
       double comm = HistoryDealGetDouble(tk, DEAL_COMMISSION);
@@ -113,6 +113,7 @@ string BuildPayload()
             entry[k] = HistoryDealGetDouble(tk, DEAL_PRICE);
             sl[k]    = HistoryDealGetDouble(tk, DEAL_SL);
             side[k]  = (type == DEAL_TYPE_BUY) ? 0 : 1;
+            openT[k] = (datetime)HistoryDealGetInteger(tk, DEAL_TIME);
            }
          volIn[k] += HistoryDealGetDouble(tk, DEAL_VOLUME);
         }
@@ -144,6 +145,7 @@ string BuildPayload()
       if(trades != "") trades += ",";
       trades += "{\"id\":\"mt5-" + IntegerToString(pid[k]) + "\""
               + ",\"closeUtc\":\"" + IsoUtc(closeT[k] - (datetime)offset) + "\""
+              + (openT[k] > 0 ? ",\"openUtc\":\"" + IsoUtc(openT[k] - (datetime)offset) + "\"" : "")
               + ",\"asset\":\"" + sym[k] + "\""
               + ",\"side\":\"" + (side[k] == 0 ? "buy" : "sell") + "\""
               + ",\"volume\":" + DoubleToString(volIn[k], 2)
@@ -157,7 +159,37 @@ string BuildPayload()
               + ",\"currency\":\"" + AccountInfoString(ACCOUNT_CURRENCY) + "\""
               + ",\"balance\":" + DoubleToString(AccountInfoDouble(ACCOUNT_BALANCE), 2)
               + ",\"equity\":" + DoubleToString(AccountInfoDouble(ACCOUNT_EQUITY), 2) + "}";
-   return acc + ",\"trades\":[" + trades + "]";
+   // open positions, with the floating result
+   string pos = "";
+   for(int i = 0; i < PositionsTotal(); i++)
+     {
+      ulong tk = PositionGetTicket(i);
+      if(tk == 0) continue;
+      string ps = PositionGetString(POSITION_SYMBOL);
+      int dg = (int)SymbolInfoInteger(ps, SYMBOL_DIGITS);
+      if(pos != "") pos += ",";
+      pos += "{\"id\":\"" + IntegerToString((long)tk) + "\""
+           + ",\"asset\":\"" + ps + "\""
+           + ",\"side\":\"" + (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY ? "buy" : "sell") + "\""
+           + ",\"volume\":" + DoubleToString(PositionGetDouble(POSITION_VOLUME), 2)
+           + ",\"openUtc\":\"" + IsoUtc((datetime)PositionGetInteger(POSITION_TIME) - (datetime)offset) + "\""
+           + ",\"open\":" + DoubleToString(PositionGetDouble(POSITION_PRICE_OPEN), dg)
+           + ",\"price\":" + DoubleToString(PositionGetDouble(POSITION_PRICE_CURRENT), dg)
+           + ",\"sl\":" + DoubleToString(PositionGetDouble(POSITION_SL), dg)
+           + ",\"tp\":" + DoubleToString(PositionGetDouble(POSITION_TP), dg)
+           + ",\"pnl\":" + DoubleToString(PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP), 2) + "}";
+     }
+
+   // contract details of the chart symbol, for the lot calculator
+   string spec = "\"symbol\":{\"name\":\"" + _Symbol + "\""
+               + ",\"contract\":" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_TRADE_CONTRACT_SIZE), 2)
+               + ",\"tickSize\":" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE), 8)
+               + ",\"tickValue\":" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE), 8)
+               + ",\"volMin\":" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN), 2)
+               + ",\"volStep\":" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP), 2)
+               + ",\"volMax\":" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX), 2) + "}";
+
+   return acc + "," + spec + ",\"positions\":[" + pos + "],\"trades\":[" + trades + "]";
   }
 
 //+------------------------------------------------------------------+
