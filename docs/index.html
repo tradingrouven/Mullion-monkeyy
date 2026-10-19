@@ -103,6 +103,27 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .br .bv{font:600 13px var(--font-num);text-align:right;white-space:nowrap}
 .br .bs{grid-column:2/4;font-size:11px;color:var(--muted);margin-top:-2px}
 @media (max-width:640px){.atiles{grid-template-columns:1fr 1fr}.cres .big{font-size:30px}}
+/* checklist */
+.ck{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;-webkit-user-select:none}
+.ck:last-child{border-bottom:0}
+.ck .bx{flex:none;width:24px;height:24px;border-radius:7px;border:2px solid var(--line);display:grid;place-items:center;font-weight:800;color:var(--accent-ink)}
+.ck.on .bx{background:var(--gold-grad);border-color:var(--accent)}
+.ck.on .tx{color:var(--muted);text-decoration:line-through}
+.ck .tx{flex:1;min-width:0}
+.ck .rm{flex:none}
+.ckadd{display:flex;gap:8px;margin-top:10px}
+#ckProg.done{background:var(--win-bg);color:var(--win)}
+.ckwarn{border:1px solid color-mix(in srgb,var(--loss) 50%,transparent);background:var(--loss-bg);border-radius:9px;padding:8px 10px;font-size:13px;margin-bottom:8px}
+.ckok{border:1px solid color-mix(in srgb,var(--win) 50%,transparent);background:var(--win-bg);color:var(--win);border-radius:9px;padding:8px 10px;font-size:13px;margin-top:10px;text-align:center;font-weight:600}
+/* notes */
+.sheet{border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--fg);padding:16px;width:min(520px,calc(100vw - 24px));max-height:calc(100vh - 40px)}
+.sheet::backdrop{background:rgba(0,0,0,.6)}
+.fl{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted)}
+textarea{background:var(--surface-2);border:1px solid var(--line);color:var(--fg);font:16px var(--font-ui);padding:8px;border-radius:7px;width:100%;resize:vertical}
+.tn{font-size:11px;color:var(--muted);white-space:normal;max-width:220px;margin-top:1px}
+.tn b{color:var(--accent);font-weight:600}
+.nb{padding:3px 7px}
+.pos1 .pn{grid-column:1/-1;font-size:12px;margin-top:2px}
 /* weeks */
 .filt{gap:8px 16px}
 .filt>span{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -222,7 +243,7 @@ td.r,th.r{text-align:right}
     <button class="tab" role="tab" id="tab-dash" aria-selected="true" data-view="dash">Dashboard</button>
     <button class="tab" role="tab" id="tab-news" aria-selected="false" data-view="news">News</button>
     <button class="tab" role="tab" id="tab-ana" aria-selected="false" data-view="ana">Analyse</button>
-    <button class="tab" role="tab" id="tab-calc" aria-selected="false" data-view="calc">Rechner</button>
+    <button class="tab" role="tab" id="tab-calc" aria-selected="false" data-view="calc">Tools</button>
   </nav>
   <div class="clock num" id="clock"></div>
 </div></header>
@@ -247,10 +268,9 @@ td.r,th.r{text-align:right}
     <p class="note" id="posNote"></p>
   </div>
 
-  <div class="panel">
-    <div class="ph"><h2>Gold-News diese Woche</h2><span class="sp"></span><span class="note">USD · Hoch &amp; Mittel</span></div>
-    <div class="gnews" id="goldNews"></div>
-    <a class="btn calsub" id="calSub" href="#">🔔 Erinnerungen in den iPhone-Kalender</a>
+  <div class="panel" id="todayPanel" hidden>
+    <div class="ph"><h2>Gold-News heute</h2><span class="sp"></span><span class="note">USD · Hoch &amp; Mittel</span></div>
+    <div class="gnews" id="goldToday"></div>
   </div>
 
   <div class="panel">
@@ -297,13 +317,18 @@ td.r,th.r{text-align:right}
       <input type="file" id="bkLoad" accept=".json,application/json" hidden>
     </div>
     <p class="note">Die Trades kommen automatisch aus MT5. Das Backup sichert deine Einstellungen und alte Einträge.</p>
-    <div class="tbl"><table><thead><tr><th>Datum</th><th>Asset</th><th class="hm">Strategie</th><th class="r">PnL</th><th class="r">R</th><th class="r hm">Trades</th><th class="hm">Notiz</th><th></th></tr></thead><tbody id="tradeRows"></tbody></table></div>
+    <div class="tbl"><table><thead><tr><th>Datum</th><th>Trade</th><th class="r">PnL</th><th class="r">R</th><th class="r hm">Trades</th><th></th></tr></thead><tbody id="tradeRows"></tbody></table></div>
     <p class="note" id="saveState"></p>
   </div>
 </section>
 
 <!-- NEWS -->
 <section id="view-news" class="grid" hidden>
+  <div class="panel">
+    <div class="ph"><h2>Gold-News diese Woche</h2><span class="sp"></span><span class="note">USD · Hoch &amp; Mittel</span></div>
+    <div class="gnews" id="goldNews"></div>
+    <a class="btn calsub" id="calSub" href="#">🔔 Erinnerungen in den iPhone-Kalender</a>
+  </div>
   <div class="grid two">
     <div class="panel">
       <div class="lbl">Als Nächstes</div>
@@ -338,8 +363,15 @@ td.r,th.r{text-align:right}
   <div id="anaBody" class="grid"></div>
 </section>
 
-<!-- RECHNER -->
+<!-- TOOLS -->
 <section id="view-calc" class="grid" hidden>
+  <div class="panel" id="ckPanel">
+    <div class="ph"><h2>Checkliste vor dem Trade</h2><span class="sp"></span><span class="pill" id="ckProg"></span></div>
+    <div id="ckWarn"></div>
+    <div id="ckList"></div>
+    <form id="ckAdd" class="ckadd" hidden><input id="ckNew" placeholder="Neue Regel, z. B. „Kein Trade vor 9 Uhr“" maxlength="90"><button class="btn pri" type="submit">Hinzufügen</button></form>
+    <div class="ph" style="margin:12px 0 0"><button class="btn sm" id="ckReset" type="button">Neuer Trade</button><span class="sp"></span><button class="btn sm" id="ckEdit" type="button">Regeln bearbeiten</button></div>
+  </div>
   <div class="panel">
     <div class="ph"><h2>Lot-Rechner</h2><span class="sp"></span><span class="pill" id="cSym">XAUUSD</span></div>
     <div class="cf">
@@ -363,6 +395,17 @@ td.r,th.r{text-align:right}
   </div>
 </section>
 </main>
+<dialog id="noteDlg" class="sheet">
+  <form method="dialog" id="noteForm">
+    <div class="ph"><h2 id="noteTitle">Trade-Notiz</h2><span class="sp"></span><button class="btn sm" type="button" id="noteX" aria-label="Schliessen">✕</button></div>
+    <p class="note" id="noteSub" style="margin:-6px 0 12px"></p>
+    <label class="fl">Setup / Strategie<input id="noteSetup" list="setupList" autocomplete="off" placeholder="z. B. Breakout, Liquidity Grab"></label>
+    <div class="chips" id="noteChips" style="margin:8px 0 12px"></div>
+    <label class="fl">Notiz<textarea id="noteText" rows="4" placeholder="Warum rein, was lief gut, was nicht?"></textarea></label>
+    <div class="ph" style="margin:14px 0 0"><button class="btn" type="button" id="noteDel">Löschen</button><span class="sp"></span><button class="btn pri" value="save" type="submit">Speichern</button></div>
+    <datalist id="setupList"></datalist>
+  </form>
+</dialog>
 
 <script>
 (function(){
@@ -384,9 +427,9 @@ const now=new Date();state.month=new Date(now.getFullYear(),now.getMonth(),1);
 
 /* ---------- tabs ---------- */
 const VIEWS=["dash","news","ana","calc"];
-function show(v){if(!VIEWS.includes(v))v="dash";window.scrollTo(0,0);document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.view===v));VIEWS.forEach(x=>$("#view-"+x).hidden=x!==v);LS.set("view",v);if(v==="ana")renderAna();if(v==="calc")renderCalc()}
+function show(v){if(!VIEWS.includes(v))v="dash";window.scrollTo(0,0);document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.view===v));VIEWS.forEach(x=>$("#view-"+x).hidden=x!==v);LS.set("view",v);if(v==="ana")renderAna();if(v==="calc"){renderCheck();renderCalc()}}
 document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>show(t.dataset.view));
-const showFirst=()=>show({"#news":"news","#dashboard":"dash","#analyse":"ana","#rechner":"calc"}[location.hash]||LS.get("view","dash"));
+const showFirst=()=>show({"#news":"news","#dashboard":"dash","#analyse":"ana","#rechner":"calc","#tools":"calc"}[location.hash]||LS.get("view","dash"));
 
 function tick(){const d=new Date();$("#clock").textContent=d.toLocaleDateString("de-CH",{weekday:"short",day:"2-digit",month:"short"})+" · "+d.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"})}
 tick();setInterval(()=>{tick();renderNews();renderNewsKpi()},30000);
@@ -396,7 +439,8 @@ const MT5_FILE="bullion-monkey.json";
 function allTrades(){
   if(!state.mt5)return state.trades;
   const own=state.trades.filter(t=>!String(t.id).startsWith("s2026"));  /* seeded screenshot totals are in the MT5 history too */
-  const mt=(state.mt5.trades||[]).map(t=>({id:t.id,date:ymd(new Date(t.closeUtc)),asset:t.asset,strategy:"",pnl:+t.pnl||0,r:t.r,count:1,note:(t.side==="buy"?"Buy ":"Sell ")+t.volume+" Lot",src:"mt5"}));
+  const N=state.settings.notes||{};
+  const mt=(state.mt5.trades||[]).map(t=>{const nt=N[t.id]||{};return {id:t.id,date:ymd(new Date(t.closeUtc)),asset:t.asset,strategy:nt.setup||"",pnl:+t.pnl||0,r:t.r,count:1,note:nt.text||"",lot:(t.side==="buy"?"Buy ":"Sell ")+t.volume+" Lot",src:"mt5"}});
   return own.concat(mt);
 }
 function filtered(){return allTrades().filter(t=>(state.fA==="Alle"||t.asset===state.fA)&&(state.fS==="Alle"||(t.strategy||"Nicht zugeordnet")===state.fS))}
@@ -412,7 +456,10 @@ function renderPositions(){
   const tm=iso=>new Date(iso).toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"});
   $("#posList").innerHTML=ps.map(p=>`<div class="pos1"><div class="ph1"><span class="sd ${p.side==="buy"?"buy":"sell"}">${p.side==="buy"?"BUY":"SELL"}</span>${esc(p.asset)} <span class="mut num" style="font-weight:500">${(+p.volume).toFixed(2)}</span></div>`
     +`<div class="pp ${cls(+p.pnl)}">${fmt(+p.pnl)}</div>`
-    +`<div class="pd num">${p.open} → ${p.price}${+p.sl?` · SL ${p.sl}`:` · <span class="neg">kein SL</span>`}${+p.tp?` · TP ${p.tp}`:""} · seit ${tm(p.openUtc)}</div></div>`).join("");
+    +`<div class="pd num">${p.open} → ${p.price}${+p.sl?` · SL ${p.sl}`:` · <span class="neg">kein SL</span>`}${+p.tp?` · TP ${p.tp}`:""} · seit ${tm(p.openUtc)}</div>`
+    +(()=>{const nt=(state.settings.notes||{})["mt5-"+p.id]||{};return `<div class="pn">${nt.setup||nt.text?`<span class="tn" style="max-width:none">${nt.setup?`<b>${esc(nt.setup)}</b>`:""}${nt.setup&&nt.text?" · ":""}${esc(nt.text||"")}</span> `:""}<button class="btn sm nb" data-note="mt5-${esc(p.id)}">${nt.setup||nt.text?"✎ Notiz":"＋ Notiz"}</button></div>`})()
+    +`</div>`).join("");
+  $("#posList").querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openNote(b.dataset.note));
   const up=new Date(state.mt5.updatedAt), age=Math.round((Date.now()-up)/6e4);
   $("#posNote").textContent="Stand "+up.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"})+(age>5?` (vor ${age} Min., läuft MT5 noch?)`:" · aktualisiert sich etwa jede Minute");
 }
@@ -499,8 +546,9 @@ function renderDash(){
 
   /* table */
   const tb=$("#tradeRows");const sorted=TT.slice().sort((a,b)=>b.date.localeCompare(a.date));
-  tb.innerHTML=sorted.length?sorted.slice(0,60).map(t=>`<tr><td class="num">${dd(t.date)}<span class="hm">${t.date.slice(0,4)}</span></td><td>${esc(t.asset)}</td><td class="hm">${esc(t.strategy||"–")}</td><td class="r num ${cls(+t.pnl)}">${fmt(+t.pnl)}</td><td class="r num ${cls(+t.r||0)}">${t.r!=null&&t.r!==""?fmt(+t.r):"–"}</td><td class="r num hm">${t.count||1}</td><td class="mut hm">${esc(t.note||"")}</td><td>${t.src==="mt5"?`<span class="tag">MT5</span>`:`<button class="btn sm" data-del="${esc(t.id)}" aria-label="Eintrag löschen">✕</button>`}</td></tr>`).join(""):`<tr><td colspan="8" class="empty">Noch keine Trades. Verbinde oben MT5, dann erscheinen sie hier.</td></tr>`;
+  tb.innerHTML=sorted.length?sorted.slice(0,60).map(t=>`<tr><td class="num">${dd(t.date)}<span class="hm">${t.date.slice(0,4)}</span></td><td>${esc(t.asset)}${t.lot?` <span class="mut hm">${esc(t.lot)}</span>`:""}${t.strategy||t.note?`<div class="tn">${t.strategy?`<b>${esc(t.strategy)}</b>`:""}${t.strategy&&t.note?" · ":""}${esc((t.note||"").slice(0,80))}</div>`:""}</td><td class="r num ${cls(+t.pnl)}">${fmt(+t.pnl)}</td><td class="r num ${cls(+t.r||0)}">${t.r!=null&&t.r!==""?fmt(+t.r):"–"}</td><td class="r num hm">${t.count||1}</td><td>${t.src==="mt5"?`<button class="btn sm nb" data-note="${esc(t.id)}" aria-label="Notiz">${t.strategy||t.note?"✎":"＋"}</button>`:`<button class="btn sm" data-del="${esc(t.id)}" aria-label="Eintrag löschen">✕</button>`}</td></tr>`).join(""):`<tr><td colspan="6" class="empty">Noch keine Trades. Verbinde oben MT5, dann erscheinen sie hier.</td></tr>`;
   tb.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>delTrade(b.dataset.del));
+  tb.querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openNote(b.dataset.note));
 }
 
 function drawChart(monthDays){
@@ -579,17 +627,21 @@ function renderNews(){
   renderSessions();
 }
 const isGold=x=>(x.impact==="High"||x.impact==="Medium")&&x.country==="USD";   /* what moves XAUUSD */
-function renderGoldNews(n){
-  const el=$("#goldNews");
-  if(!state.news){el.innerHTML=`<p class="empty">News werden geladen …</p>`;return}
-  const today=ymd(n), list=events().filter(x=>isGold(x)&&(x.t>n||ymd(x.t)===today));
-  if(!list.length){el.innerHTML=`<p class="empty">Keine wichtigen USD-News mehr diese Woche.</p>`;return}
-  let day="",h="";const nx=list.find(x=>x.t>n);
-  for(const e of list.slice(0,8)){const d=ymd(e.t);
-    if(d!==day){day=d;h+=`<div class="gday">${d===today?"Heute":e.t.toLocaleDateString("de-CH",{weekday:"long",day:"2-digit",month:"2-digit"})}</div>`}
+function goldRows(list,n,withDays){
+  let day="",h="";const nx=list.find(x=>x.t>n),today=ymd(n);
+  for(const e of list){const d=ymd(e.t);
+    if(withDays&&d!==day){day=d;h+=`<div class="gday">${d===today?"Heute":e.t.toLocaleDateString("de-CH",{weekday:"long",day:"2-digit",month:"2-digit"})}</div>`}
     const past=e.t<=n;
     h+=`<div class="grow${past?" past":""}${e===nx?" next":""}"><span class="num gt">${tf(e.t)}</span><span class="imp ${esc(e.impact)}"></span><span class="gtitle">${esc(e.title)}</span><span class="mut gc">${past?"vorbei":countdown(e.t-n)}</span>${e.forecast||e.previous?`<span class="mut gf">${e.forecast?"Prog. "+esc(e.forecast):""}${e.forecast&&e.previous?" · ":""}${e.previous?"Vorh. "+esc(e.previous):""}</span>`:""}</div>`}
-  el.innerHTML=h;
+  return h;
+}
+function renderGoldNews(n){
+  const el=$("#goldNews"),today=ymd(n);
+  const tl=state.news?events().filter(x=>isGold(x)&&ymd(x.t)===today):[];
+  $("#todayPanel").hidden=!tl.length;$("#goldToday").innerHTML=goldRows(tl,n,false);
+  if(!state.news){el.innerHTML=`<p class="empty">News werden geladen …</p>`;return}
+  const list=events().filter(x=>isGold(x)&&(x.t>n||ymd(x.t)===today));
+  el.innerHTML=list.length?goldRows(list,n,true):`<p class="empty">Keine wichtigen USD-News mehr diese Woche.</p>`;
 }
 function renderNewsKpi(){renderGoldNews(new Date())}
 $("#onlyToday").onclick=e=>{state.onlyToday=!state.onlyToday;e.currentTarget.setAttribute("aria-pressed",state.onlyToday);renderNews()};
@@ -630,6 +682,53 @@ $("#mt5Form").onsubmit=e=>{e.preventDefault();const id=$("#mt5Id").value.trim().
   state.settings.mt5Gist=id;persist();mt5Etag="";state.mt5=null;renderMt5();syncMt5()};
 $("#mt5Off").onclick=()=>{delete state.settings.mt5Gist;persist();state.mt5=null;LS.set("bm-mt5",null);mt5Etag="";renderMt5();renderDash()};
 
+/* ---------- trade notes ---------- */
+let noteId=null;
+function setups(){return [...new Set(Object.values(state.settings.notes||{}).map(n=>n.setup).filter(Boolean))].sort()}
+function openNote(id){
+  noteId=id;const nt=(state.settings.notes||{})[id]||{};
+  const t=((state.mt5&&state.mt5.trades)||[]).find(x=>x.id===id), p=((state.mt5&&state.mt5.positions)||[]).find(x=>"mt5-"+x.id===id), x=t||p;
+  $("#noteTitle").textContent=p&&!t?"Notiz zur offenen Position":"Trade-Notiz";
+  $("#noteSub").innerHTML=x?`${esc(x.asset)} · ${x.side==="buy"?"Long":"Short"} ${(+x.volume).toFixed(2)} Lot · <span class="${cls(+x.pnl)}">${fmt(+x.pnl)}</span> · ${new Date(x.closeUtc||x.openUtc).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}`:"";
+  $("#noteSetup").value=nt.setup||"";$("#noteText").value=nt.text||"";
+  const su=setups();$("#setupList").innerHTML=su.map(v=>`<option value="${esc(v)}">`).join("");
+  const ch=$("#noteChips");ch.innerHTML="";su.slice(0,8).forEach(v=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=v;b.onclick=()=>{$("#noteSetup").value=v};ch.appendChild(b)});
+  $("#noteDel").hidden=!(nt.setup||nt.text);
+  $("#noteDlg").showModal();
+}
+function saveNote(val){
+  const N=state.settings.notes=state.settings.notes||{};
+  if(val&&(val.setup||val.text))N[noteId]=val;else delete N[noteId];
+  persist();renderDash();if(!$("#view-ana").hidden)renderAna();
+}
+$("#noteDlg").addEventListener("close",()=>{if($("#noteDlg").returnValue==="save")saveNote({setup:$("#noteSetup").value.trim(),text:$("#noteText").value.trim()})});
+$("#noteX").onclick=()=>$("#noteDlg").close("cancel");
+$("#noteDel").onclick=()=>{saveNote(null);$("#noteDlg").close("cancel")};
+
+/* ---------- checklist ---------- */
+const CK_DEFAULT=["News gecheckt: keine rote USD-News in den nächsten 30 Min.","Trend und Struktur auf höherem Timeframe geprüft","Setup passt zu meiner Strategie","Stop-Loss gesetzt","Risiko max. 1 % (Lot-Rechner)","Chance/Risiko mindestens 1:2","Ruhig, kein Revenge-Trade"];
+let ckEdit=false;
+function ckItems(){return state.settings.checklist||CK_DEFAULT}
+function ckDone(){const d=LS.get("bm-check",{});return d.at&&Date.now()-d.at<6*3600e3?d.done||{}:{}}   /* ticks expire after 6 h */
+function renderCheck(){
+  const items=ckItems(),done=ckDone(),n=items.filter(t=>done[t]).length;
+  const pr=$("#ckProg");pr.textContent=`${n} / ${items.length}`;pr.className="pill"+(n===items.length&&n?" done":"");
+  const now=new Date(),soon=events().filter(x=>isGold(x)&&x.impact==="High"&&x.t>now&&x.t-now<45*6e4);
+  $("#ckWarn").innerHTML=soon.map(e=>`<div class="ckwarn">⚠️ ${esc(e.title)} ${countdown(e.t-now)}</div>`).join("");
+  $("#ckList").innerHTML=items.map((t,i)=>`<div class="ck${done[t]?" on":""}" data-i="${i}" role="checkbox" aria-checked="${!!done[t]}" tabindex="0"><span class="bx">${done[t]?"✓":""}</span><span class="tx">${esc(t)}</span>${ckEdit?`<button class="btn sm rm" data-rm="${i}" aria-label="Regel entfernen">✕</button>`:""}</div>`).join("")
+    +(n===items.length&&n&&!ckEdit?`<div class="ckok">Alles erledigt, viel Erfolg beim Trade! 🐒</div>`:"");
+  $("#ckAdd").hidden=!ckEdit;$("#ckEdit").textContent=ckEdit?"Fertig":"Regeln bearbeiten";
+}
+$("#ckList").onclick=e=>{
+  const rm=e.target.closest("[data-rm]");
+  if(rm){const it=ckItems().slice();it.splice(+rm.dataset.rm,1);state.settings.checklist=it;persist();renderCheck();return}
+  const row=e.target.closest(".ck");if(!row||ckEdit)return;
+  const t=ckItems()[+row.dataset.i],d=ckDone();d[t]=!d[t];LS.set("bm-check",{at:Date.now(),done:d});renderCheck()};
+$("#ckList").onkeydown=e=>{if((e.key===" "||e.key==="Enter")&&e.target.classList.contains("ck")){e.preventDefault();e.target.click()}};
+$("#ckReset").onclick=()=>{LS.set("bm-check",{});renderCheck()};
+$("#ckEdit").onclick=()=>{ckEdit=!ckEdit;renderCheck()};
+$("#ckAdd").onsubmit=e=>{e.preventDefault();const v=$("#ckNew").value.trim();if(!v)return;state.settings.checklist=[...ckItems(),v];$("#ckNew").value="";persist();renderCheck()};
+
 /* ---------- analyse ---------- */
 const PER={m:"Dieser Monat",q:"3 Monate",a:"Alles"};
 state.per=LS.get("aPer","a");
@@ -662,7 +761,9 @@ function renderAna(){
   const sessLbl={Asien:`Asien`,London:`London`,"New York":`New York`};
   const DOWL=["SO","MO","DI","MI","DO","FR","SA"];
   const basis=hasOpen?"nach Eröffnungszeit, in deiner Ortszeit":"nach Schliesszeit (neuer Expert Advisor liefert die Eröffnungszeit)";
-  body.innerHTML=`<div class="panel"><div class="atiles">${tiles.map(([a,b])=>`<div class="at"><span>${a}</span><b>${b}</b></div>`).join("")}</div><p class="note" style="margin-top:10px">Beträge in ${cur}.</p></div>
+  const NT=state.settings.notes||{};
+  const setupPanel=`<div class="panel"><div class="ph"><h2>Nach Setup</h2></div>${T.some(t=>(NT[t.id]||{}).setup)?bars(group(t=>(NT[t.id]||{}).setup||"Ohne Setup")):`<p class="note">Gib deinen Trades im Dashboard unter „Trades“ mit ＋ ein Setup, dann siehst du hier, welches am besten läuft.</p>`}</div>`;
+  body.innerHTML=`<div class="panel"><div class="atiles">${tiles.map(([a,b])=>`<div class="at"><span>${a}</span><b>${b}</b></div>`).join("")}</div><p class="note" style="margin-top:10px">Beträge in ${cur}.</p></div>${setupPanel}
   <div class="grid two">
     <div class="panel"><div class="ph"><h2>Long vs. Short</h2></div>${bars(group(t=>t.side==="buy"?"Long":"Short",["Long","Short"]))}</div>
     <div class="panel"><div class="ph"><h2>Sessions</h2><span class="sp"></span><span class="note">Asien ${lh(21)}–${lh(7)} · London ${lh(7)}–${lh(12)} · NY ${lh(12)}–${lh(21)} Uhr</span></div>${bars(group(sess,["Asien","London","New York"]),k=>sessLbl[k])}</div>
