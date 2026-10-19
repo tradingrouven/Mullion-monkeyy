@@ -122,6 +122,13 @@ textarea{background:var(--surface-2);border:1px solid var(--line);color:var(--fg
 #riskState.warn{background:color-mix(in srgb,var(--med) 18%,transparent);color:var(--med)}
 #riskState.stop{background:var(--loss-bg);color:var(--loss)}
 #riskPanel.stop{border-color:color-mix(in srgb,var(--loss) 60%,transparent)}
+/* headlines */
+.hl{display:grid;grid-template-columns:44px minmax(0,1fr);gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.hl:last-child{border-bottom:0}
+.hl .ht{font:600 12px var(--font-num);color:var(--muted);padding-top:1px}
+.hl.g .hx{font-weight:600}
+.hl.g .ht{color:var(--accent)}
+.hl.new{background:color-mix(in srgb,var(--accent) 8%,transparent);border-radius:6px}
 /* weeks */
 .filt{gap:8px 16px}
 .filt>span{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -331,6 +338,11 @@ td.r,th.r{text-align:right}
     <div class="ph"><h2>Gold-News diese Woche</h2><span class="sp"></span><span class="note">USD · Hoch &amp; Mittel</span></div>
     <div class="gnews" id="goldNews"></div>
     <a class="btn calsub" id="calSub" href="#">🔔 Erinnerungen in den iPhone-Kalender</a>
+  </div>
+  <div class="panel">
+    <div class="ph"><h2>Live-Schlagzeilen</h2><span class="note">FinancialJuice</span><span class="sp"></span><div class="chips" id="hlF"></div></div>
+    <div id="hlList"></div>
+    <p class="note" id="hlNote" style="margin-top:8px"></p>
   </div>
   <div class="grid two">
     <div class="panel">
@@ -727,7 +739,7 @@ async function syncMt5(){
     mt5Etag=r.headers.get("ETag")||"";
     const g=await r.json(),f=g.files&&g.files[MT5_FILE];if(!f){$("#mt5Note").textContent="Im Gist fehlen die MT5-Daten.";return}
     const txt=f.truncated?await (await fetch(f.raw_url)).text():f.content;
-    state.mt5=JSON.parse(txt);LS.set("bm-mt5",state.mt5);renderMt5();renderDash();if(!$("#view-ana").hidden)renderAna();if(!$("#view-calc").hidden)renderCalc();
+    state.mt5=JSON.parse(txt);LS.set("bm-mt5",state.mt5);renderMt5();renderDash();renderHeadlines();if(!$("#view-ana").hidden)renderAna();if(!$("#view-calc").hidden)renderCalc();
   }catch(e){$("#mt5Note").textContent="Keine Verbindung. Angezeigt wird der letzte Stand."}
 }
 $("#mt5Form").onsubmit=e=>{e.preventDefault();const id=$("#mt5Id").value.trim().replace(/^.*gist\.github\.com\/[^/]+\//,"");if(!id)return;
@@ -785,6 +797,21 @@ $("#ckAdd").onsubmit=e=>{e.preventDefault();const v=$("#ckNew").value.trim();if(
 function renderRiskForm(){const L=rk();document.querySelectorAll("[data-rk]").forEach(i=>{if(document.activeElement!==i)i.value=L[i.dataset.rk]})}
 document.querySelectorAll("[data-rk]").forEach(i=>i.oninput=()=>{const v=parseFloat(i.value.replace(",","."));if(isNaN(v)||v<0)return;state.settings.risk={...rk(),[i.dataset.rk]:v};persist();renderRisk()});
 $("#rkDef").onclick=()=>{delete state.settings.risk;persist();renderRiskForm();renderRisk()};
+
+/* ---------- headlines (FinancialJuice via the EA) ---------- */
+const HL_WORDS=["gold","xau","fed ","fed's","fomc","powell","cpi","pce","nfp","non-farm","payrolls","inflation","rate cut","rate hike","treasury","yields","dollar","dxy","tariff","geopolit","jobless","unemployment","gdp","ism","retail sales","safe haven","central bank"];
+const isGoldHl=t=>{const x=" "+t.toLowerCase()+" ";return HL_WORDS.some(w=>x.includes(w))};
+state.hlAll=LS.get("hlAll",false);
+function renderHeadlines(){
+  const f=$("#hlF");f.innerHTML="";[["Gold-relevant",false],["Alle",true]].forEach(([l,v])=>{const b=document.createElement("button");b.className="chip";b.textContent=l;b.setAttribute("aria-pressed",state.hlAll===v);b.onclick=()=>{state.hlAll=v;LS.set("hlAll",v);renderHeadlines()};f.appendChild(b)});
+  const H=((state.mt5&&state.mt5.headlines)||[]).map(h=>({t:h.t,d:new Date(h.d)})).filter(h=>h.t);
+  const list=H.filter(h=>state.hlAll||isGoldHl(h.t)).slice(0,30), n=Date.now();
+  $("#hlList").innerHTML=list.length?list.map(h=>`<div class="hl${isGoldHl(h.t)?" g":""}${n-h.d<15*6e4?" new":""}"><span class="ht">${isNaN(h.d)?"":tf(h.d)}</span><span class="hx">${esc(h.t)}</span></div>`).join("")
+    :`<p class="empty" style="padding:16px">${H.length?"Gerade keine Gold-relevanten Schlagzeilen. Tippe auf „Alle“.":"Noch keine Schlagzeilen."}</p>`;
+  $("#hlNote").textContent=!state.mt5?"Die Schlagzeilen kommen über deinen Expert Advisor in MT5. Verbinde zuerst MT5 im Dashboard."
+    :!H.length?"Expert Advisor auf Version 1.30 aktualisieren und in MT5 bei WebRequest zusätzlich https://www.financialjuice.com erlauben."
+    :`Holt dein MT5 etwa alle 2 Minuten · Stand ${new Date(state.mt5.updatedAt).toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"})}`;
+}
 
 /* ---------- analyse ---------- */
 const PER={m:"Dieser Monat",q:"3 Monate",a:"Alles"};
@@ -876,7 +903,7 @@ $("#cClear").onclick=()=>{["#cEntry","#cSl","#cTp","#cDist"].forEach(id=>$(id).v
 
 $("#calSub").href="webcal://"+location.host+location.pathname.replace(/[^/]*$/,"")+"gold-news.ics";
 /* ---------- boot ---------- */
-load();if(state.settings.mt5Gist)state.mt5=LS.get("bm-mt5",null);showFirst();renderMt5();renderDash();renderNews();renderNewsKpi();renderSessions();
+load();if(state.settings.mt5Gist)state.mt5=LS.get("bm-mt5",null);showFirst();renderMt5();renderDash();renderHeadlines();renderNews();renderNewsKpi();renderSessions();
 async function loadNews(){try{const r=await fetch("news.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;state.news=await r.json()}catch(e){if(!state.news)state.news={events:[]}}renderNewsFilters();renderNews();renderNewsKpi()}
 loadNews();
 syncMt5();setInterval(()=>{if(!document.hidden)syncMt5()},90000);

@@ -3,12 +3,13 @@
 //| Sends closed trades, open positions and the balance to a secret  |
 //| GitHub Gist, which the Bullion Monkey app reads.                 |
 //| Setup: Tools > Options > Expert Advisors > "Allow WebRequest for |
-//| listed URL" and add https://api.github.com                       |
+//| listed URL" and add https://api.github.com and                   |
+//| https://www.financialjuice.com (news headlines)                  |
 //| Push messages: Tools > Options > Notifications, enter the        |
 //| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.20"
+#property version   "1.30"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
@@ -18,16 +19,24 @@ input bool   PushTrades  = true; // push message when a trade opens or closes
 input double DailyLossPct = 3.0; // push when today's loss reaches this % (0 = off)
 input int    MaxTradesDay = 3;   // push when more trades than this are opened today (0 = off)
 input int    NoSlMinutes  = 2;   // push when a position has no stop-loss after this many minutes (0 = off)
+input int    FeedMinutes  = 2;   // read FinancialJuice headlines every n minutes (0 = off)
+input bool   PushHeadlines = true; // push gold-relevant headlines
+input string HeadlineWords = "gold,xau,fed ,fomc,powell,cpi,pce,nfp,non-farm,payrolls,inflation,rate cut,rate hike,treasury,yields,dollar,dxy,tariff,geopolit"; // comma list for the push filter
 
 #define GIST_FILE "bullion-monkey.json"
 #define ID_FILE   "bullion_monkey_gist.txt"
 #define API       "https://api.github.com/gists"
+#define FEED      "https://www.financialjuice.com/feed.ashx?xy=rss"
 
 string g_gist = "";
 string g_last = "";     // last uploaded trade/balance payload, to skip unchanged uploads
 bool   g_dirty = true;
 datetime g_lossDay = 0, g_tradesDay = 0;   // day of the last limit push, so each fires once a day
 ulong  g_noSl[];                          // positions already warned about a missing stop-loss
+string g_news = "";                       // JSON array body of the latest headlines
+datetime g_newsAt = 0;
+string g_newsSeen = "";                   // newest headline already handled, for the push
+bool   g_feedWarned = false;
 
 //+------------------------------------------------------------------+
 int OnInit()
@@ -41,13 +50,20 @@ int OnInit()
    if(g_gist == "")
       g_gist = ReadSavedId();
    EventSetTimer(SyncSeconds < 15 ? 15 : SyncSeconds);
+   if(FeedMinutes > 0) FetchNews();
    Sync();
    return(INIT_SUCCEEDED);
   }
 
 void OnDeinit(const int reason) { EventKillTimer(); }
 
-void OnTimer() { CheckNoSl(); Sync(); }
+void OnTimer()
+  {
+   CheckNoSl();
+   if(FeedMinutes > 0 && TimeLocal() - g_newsAt >= FeedMinutes * 60)
+      FetchNews();
+   Sync();
+  }
 
 void OnTradeTransaction(const MqlTradeTransaction &trans, const MqlTradeRequest &req, const MqlTradeResult &res)
   {
@@ -122,6 +138,87 @@ void PushDeal(const ulong deal)
       g_tradesDay = day;
       Push(StringFormat("Bullion Monkey: Achtung, das ist schon dein %d. Trade heute (Limit %d).", dayTrades, MaxTradesDay));
      }
+  }
+
+//+------------------------------------------------------------------+
+//| FinancialJuice headlines                                         |
+//+------------------------------------------------------------------+
+string TagText(const string xml, const string tag)
+  {
+   int a = StringFind(xml, "<" + tag + ">");
+   if(a < 0) return "";
+   a += StringLen(tag) + 2;
+   int b = StringFind(xml, "</" + tag + ">", a);
+   if(b < 0) return "";
+   string v = StringSubstr(xml, a, b - a);
+   StringReplace(v, "<![CDATA[", ""); StringReplace(v, "]]>", "");
+   StringReplace(v, "&lt;", "<"); StringReplace(v, "&gt;", ">"); StringReplace(v, "&quot;", "\"");
+   StringReplace(v, "&#39;", "'"); StringReplace(v, "&apos;", "'"); StringReplace(v, "&amp;", "&");
+   StringReplace(v, "\t", " ");
+   StringTrimLeft(v); StringTrimRight(v);
+   return v;
+  }
+
+bool IsGoldNews(const string title)
+  {
+   string t = " " + title + " "; StringToLower(t);
+   string w[]; int n = StringSplit(HeadlineWords, ',', w);
+   for(int i = 0; i < n; i++)
+     {
+      string k = w[i]; StringToLower(k); StringTrimLeft(k);
+      if(StringLen(k) > 1 && StringFind(t, k) >= 0) return true;
+     }
+   return false;
+  }
+
+void FetchNews()
+  {
+   g_newsAt = TimeLocal();
+   char data[], result[];
+   string resHeaders;
+   ResetLastError();
+   int code = WebRequest("GET", FEED, "User-Agent: Mozilla/5.0 (BullionMonkeySync)\r\n", 15000, data, result, resHeaders);
+   if(code != 200)
+     {
+      if(!g_feedWarned)
+        {
+         g_feedWarned = true;
+         if(code == -1 && GetLastError() == 4014)
+            Print("Bullion Monkey: für Schlagzeilen https://www.financialjuice.com bei WebRequest erlauben.");
+         else
+            Print("Bullion Monkey: FinancialJuice antwortet ", code);
+        }
+      return;
+     }
+   string xml = CharArrayToString(result, 0, WHOLE_ARRAY, CP_UTF8);
+   string out = "", newest = "";
+   string fresh[]; int nf = 0;
+   bool reachedSeen = (g_newsSeen == "");   // first run: remember, but don't push old headlines
+   int pos = 0;
+   for(int i = 0; i < 40; i++)
+     {
+      int a = StringFind(xml, "<item>", pos);
+      if(a < 0) break;
+      int b = StringFind(xml, "</item>", a);
+      if(b < 0) break;
+      pos = b + 7;
+      string item = StringSubstr(xml, a, b - a);
+      string title = TagText(item, "title");
+      if(StringFind(title, "FinancialJuice: ") == 0) title = StringSubstr(title, 16);
+      if(title == "") continue;
+      if(newest == "") newest = title;
+      if(title == g_newsSeen) reachedSeen = true;
+      if(!reachedSeen) { ArrayResize(fresh, nf + 1); fresh[nf++] = title; }
+      if(out != "") out += ",";
+      out += "{\"t\":\"" + Esc(title) + "\",\"d\":\"" + Esc(TagText(item, "pubDate")) + "\"}";
+     }
+   if(out == "") return;
+   if(out != g_news) g_dirty = true;
+   g_news = out;
+   if(PushHeadlines && g_newsSeen != "")
+      for(int k = (int)MathMin(nf, 5) - 1; k >= 0; k--)   // oldest first, at most 5 at once
+         if(IsGoldNews(fresh[k])) Push("📰 " + fresh[k]);
+   g_newsSeen = newest;
   }
 
 void CheckNoSl()
@@ -279,7 +376,7 @@ string BuildPayload()
                + ",\"volStep\":" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP), 2)
                + ",\"volMax\":" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX), 2) + "}";
 
-   return acc + "," + spec + ",\"positions\":[" + pos + "],\"trades\":[" + trades + "]";
+   return acc + "," + spec + ",\"headlines\":[" + g_news + "],\"positions\":[" + pos + "],\"trades\":[" + trades + "]";
   }
 
 //+------------------------------------------------------------------+
@@ -352,6 +449,7 @@ string Esc(const string s)
    StringReplace(o, "\"", "\\\"");
    StringReplace(o, "\r", "");
    StringReplace(o, "\n", "\\n");
+   StringReplace(o, "\t", " ");
    return o;
   }
 
