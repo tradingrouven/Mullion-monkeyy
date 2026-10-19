@@ -127,6 +127,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .dc.loss{background:var(--loss-bg);border-color:color-mix(in srgb,var(--loss) 45%,transparent)}
 .dc.out{opacity:.4}
 .dc.today{box-shadow:inset 0 0 0 2px var(--accent)}
+.calsub{display:block;text-align:center;margin-top:12px;text-decoration:none;padding:9px 11px}
 .grow.next{background:color-mix(in srgb,var(--accent) 10%,transparent);box-shadow:inset 3px 0 0 var(--accent);padding-left:8px;border-radius:6px}
 .kpi.hero .v{font-size:30px}
 .two{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}
@@ -249,6 +250,7 @@ td.r,th.r{text-align:right}
   <div class="panel">
     <div class="ph"><h2>Gold-News diese Woche</h2><span class="sp"></span><span class="note">USD · Hoch &amp; Mittel</span></div>
     <div class="gnews" id="goldNews"></div>
+    <a class="btn calsub" id="calSub" href="#">🔔 Erinnerungen in den iPhone-Kalender</a>
   </div>
 
   <div class="panel">
@@ -714,6 +716,7 @@ $("#cBal").oninput=()=>{const v=num("#cBal");calc.bal=v!=null&&Math.abs(v-accBal
 $("#cDist").oninput=()=>{$("#cEntry").value="";$("#cSl").value="";renderCalc()};
 $("#cClear").onclick=()=>{["#cEntry","#cSl","#cTp","#cDist"].forEach(id=>$(id).value="");renderCalc()};
 
+$("#calSub").href="webcal://"+location.host+location.pathname.replace(/[^/]*$/,"")+"gold-news.ics";
 /* ---------- boot ---------- */
 load();if(state.settings.mt5Gist)state.mt5=LS.get("bm-mt5",null);showFirst();renderMt5();renderDash();renderNews();renderNewsKpi();renderSessions();
 async function loadNews(){try{const r=await fetch("news.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;state.news=await r.json()}catch(e){if(!state.news)state.news={events:[]}}renderNewsFilters();renderNews();renderNewsKpi()}
