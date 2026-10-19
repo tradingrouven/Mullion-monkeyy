@@ -89,6 +89,14 @@ td.r,th.r{text-align:right}
 .banner{border:1px dashed var(--accent);border-radius:10px;padding:10px 12px;font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .banner input{width:140px}
 /* news */
+.gday{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin:12px 0 4px}
+.gday:first-child{margin-top:0}
+.grow{display:grid;grid-template-columns:46px 14px minmax(0,1fr) auto;column-gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+.grow .gt{font-weight:600}
+.grow .gtitle{font-weight:600;min-width:0}
+.grow .gc{font-size:12px;white-space:nowrap}
+.grow .gf{grid-column:3/5;font-size:11px;margin-top:2px}
+.grow.past{opacity:.45}
 .nextup{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .nextup .big{font:600 22px var(--font-num)}
 .imp{display:inline-block;width:14px;height:16px;border-radius:2px;vertical-align:-3px;background:var(--c)}
@@ -182,7 +190,12 @@ td.r,th.r{text-align:right}
     <div class="panel kpi"><div class="lbl" id="kBalL">Kontostand</div><div class="v num" id="kBal">–</div><div class="s" id="kBalS"></div></div>
     <div class="panel kpi"><div class="lbl">Diese Woche</div><div class="v num" id="kWeek">–</div><div class="s" id="kWeekS"></div></div>
     <div class="panel kpi"><div class="lbl" id="kMonL">Monat</div><div class="v num" id="kMon">–</div><div class="s" id="kMonS"></div></div>
-    <div class="panel kpi"><div class="lbl">Nächste High-Impact News</div><div class="v" style="font-size:16px;font-weight:600" id="kNews">–</div><div class="s" id="kNewsS"></div></div>
+    <div class="panel kpi"><div class="lbl">Nächste Gold-News</div><div class="v" style="font-size:16px;font-weight:600" id="kNews">–</div><div class="s" id="kNewsS"></div></div>
+  </div>
+
+  <div class="panel">
+    <div class="ph"><h2>Gold-News diese Woche</h2><span class="sp"></span><span class="note">USD · Hoch &amp; Mittel</span></div>
+    <div class="gnews" id="goldNews"></div>
   </div>
 
   <div class="panel">
@@ -224,26 +237,12 @@ td.r,th.r{text-align:right}
   </div>
 
   <div class="panel">
-    <div class="ph"><h2>Trades erfassen</h2><span class="sp"></span>
+    <div class="ph"><h2>Trades</h2><span class="sp"></span>
       <button class="btn sm" id="bkSave" type="button">Backup sichern</button>
       <label class="btn sm" for="bkLoad" style="cursor:pointer">Backup laden</label>
       <input type="file" id="bkLoad" accept=".json,application/json" hidden>
-      <label class="btn sm" for="csv" style="cursor:pointer">CSV importieren</label>
-      <input type="file" id="csv" accept=".csv,text/csv" hidden>
     </div>
-    <form class="add" id="addForm">
-      <label>Datum<input type="date" id="fDate" required></label>
-      <label>Asset<input id="fAssetIn" list="assetList" value="XAUUSD" required></label>
-      <label>Strategie<input id="fStratIn" list="stratList" value="Markterfahrung"></label>
-      <label>PnL (USD)<input type="number" step="0.01" id="fPnl" required></label>
-      <label>R<input type="number" step="0.01" id="fR"></label>
-      <label>Anzahl Trades<input type="number" min="1" step="1" id="fCount" value="1"></label>
-      <label>Notiz<input id="fNote"></label>
-      <button class="btn pri" type="submit">Hinzufügen</button>
-    </form>
-    <datalist id="assetList"></datalist><datalist id="stratList"></datalist>
-    <p class="note">Deine Trades sind nur auf diesem Gerät gespeichert. Sichere ab und zu ein Backup.</p>
-    <p class="note" id="csvHint">CSV-Spalten: Datum;Asset;Strategie;PnL;R;Anzahl;Notiz (Komma oder Semikolon, Dezimal-Komma geht auch).</p>
+    <p class="note">Die Trades kommen automatisch aus MT5. Das Backup sichert deine Einstellungen und alte Einträge.</p>
     <div class="tbl"><table><thead><tr><th>Datum</th><th>Asset</th><th class="hm">Strategie</th><th class="r">PnL</th><th class="r">R</th><th class="r hm">Trades</th><th class="hm">Notiz</th><th></th></tr></thead><tbody id="tradeRows"></tbody></table></div>
     <p class="note" id="saveState"></p>
   </div>
@@ -325,8 +324,6 @@ function renderDash(){
   const strats=[...new Set(TT.map(t=>t.strategy||"Nicht zugeordnet"))].sort();
   chipRow($("#fAsset"),assets,state.fA,v=>state.fA=v);
   chipRow($("#fStrat"),strats,state.fS,v=>state.fS=v);
-  $("#assetList").innerHTML=assets.map(a=>`<option value="${esc(a)}">`).join("");
-  $("#stratList").innerHTML=strats.filter(s=>s!=="Nicht zugeordnet").map(a=>`<option value="${esc(a)}">`).join("");
 
   const list=filtered(), days=byDay(list);
   const y=state.month.getFullYear(), m=state.month.getMonth();
@@ -419,7 +416,6 @@ function niceStep(r){const p=Math.pow(10,Math.floor(Math.log10(r||1)));const f=r
 $("#prevM").onclick=()=>{state.month=new Date(state.month.getFullYear(),state.month.getMonth()-1,1);renderDash()};
 $("#nextM").onclick=()=>{state.month=new Date(state.month.getFullYear(),state.month.getMonth()+1,1);renderDash()};
 $("#todayM").onclick=()=>{const t=new Date();state.month=new Date(t.getFullYear(),t.getMonth(),1);renderDash()};
-$("#fDate").value=ymd(new Date());
 
 /* ---------- persistence (on this device) ---------- */
 const KEY="bm-data-v1";
@@ -432,13 +428,7 @@ const SEED={settings:{name:"RoboForex 773",currency:"USD",startBalance:911.53},t
 function setSave(msg){$("#saveState").textContent=msg}
 function load(){const d=LS.get(KEY,null)||SEED;state.trades=d.trades||[];state.settings=d.settings||{}}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify({settings:state.settings,trades:state.trades}))}catch(e){setSave("Speichern fehlgeschlagen: kein Speicherplatz auf dem Gerät.")}}
-function addTrades(arr){arr.forEach(t=>state.trades.push({...t,id:"t"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}));persist();renderDash();setSave(arr.length===1?"Trade gespeichert.":arr.length+" Trades gespeichert.")}
 function delTrade(id){state.trades=state.trades.filter(t=>t.id!==id);persist();renderDash()}
-$("#addForm").onsubmit=e=>{e.preventDefault();
-  const t={date:$("#fDate").value,asset:$("#fAssetIn").value.trim().toUpperCase(),strategy:$("#fStratIn").value.trim(),pnl:+$("#fPnl").value,count:Math.max(1,+$("#fCount").value||1),note:$("#fNote").value.trim()};
-  const r=$("#fR").value;if(r!=="")t.r=+r;
-  addTrades([t]);$("#fPnl").value="";$("#fR").value="";$("#fNote").value="";$("#fCount").value=1;
-};
 $("#saveStart").onclick=()=>{const v=parseFloat($("#startBal").value);if(isNaN(v))return;
   state.settings.startBalance=v;persist();renderDash()};
 /* backup: share/save a JSON file, restore from one */
@@ -450,19 +440,6 @@ $("#bkSave").onclick=async()=>{const name="bullion-monkey-backup-"+ymd(new Date(
 $("#bkLoad").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
   try{const d=JSON.parse(await f.text());if(!Array.isArray(d.trades))throw 0;state.trades=d.trades;state.settings=d.settings||{};persist();renderDash();setSave("Backup geladen: "+d.trades.length+" Einträge.")}
   catch(_){setSave("Diese Datei ist kein Bullion-Monkey-Backup.")}};
-$("#csv").onchange=async e=>{const f=e.target.files[0];if(!f)return;const txt=await f.text();e.target.value="";
-  const lines=txt.split(/\r?\n/).filter(l=>l.trim());if(!lines.length)return;
-  const sep=(lines[0].split(";").length>lines[0].split(",").length)?";":",";
-  const num=s=>parseFloat(String(s||"").replace(/[^\d,.\-]/g,"").replace(/\.(?=.*,)/g,"").replace(",","."));
-  const out=[];
-  for(const l of lines){const c=l.split(sep).map(s=>s.trim().replace(/^"|"$/g,""));
-    let dt=c[0];const m1=dt.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);if(m1)dt=`${m1[3]}-${pad(m1[2])}-${pad(m1[1])}`;
-    if(!/^\d{4}-\d{2}-\d{2}/.test(dt))continue;
-    const p=num(c[3]);if(isNaN(p))continue;
-    const t={date:dt.slice(0,10),asset:(c[1]||"").toUpperCase(),strategy:c[2]||"",pnl:p,count:Math.max(1,parseInt(c[5])||1),note:c[6]||""};
-    const r=num(c[4]);if(!isNaN(r))t.r=r;out.push(t)}
-  if(!out.length){setSave("Keine gültigen Zeilen gefunden. Erwartet: Datum;Asset;Strategie;PnL;R;Anzahl;Notiz");return}
-  addTrades(out)};
 
 /* ---------- news ---------- */
 const IMP_DE={High:"Hoch",Medium:"Mittel",Low:"Tief",Holiday:"Feiertag"};
@@ -494,8 +471,22 @@ function renderNews(){
   $("#nextUp").innerHTML=nxt?`<span class="big">${tf(nxt.t)}</span><span class="cur">${esc(nxt.country)}</span><span class="imp ${esc(nxt.impact)}"></span><b>${esc(nxt.title)}</b><span class="mut">${countdown(nxt.t-n)}</span>`:`<span class="mut">Für diese Woche keine weiteren Events mit diesen Filtern.</span>`;
   renderSessions();
 }
+const isGold=x=>(x.impact==="High"||x.impact==="Medium")&&x.country==="USD";   /* what moves XAUUSD */
+function renderGoldNews(n){
+  const el=$("#goldNews");
+  if(!state.news){el.innerHTML=`<p class="empty">News werden geladen …</p>`;return}
+  const today=ymd(n), list=events().filter(x=>isGold(x)&&(x.t>n||ymd(x.t)===today));
+  if(!list.length){el.innerHTML=`<p class="empty">Keine wichtigen USD-News mehr diese Woche.</p>`;return}
+  let day="",h="";
+  for(const e of list){const d=ymd(e.t);
+    if(d!==day){day=d;h+=`<div class="gday">${d===today?"Heute":e.t.toLocaleDateString("de-CH",{weekday:"long",day:"2-digit",month:"2-digit"})}</div>`}
+    const past=e.t<=n;
+    h+=`<div class="grow${past?" past":""}"><span class="num gt">${tf(e.t)}</span><span class="imp ${esc(e.impact)}"></span><span class="gtitle">${esc(e.title)}</span><span class="mut gc">${past?"vorbei":countdown(e.t-n)}</span>${e.forecast||e.previous?`<span class="mut gf">${e.forecast?"Prog. "+esc(e.forecast):""}${e.forecast&&e.previous?" · ":""}${e.previous?"Vorh. "+esc(e.previous):""}</span>`:""}</div>`}
+  el.innerHTML=h;
+}
 function renderNewsKpi(){
-  const n=new Date();const e=events().find(x=>x.impact==="High"&&x.t>n);
+  const n=new Date();const e=events().find(x=>isGold(x)&&x.t>n);
+  renderGoldNews(n);
   if(!state.news){$("#kNews").textContent="–";$("#kNewsS").textContent="";return}
   if(e){$("#kNews").innerHTML=`<span class="cur">${esc(e.country)}</span> ${esc(e.title)}`;$("#kNewsS").textContent=e.t.toLocaleDateString("de-CH",{weekday:"short"})+" "+tf(e.t)+" · "+countdown(e.t-n)}
   else{$("#kNews").textContent="Keine mehr diese Woche";$("#kNewsS").textContent=""}
