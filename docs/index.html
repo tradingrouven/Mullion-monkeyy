@@ -981,18 +981,24 @@ function renderPositions(){
 
 const RK_DEF={day:3,week:6,trades:3,dd:10,open:2,loss:2,pause:30};
 function rk(){return {...RK_DEF,...(state.settings.risk||{})}}
+const cashList=()=>((state.mt5&&state.mt5.cash)||[]).map(x=>({a:+x.a||0,c:new Date(x.t)}));   /* deposits (+) and withdrawals (−) */
 function riskData(){
   const m=state.mt5;if(!m||!m.account)return null;
   const bal=+m.account.balance, eq=+m.account.equity||bal, now=new Date(), today=ymd(now), ws=ymd(monday(now));
   const T=(m.trades||[]).map(t=>({pnl:+t.pnl||0,c:new Date(t.closeUtc),o:new Date(t.openUtc||t.closeUtc)}));
-  const floating=eq-bal;
+  const floating=eq-bal,C=cashList();
   const dayCl=T.filter(t=>ymd(t.c)===today).reduce((a,t)=>a+t.pnl,0), wkCl=T.filter(t=>ymd(t.c)>=ws).reduce((a,t)=>a+t.pnl,0);
+  const dayCash=C.filter(x=>ymd(x.c)===today).reduce((a,x)=>a+x.a,0), wkCash=C.filter(x=>ymd(x.c)>=ws).reduce((a,x)=>a+x.a,0);
   const pos=m.positions||[], sp=spec();
   const trades=T.filter(t=>ymd(t.o)===today).length+pos.filter(p=>ymd(new Date(p.openUtc))===today).length;
-  /* balance history from closed trades, to find the high */
-  let b=bal,peak=bal;T.slice().sort((a,b2)=>b2.c-a.c).forEach(t=>{b-=t.pnl;peak=Math.max(peak,b)});
+  /* the high: rebuilt from trades and deposits/withdrawals (EA 1.42+); older EAs send no deposits, then only the highest equity this app has seen counts */
+  let peak=Math.max(bal,eq);
+  /* counted from the start of the month or the last deposit, whichever is later */
+  if(m.cash){const dep=C.filter(x=>x.a>0).reduce((a,x)=>x.c>a?x.c:a,new Date(0)),from=new Date(Math.max(+new Date(now.getFullYear(),now.getMonth(),1),+dep));let b=bal;
+    [...T.map(t=>({c:t.c,v:t.pnl})),...C.map(x=>({c:x.c,v:x.a}))].filter(x=>x.c>from).sort((a,b2)=>b2.c-a.c).forEach(x=>{b-=x.v;peak=Math.max(peak,b)})}
+  else{const k="bm-peak-"+m.account.login;peak=Math.max(peak,LS.get(k,0));LS.set(k,peak)}
   const noSl=pos.filter(p=>!(+p.sl)), openRisk=pos.reduce((a,p)=>{if(!(+p.sl))return a;const r=(p.side==="buy"?+p.open-+p.sl:+p.sl-+p.open)*+p.volume*sp.vpl;return a+Math.max(0,r)},0);
-  return {bal,eq,dayStart:bal-dayCl,wkStart:bal-wkCl,day:dayCl+floating,week:wkCl+floating,trades,peak,dd:Math.max(0,peak-eq),noSl,openRisk,cur:m.account.currency||"USD"};
+  return {bal,eq,dayStart:bal-dayCl-dayCash,wkStart:bal-wkCl-wkCash,day:dayCl+floating,week:wkCl+floating,trades,peak,dd:Math.max(0,peak-eq),noSl,openRisk,cur:m.account.currency||"USD"};
 }
 function renderRisk(){
   const d=riskData(),panel=$("#riskPanel");panel.hidden=!d;if(!d)return;
@@ -1024,11 +1030,13 @@ function renderToday(){
   const nx=state.news?events().find(x=>isGold(x)&&x.t>n):null;
   if(nx&&nx.impact==="High"&&nx.t-n<45*6e4){lv=Math.max(lv,1);why.push(`${nx.title} ${countdown(nx.t-n)}`)}
   const pz=pauseInfo();if(pz)lv=Math.max(lv,1);
+  const up=state.mt5&&state.mt5.updatedAt?new Date(state.mt5.updatedAt):null,stale=!!up&&Date.now()-up>15*6e4;
+  if(stale){lv=Math.max(lv,1);why.unshift(`Daten nicht aktuell: letzter MT5-Sync ${ymd(up)===ymd(n)?tf(up):up.toLocaleDateString("de-CH",{weekday:"short"})+" "+tf(up)}. Läuft MT5?`)}
   const st=$("#tdState");st.className="pill "+["ok","warn","stop"][lv];st.textContent=lv===1&&pz?"Pause":["Bereit","Vorsicht","Stopp für heute"][lv];
   $("#tdHero").className="hero status "+(lv===2?"stop":pz?"pause":["ok","warn"][lv]);
   $("#tdIco").innerHTML=lv===2?ICO.stop:pz?ICO.pause:lv===1?ICO.warn:ICO.ok;
-  $("#tdTitle").textContent=lv===2?"Stopp für heute":pz?`Pause bis ${tf(new Date(pz.end))}`:lv===1?"Vorsicht":"Handel erlaubt";
-  $("#tdSub").textContent=lv===2?why.join(" · ")+". Keine neuen Trades mehr.":pz?`Noch ${pauseLeft(pz)} · ${pz.n} Verluste heute, kein Revenge-Trade.`:lv===1?why.join(" · "):d?"Alle Systeme im grünen Bereich":"Verbinde MT5, dann prüfe ich deine Grenzen.";
+  $("#tdTitle").textContent=lv===2?"Stopp für heute":pz?`Pause bis ${tf(new Date(pz.end))}`:stale&&why.length===1?"Daten nicht aktuell":lv===1?"Vorsicht":"Handel erlaubt";
+  $("#tdSub").textContent=stale&&why.length===1&&!pz?why[0].replace("Daten nicht aktuell: l","L"):lv===2?why.join(" · ")+". Keine neuen Trades mehr.":pz?`Noch ${pauseLeft(pz)} · ${pz.n} Verluste heute, kein Revenge-Trade.`:lv===1?why.join(" · "):d?"Alle Systeme im grünen Bereich":"Verbinde MT5, dann prüfe ich deine Grenzen.";
   /* number strip */
   const days=byDay(allTrades()),wsK=ymd(monday(n)),pc=(v,base)=>base>0?`<span class="${cls(v)}">${fmtR(v/base*100,2)} %</span>`:"";
   const dayP=d?d.day:((days[ymd(n)]||{}).pnl||0),wkP=d?d.week:Object.entries(days).filter(([k])=>k>=wsK).reduce((a,[,v])=>a+v.pnl,0);
@@ -1062,9 +1070,9 @@ function dayBreaks(){
   if(!state.mt5)return {};
   const N=state.settings.notes||{},P=state.settings.plans||{},L=rk(),all=mt5Trades(),bal=+((state.mt5.account||{}).balance)||0,closed={},opened={};
   all.forEach(t=>{(closed[ymd(t.c)]=closed[ymd(t.c)]||[]).push(t);(opened[ymd(t.o)]=opened[ymd(t.o)]||[]).push(t)});
-  const out={};let after=0;   /* PnL closed after a day, to get the balance at its start */
+  const out={},C=cashList();let after=0;   /* PnL closed after a day, to get the balance at its start */
   [...new Set([...Object.keys(closed),...Object.keys(opened)])].sort().reverse().forEach(k=>{
-    const cl=closed[k]||[],op=opened[k]||[],p=cl.reduce((a,t)=>a+t.pnl,0),start=bal-after-p,b=[];after+=p;
+    const cl=closed[k]||[],op=opened[k]||[],p=cl.reduce((a,t)=>a+t.pnl,0),start=bal-after-p-C.filter(x=>ymd(x.c)>=k).reduce((a,x)=>a+x.a,0),b=[];after+=p;
     if(L.day>0&&-p>=start*L.day/100)b.push(`Tageslimit überschritten (${fmt(p)})`);
     if(L.trades>0&&op.length>L.trades)b.push(`${op.length} Trades statt max. ${L.trades}`);
     const noSl=op.filter(t=>t.r==null).length;if(noSl)b.push(`${noSl}× ohne Stop-Loss`);
@@ -1211,7 +1219,7 @@ function renderDash(){
   /* balance (the rest of the number strip is in renderToday) */
   const allP=TT.reduce((a,t)=>a+(+t.pnl||0),0);
   const sb=state.settings.startBalance;
-  if(acc){$("#kBal").textContent=plain(+acc.balance);$("#kBalS").textContent=Math.abs(+acc.equity-+acc.balance)>0.005?"Equity "+plain(+acc.equity):cur;$("#setupBanner").hidden=true}
+  if(acc){const up=new Date(state.mt5.updatedAt);$("#kBal").textContent=plain(+acc.balance);$("#kBalS").textContent=(Math.abs(+acc.equity-+acc.balance)>0.005?"Equity "+plain(+acc.equity)+" · ":"")+"Stand "+(ymd(up)===ymd(new Date())?tf(up):up.toLocaleDateString("de-CH",{day:"2-digit",month:"2-digit"}));$("#setupBanner").hidden=true}
   else if(typeof sb==="number"){$("#kBal").textContent=plain(sb+allP);$("#kBalS").textContent=cur;$("#setupBanner").hidden=true}
   else{$("#kBal").textContent="–";$("#kBalS").textContent="Startkapital fehlt";$("#setupBanner").hidden=false}
 
@@ -1564,7 +1572,7 @@ function renderJournal(){
   const pnl=L.reduce((a,t)=>a+(+t.pnl||0),0),win=L.filter(t=>+t.pnl>0).length,rs=L.filter(t=>t.r!=null),rsum=rs.reduce((a,t)=>a+(+t.r||0),0);
   const ds=state.mt5?discipline():{ks:[],pts:0},bal=+((state.mt5&&state.mt5.account||{}).balance)||0;
   $("#jSum").innerHTML=[["Trefferquote",L.length?Math.round(win/L.length*100)+" %":"–",`${win} von ${L.length}`],
-    ["Gesamt-PnL",`<span class="${cls(pnl)}">${fmt(pnl)}</span>`,bal&&L.length?`<span class="${cls(pnl)}">${fmtR(pnl/(bal-pnl)*100,1)} %</span>`:""],
+    ["Gesamt-PnL",`<span class="${cls(pnl)}">${fmt(pnl)}</span>`,`${L.length} Trades`],
     ["Ø R",rs.length?`<span class="${cls(rsum)}">${fmtR(rsum/rs.length)}</span>`:"–",`${rs.length} mit SL`],
     ["Regelkonformität",ds.ks.length?Math.round(ds.pts/ds.ks.length*100)+" %":"–",ds.ks.length?`${ds.pts} von ${ds.ks.length} Tagen`:""]].map(([a,b,c])=>`<div><span>${a}</span><b class="num">${b}</b><i>${c}</i></div>`).join("");
   $("#jCount").textContent=L.length?`${Math.min(jLimit,L.length)} von ${L.length}`:"";
@@ -1799,11 +1807,11 @@ function buildPdf(JsPDF){
   if(!T.length){tx("Keine abgeschlossenen Trades in diesem Monat.",M,y+4,{s:11,c:MUT});return doc}
   const net=T.reduce((a,t)=>a+t.pnl,0),Wn=T.filter(t=>t.pnl>0),Ls=T.filter(t=>t.pnl<0),gw=Wn.reduce((a,t)=>a+t.pnl,0),gl=-Ls.reduce((a,t)=>a+t.pnl,0);
   const Rs=T.filter(t=>t.r!=null),avgR=Rs.length?Rs.reduce((a,t)=>a+ +t.r,0)/Rs.length:null;
-  const endBal=(+acc.balance||0)-all.filter(t=>ymd(t.c)>mk+"-31").reduce((a,t)=>a+t.pnl,0),startBal=endBal-net;
+  const C=cashList(),endBal=(+acc.balance||0)-all.filter(t=>ymd(t.c)>mk+"-31").reduce((a,t)=>a+t.pnl,0)-C.filter(x=>ymd(x.c)>mk+"-31").reduce((a,x)=>a+x.a,0),inC=C.filter(x=>ymd(x.c).startsWith(mk)).reduce((a,x)=>a+x.a,0),startBal=endBal-net-inC;
   const days={};T.forEach(t=>{const k=ymd(t.c);(days[k]=days[k]||[]).push(t)});const dk=Object.keys(days).sort(),dp=k=>days[k].reduce((a,t)=>a+t.pnl,0);
   const tiles=[["Netto",pn(net)+" "+cur,col(net)],["Rendite",startBal>0?pn(net/startBal*100,1)+" %":"-",col(net)],["Trades",String(T.length)],["Trefferquote",Math.round(Wn.length/T.length*100)+" %"],
     ["Profit-Faktor",gl?(gw/gl).toFixed(2):"-"],["Ø R",avgR==null?"-":pn(avgR),avgR==null?INK:col(avgR)],["Ø Gewinn",pn(Wn.length?gw/Wn.length:0),GRN],["Ø Verlust",pn(Ls.length?-gl/Ls.length:0),RED],
-    ["Kontostand Start",pn(startBal).replace("+","")],["Kontostand Ende",pn(endBal).replace("+","")],["Gewinntage",dk.filter(k=>dp(k)>0).length+" von "+dk.length],["Grösster Verlust",pn(Math.min(0,...T.map(t=>t.pnl))),RED]];
+    ["Kontostand Start",pn(startBal).replace("+","")],["Kontostand Ende",pn(endBal).replace("+","")],[inC?"Ein-/Auszahlungen":"Gewinntage",inC?pn(inC):dk.filter(k=>dp(k)>0).length+" von "+dk.length],["Grösster Verlust",pn(Math.min(0,...T.map(t=>t.pnl))),RED]];
   const tw=(W-2*M-9)/4;
   tiles.forEach(([a,b,c],i)=>{const x=M+(i%4)*(tw+3),yy=y+Math.floor(i/4)*17;doc.setFillColor(246,243,236);doc.roundedRect(x,yy,tw,14,2,2,"F");tx(a,x+3,yy+5,{s:7.5,c:MUT});tx(b,x+3,yy+11,{b:1,s:11,c:c||INK})});
   y+=3*17+2;

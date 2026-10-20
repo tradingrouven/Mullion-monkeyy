@@ -371,6 +371,9 @@ string BuildPayload()
    int      side[];     // 0 buy, 1 sell
    bool     closed[];
    int n = 0;
+   datetime cashT[];    // deposits and withdrawals, so the app can tell them apart from trading results
+   double   cashA[];
+   int nc = 0;
 
    int total = HistoryDealsTotal();
    for(int i = 0; i < total; i++)
@@ -378,6 +381,12 @@ string BuildPayload()
       ulong tk = HistoryDealGetTicket(i);
       if(tk == 0) continue;
       long type = HistoryDealGetInteger(tk, DEAL_TYPE);
+      if(type == DEAL_TYPE_BALANCE || type == DEAL_TYPE_CORRECTION || type == DEAL_TYPE_CHARGE || type == DEAL_TYPE_BONUS)
+        {
+         double a = HistoryDealGetDouble(tk, DEAL_PROFIT);
+         if(a != 0) { ArrayResize(cashT, nc + 1); ArrayResize(cashA, nc + 1); cashT[nc] = (datetime)HistoryDealGetInteger(tk, DEAL_TIME); cashA[nc] = a; nc++; }
+         continue;
+        }
       if(type != DEAL_TYPE_BUY && type != DEAL_TYPE_SELL) continue;   // skip deposits, credit, etc.
       long p = HistoryDealGetInteger(tk, DEAL_POSITION_ID);
       int k = -1;
@@ -443,6 +452,13 @@ string BuildPayload()
               + ",\"r\":" + r + "}";
      }
 
+   string cash = "";
+   for(int c = 0; c < nc; c++)
+     {
+      if(cash != "") cash += ",";
+      cash += "{\"t\":\"" + IsoUtc(cashT[c] - (datetime)offset) + "\",\"a\":" + DoubleToString(cashA[c], 2) + "}";
+     }
+
    string acc = "\"account\":{\"login\":" + IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN))
               + ",\"server\":\"" + Esc(AccountInfoString(ACCOUNT_SERVER)) + "\""
               + ",\"company\":\"" + Esc(AccountInfoString(ACCOUNT_COMPANY)) + "\""
@@ -479,7 +495,7 @@ string BuildPayload()
                + ",\"volStep\":" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP), 2)
                + ",\"volMax\":" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX), 2) + "}";
 
-   return acc + "," + spec + ",\"headlines\":[" + g_news + "],\"truths\":[" + g_truth + "],\"positions\":[" + pos + "],\"trades\":[" + trades + "]";
+   return acc + "," + spec + ",\"headlines\":[" + g_news + "],\"truths\":[" + g_truth + "],\"positions\":[" + pos + "],\"trades\":[" + trades + "],\"cash\":[" + cash + "]";
   }
 
 //+------------------------------------------------------------------+
