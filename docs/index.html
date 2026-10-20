@@ -1034,6 +1034,7 @@ function renderToday(){
   if(stale){lv=Math.max(lv,1);why.unshift(`Daten nicht aktuell: letzter MT5-Sync ${ymd(up)===ymd(n)?tf(up):up.toLocaleDateString("de-CH",{weekday:"short"})+" "+tf(up)}. Läuft MT5?`)}
   const st=$("#tdState");st.className="pill "+["ok","warn","stop"][lv];st.textContent=lv===1&&pz?"Pause":["Bereit","Vorsicht","Stopp für heute"][lv];
   $("#tdHero").className="hero status "+(lv===2?"stop":pz?"pause":["ok","warn"][lv]);
+  $("#tdHero").hidden=lv===0;   /* the card only shows up when something needs attention */
   $("#tdIco").innerHTML=lv===2?ICO.stop:pz?ICO.pause:lv===1?ICO.warn:ICO.ok;
   $("#tdTitle").textContent=lv===2?"Stopp für heute":pz?`Pause bis ${tf(new Date(pz.end))}`:stale&&why.length===1?"Daten nicht aktuell":lv===1?"Vorsicht":"Handel erlaubt";
   $("#tdSub").textContent=stale&&why.length===1&&!pz?why[0].replace("Daten nicht aktuell: l","L"):lv===2?why.join(" · ")+". Keine neuen Trades mehr.":pz?`Noch ${pauseLeft(pz)} · ${pz.n} Verluste heute, kein Revenge-Trade.`:lv===1?why.join(" · "):d?"Alle Systeme im grünen Bereich":"Verbinde MT5, dann prüfe ich deine Grenzen.";
