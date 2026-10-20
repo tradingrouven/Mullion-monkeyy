@@ -129,6 +129,25 @@ textarea{background:var(--surface-2);border:1px solid var(--line);color:var(--fg
 .hl.g .hx{font-weight:600}
 .hl.g .ht{color:var(--accent)}
 .hl a{color:var(--accent);text-decoration:none;margin-left:4px}
+.hl .hx.clamp{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+.hl .src{display:block;margin-top:4px;font:600 11px var(--font-ui);color:var(--accent);text-decoration:none;padding:2px 0}
+.jsum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.jsum div{background:var(--surface-2);border-radius:9px;padding:8px 10px}
+.jsum b{display:block;font:700 15px var(--font-num)}
+.jt{display:block;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);padding:11px 0;color:inherit;font:inherit;cursor:pointer}
+.jt:last-child{border-bottom:0}
+.jt .l1{display:flex;gap:8px;align-items:baseline;font-weight:600}
+.jt .l2{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:5px}
+.jt .l1 .sp{flex:1}
+.jt .d{font:600 12px var(--font-num);color:var(--muted)}
+.jt .pn{font:700 15px var(--font-num)}
+.jt .st{display:inline-block;font:600 11px var(--font-ui);color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);border-radius:999px;padding:1px 8px}
+.jt .st.none{color:var(--muted);border-color:var(--line)}
+.jt .tx{font-size:13.5px;margin-top:6px;white-space:pre-wrap}
+.jt .tx.mut{color:var(--muted);font-size:12.5px}
+.strat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 14px}
+.strat button{border:1px solid var(--line);background:var(--surface-2);color:var(--text);font:600 14px var(--font-ui);padding:12px 8px;border-radius:10px;cursor:pointer}
+.strat button[aria-pressed="true"]{border-color:var(--accent);background:var(--gold-grad);color:var(--accent-ink)}
 .hl.new{background:color-mix(in srgb,var(--accent) 8%,transparent);border-radius:6px}
 /* onboarding */
 .welcome{background:color-mix(in srgb,var(--accent) 7%,transparent)}
@@ -220,8 +239,8 @@ td.r,th.r{text-align:right}
   .panel{padding:12px;border-radius:10px}
   .top .wrap{gap:10px;padding-block:8px}
   .clock{display:none}
-  .tabs{flex-basis:100%;display:grid;grid-template-columns:repeat(4,1fr)}
-  .tab{padding:9px 4px;font-size:12.5px}
+  .tabs{flex-basis:100%;display:grid;grid-template-columns:repeat(5,1fr)}
+  .tab{padding:9px 2px;font-size:12px}
   .kpi .v{font-size:19px}
   .kpi.hero .v{font-size:28px}
   .stats{grid-template-columns:1fr 1fr;gap:8px}
@@ -254,6 +273,7 @@ td.r,th.r{text-align:right}
   <nav class="tabs" role="tablist">
     <button class="tab" role="tab" id="tab-dash" aria-selected="true" data-view="dash">Dashboard</button>
     <button class="tab" role="tab" id="tab-news" aria-selected="false" data-view="news">News</button>
+    <button class="tab" role="tab" id="tab-jour" aria-selected="false" data-view="jour">Journal</button>
     <button class="tab" role="tab" id="tab-ana" aria-selected="false" data-view="ana">Analyse</button>
     <button class="tab" role="tab" id="tab-calc" aria-selected="false" data-view="calc">Tools</button>
   </nav>
@@ -339,6 +359,7 @@ td.r,th.r{text-align:right}
     </div>
     <p class="note">Die Trades kommen automatisch aus MT5. Das Backup sichert deine Einstellungen und alte Einträge.</p>
     <div class="tbl"><table><thead><tr><th>Datum</th><th>Trade</th><th class="r">PnL</th><th class="r">R</th><th class="r hm">Trades</th><th></th></tr></thead><tbody id="tradeRows"></tbody></table></div>
+    <button class="btn sm" type="button" id="toJournal" style="margin-top:10px">Alle Trades im Journal →</button>
     <p class="note" id="saveState"></p>
   </div>
   <button class="btn share" id="shareApp" type="button">🐒 Bullion Monkey mit Freunden teilen</button>
@@ -350,16 +371,6 @@ td.r,th.r{text-align:right}
     <div class="ph"><h2>Gold-News diese Woche</h2><span class="sp"></span><span class="note">USD · Hoch &amp; Mittel</span></div>
     <div class="gnews" id="goldNews"></div>
     <a class="btn calsub" id="calSub" href="#">🔔 Erinnerungen in den iPhone-Kalender</a>
-  </div>
-  <div class="panel">
-    <div class="ph"><h2>Live-Schlagzeilen</h2><span class="note">FinancialJuice</span><span class="sp"></span><div class="chips" id="hlF"></div></div>
-    <div id="hlList"></div>
-    <p class="note" id="hlNote" style="margin-top:8px"></p>
-  </div>
-  <div class="panel">
-    <div class="ph"><h2>Trump auf Truth Social</h2><span class="note">trumpstruth.org</span></div>
-    <div id="truthList"></div>
-    <p class="note" id="truthNote" style="margin-top:8px"></p>
   </div>
   <div class="grid two">
     <div class="panel">
@@ -386,6 +397,26 @@ td.r,th.r{text-align:right}
     </div>
     <div class="tbl"><table class="news"><thead><tr><th>Zeit</th><th>Währung</th><th>Impact</th><th>Event</th><th class="r">Prognose</th><th class="r">Vorher</th></tr></thead><tbody id="newsRows"></tbody></table></div>
   </div>
+  <div class="panel">
+    <div class="ph"><h2>Live-Schlagzeilen</h2><span class="note">FinancialJuice</span><span class="sp"></span><div class="chips" id="hlF"></div></div>
+    <div id="hlList"></div>
+    <p class="note" id="hlNote" style="margin-top:8px"></p>
+  </div>
+  <div class="panel">
+    <div class="ph"><h2>Trump auf Truth Social</h2><span class="note">trumpstruth.org</span></div>
+    <div id="truthList"></div>
+    <button class="btn sm" id="truthMore" type="button" style="margin-top:8px" hidden>Mehr anzeigen</button>
+    <p class="note" id="truthNote" style="margin-top:8px"></p>
+  </div>
+</section>
+<!-- JOURNAL -->
+<section id="view-jour" class="grid" hidden>
+  <div class="panel">
+    <div class="ph"><h2>Journal</h2><span class="sp"></span><button class="chip" id="jNoted" aria-pressed="false">Nur mit Notiz</button></div>
+    <div class="chips" id="jStrat"></div>
+    <div class="jsum" id="jSum"></div>
+  </div>
+  <div class="panel"><div id="jList"></div><button class="btn sm" id="jMore" type="button" style="margin-top:10px" hidden>Ältere Trades laden</button></div>
 </section>
 <!-- ANALYSE -->
 <section id="view-ana" class="grid" hidden>
@@ -458,11 +489,11 @@ td.r,th.r{text-align:right}
   <form method="dialog" id="noteForm">
     <div class="ph"><h2 id="noteTitle">Trade-Notiz</h2><span class="sp"></span><button class="btn sm" type="button" id="noteX" aria-label="Schliessen">✕</button></div>
     <p class="note" id="noteSub" style="margin:-6px 0 12px"></p>
-    <label class="fl">Setup / Strategie<input id="noteSetup" list="setupList" autocomplete="off" placeholder="z. B. Breakout, Liquidity Grab"></label>
-    <div class="chips" id="noteChips" style="margin:8px 0 12px"></div>
+    <div class="lbl">Strategie</div>
+    <div class="strat" id="noteChips"></div>
+    <input type="hidden" id="noteSetup">
     <label class="fl">Notiz<textarea id="noteText" rows="4" placeholder="Warum rein, was lief gut, was nicht?"></textarea></label>
     <div class="ph" style="margin:14px 0 0"><button class="btn" type="button" id="noteDel">Löschen</button><span class="sp"></span><button class="btn pri" value="save" type="submit">Speichern</button></div>
-    <datalist id="setupList"></datalist>
   </form>
 </dialog>
 
@@ -485,10 +516,10 @@ const state={trades:[],settings:{},news:null,month:null,fA:"Alle",fS:"Alle",imp:
 const now=new Date();state.month=new Date(now.getFullYear(),now.getMonth(),1);
 
 /* ---------- tabs ---------- */
-const VIEWS=["dash","news","ana","calc"];
-function show(v){if(!VIEWS.includes(v))v="dash";window.scrollTo(0,0);document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.view===v));VIEWS.forEach(x=>$("#view-"+x).hidden=x!==v);LS.set("view",v);if(v==="ana")renderAna();if(v==="calc"){renderCheck();renderRiskForm();renderCalc()}}
+const VIEWS=["dash","news","jour","ana","calc"];
+function show(v){if(!VIEWS.includes(v))v="dash";window.scrollTo(0,0);document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.view===v));VIEWS.forEach(x=>$("#view-"+x).hidden=x!==v);LS.set("view",v);if(v==="ana")renderAna();if(v==="jour")renderJournal();if(v==="calc"){renderCheck();renderRiskForm();renderCalc()}}
 document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>show(t.dataset.view));
-const showFirst=()=>show({"#news":"news","#dashboard":"dash","#analyse":"ana","#rechner":"calc","#tools":"calc"}[location.hash]||LS.get("view","dash"));
+const showFirst=()=>show({"#news":"news","#dashboard":"dash","#journal":"jour","#analyse":"ana","#rechner":"calc","#tools":"calc"}[location.hash]||LS.get("view","dash"));
 
 function tick(){const d=new Date();$("#clock").textContent=d.toLocaleDateString("de-CH",{weekday:"short",day:"2-digit",month:"short"})+" · "+d.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"})}
 tick();setInterval(()=>{tick();renderNews();renderNewsKpi()},30000);
@@ -642,7 +673,7 @@ function renderDash(){
 
   /* table */
   const tb=$("#tradeRows");const sorted=TT.slice().sort((a,b)=>b.date.localeCompare(a.date));
-  tb.innerHTML=sorted.length?sorted.slice(0,60).map(t=>`<tr><td class="num">${dd(t.date)}<span class="hm">${t.date.slice(0,4)}</span></td><td>${esc(t.asset)}${t.lot?` <span class="mut hm">${esc(t.lot)}</span>`:""}${t.strategy||t.note?`<div class="tn">${t.strategy?`<b>${esc(t.strategy)}</b>`:""}${t.strategy&&t.note?" · ":""}${esc((t.note||"").slice(0,80))}</div>`:""}</td><td class="r num ${cls(+t.pnl)}">${fmt(+t.pnl)}</td><td class="r num ${cls(+t.r||0)}">${t.r!=null&&t.r!==""?fmt(+t.r):"–"}</td><td class="r num hm">${t.count||1}</td><td>${t.src==="mt5"?`<button class="btn sm nb" data-note="${esc(t.id)}" aria-label="Notiz">${t.strategy||t.note?"✎":"＋"}</button>`:`<button class="btn sm" data-del="${esc(t.id)}" aria-label="Eintrag löschen">✕</button>`}</td></tr>`).join(""):`<tr><td colspan="6" class="empty">Noch keine Trades. Verbinde oben MT5, dann erscheinen sie hier.</td></tr>`;
+  tb.innerHTML=sorted.length?sorted.slice(0,8).map(t=>`<tr><td class="num">${dd(t.date)}<span class="hm">${t.date.slice(0,4)}</span></td><td>${esc(t.asset)}${t.lot?` <span class="mut hm">${esc(t.lot)}</span>`:""}${t.strategy||t.note?`<div class="tn">${t.strategy?`<b>${esc(t.strategy)}</b>`:""}${t.strategy&&t.note?" · ":""}${esc((t.note||"").slice(0,80))}</div>`:""}</td><td class="r num ${cls(+t.pnl)}">${fmt(+t.pnl)}</td><td class="r num ${cls(+t.r||0)}">${t.r!=null&&t.r!==""?fmt(+t.r):"–"}</td><td class="r num hm">${t.count||1}</td><td>${t.src==="mt5"?`<button class="btn sm nb" data-note="${esc(t.id)}" aria-label="Notiz">${t.strategy||t.note?"✎":"＋"}</button>`:`<button class="btn sm" data-del="${esc(t.id)}" aria-label="Eintrag löschen">✕</button>`}</td></tr>`).join(""):`<tr><td colspan="6" class="empty">Noch keine Trades. Verbinde oben MT5, dann erscheinen sie hier.</td></tr>`;
   tb.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>delTrade(b.dataset.del));
   tb.querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openNote(b.dataset.note));
 }
@@ -771,7 +802,7 @@ async function syncMt5(force){
     mt5Etag=r.headers.get("ETag")||"";
     const g=await r.json(),f=g.files&&g.files[MT5_FILE];if(!f){$("#mt5Note").textContent="Im Gist fehlen die MT5-Daten.";return}
     const txt=f.truncated?await (await fetch(f.raw_url)).text():f.content;
-    state.mt5=JSON.parse(txt);LS.set("bm-mt5",state.mt5);renderMt5();renderDash();renderHeadlines();renderTruth();if(!$("#view-ana").hidden)renderAna();if(!$("#view-calc").hidden)renderCalc();
+    state.mt5=JSON.parse(txt);LS.set("bm-mt5",state.mt5);renderMt5();renderDash();renderHeadlines();renderTruth();if(!$("#view-ana").hidden)renderAna();if(!$("#view-jour").hidden)renderJournal();if(!$("#view-calc").hidden)renderCalc();
   }catch(e){$("#mt5Note").textContent="Keine Verbindung. Angezeigt wird der letzte Stand."}
 }
 $("#mt5Form").onsubmit=e=>{e.preventDefault();const id=$("#mt5Id").value.trim().replace(/^.*gist\.github\.com\/[^/]+\//,"");if(!id)return;
@@ -787,26 +818,51 @@ $("#shareApp").onclick=async()=>{const url=location.origin+location.pathname;
 
 /* ---------- trade notes ---------- */
 let noteId=null;
-function setups(){return [...new Set(Object.values(state.settings.notes||{}).map(n=>n.setup).filter(Boolean))].sort()}
+const STRATS=["Ichimoku Cloud","Markterfahrung"];
 function openNote(id){
   noteId=id;const nt=(state.settings.notes||{})[id]||{};
   const t=((state.mt5&&state.mt5.trades)||[]).find(x=>x.id===id), p=((state.mt5&&state.mt5.positions)||[]).find(x=>"mt5-"+x.id===id), x=t||p;
   $("#noteTitle").textContent=p&&!t?"Notiz zur offenen Position":"Trade-Notiz";
   $("#noteSub").innerHTML=x?`${esc(x.asset)} · ${x.side==="buy"?"Long":"Short"} ${(+x.volume).toFixed(2)} Lot · <span class="${cls(+x.pnl)}">${fmt(+x.pnl)}</span> · ${new Date(x.closeUtc||x.openUtc).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}`:"";
   $("#noteSetup").value=nt.setup||"";$("#noteText").value=nt.text||"";
-  const su=setups();$("#setupList").innerHTML=su.map(v=>`<option value="${esc(v)}">`).join("");
-  const ch=$("#noteChips");ch.innerHTML="";su.slice(0,8).forEach(v=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=v;b.onclick=()=>{$("#noteSetup").value=v};ch.appendChild(b)});
+  if(!nt.setup&&!nt.text)$("#noteSetup").value=LS.get("lastStrat","");   /* new note: start with the last strategy used */
+  const ch=$("#noteChips"),paint=()=>ch.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.textContent===$("#noteSetup").value));
+  ch.innerHTML="";STRATS.forEach(v=>{const b=document.createElement("button");b.type="button";b.textContent=v;b.onclick=()=>{$("#noteSetup").value=$("#noteSetup").value===v?"":v;paint()};ch.appendChild(b)});paint();
   $("#noteDel").hidden=!(nt.setup||nt.text);
   $("#noteDlg").showModal();
 }
 function saveNote(val){
   const N=state.settings.notes=state.settings.notes||{};
   if(val&&(val.setup||val.text))N[noteId]=val;else delete N[noteId];
-  persist();renderDash();if(!$("#view-ana").hidden)renderAna();
+  if(val&&STRATS.includes(val.setup))LS.set("lastStrat",val.setup);
+  persist();renderDash();if(!$("#view-ana").hidden)renderAna();if(!$("#view-jour").hidden)renderJournal();
 }
 $("#noteDlg").addEventListener("close",()=>{if($("#noteDlg").returnValue==="save")saveNote({setup:$("#noteSetup").value.trim(),text:$("#noteText").value.trim()})});
 $("#noteX").onclick=()=>$("#noteDlg").close("cancel");
 $("#noteDel").onclick=()=>{saveNote(null);$("#noteDlg").close("cancel")};
+
+/* ---------- journal ---------- */
+let jStrat=LS.get("jStrat","Alle"),jNoted=false,jLimit=40;
+function renderJournal(){
+  const N=state.settings.notes||{};
+  const T=((state.mt5&&state.mt5.trades)||[]).map(t=>({...t,nt:N[t.id]||{}})).sort((a,b)=>String(b.closeUtc).localeCompare(String(a.closeUtc)));
+  const sf=$("#jStrat");sf.innerHTML="";["Alle",...STRATS,"Ohne"].forEach(v=>{const b=document.createElement("button");b.className="chip";b.textContent=v==="Ohne"?"Ohne Strategie":v;b.setAttribute("aria-pressed",jStrat===v);b.onclick=()=>{jStrat=v;LS.set("jStrat",v);jLimit=40;renderJournal()};sf.appendChild(b)});
+  $("#jNoted").setAttribute("aria-pressed",jNoted);
+  const L=T.filter(t=>(jStrat==="Alle"||(jStrat==="Ohne"?!STRATS.includes(t.nt.setup):t.nt.setup===jStrat))&&(!jNoted||t.nt.text));
+  const pnl=L.reduce((a,t)=>a+(+t.pnl||0),0),win=L.filter(t=>+t.pnl>0).length,rs=L.filter(t=>t.r!=null),rsum=rs.reduce((a,t)=>a+(+t.r||0),0);
+  $("#jSum").innerHTML=[["Trades",L.length],["Treffer",L.length?Math.round(win/L.length*100)+" %":"–"],["PnL",`<span class="${cls(pnl)}">${fmt(pnl)}</span>`],["Ø R",rs.length?`<span class="${cls(rsum)}">${fmt(rsum/rs.length)}</span>`:"–"]].map(([a,b])=>`<div><span class="lbl">${a}</span><b>${b}</b></div>`).join("");
+  $("#jList").innerHTML=!state.mt5?`<p class="empty">Verbinde zuerst MT5 im Dashboard, dann erscheinen hier deine Trades.</p>`
+    :!L.length?`<p class="empty">Keine Trades für diesen Filter.</p>`
+    :L.slice(0,jLimit).map(t=>{const d=new Date(t.closeUtc),st=t.nt.setup;return `<button class="jt" type="button" data-note="${esc(t.id)}">
+      <div class="l1"><span>${esc(t.asset)} · ${t.side==="buy"?"Long":"Short"} ${(+t.volume).toFixed(2)}</span><span class="sp"></span><span class="pn ${cls(+t.pnl)}">${fmt(+t.pnl)}</span></div>
+      <div class="l2"><span class="d">${d.toLocaleDateString("de-CH",{weekday:"short",day:"2-digit",month:"2-digit"})} ${tf(d)}</span><span class="st${st?"":" none"}">${st?esc(st):"Keine Strategie"}</span>${t.r!=null?`<span class="d">${fmt(+t.r)} R</span>`:""}</div>
+      <div class="tx${t.nt.text?"":" mut"}">${t.nt.text?esc(t.nt.text):"Noch keine Notiz. Tippen zum Schreiben."}</div></button>`}).join("");
+  $("#jList").querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openNote(b.dataset.note));
+  $("#jMore").hidden=L.length<=jLimit;
+}
+$("#jNoted").onclick=()=>{jNoted=!jNoted;jLimit=40;renderJournal()};
+$("#jMore").onclick=()=>{jLimit+=40;renderJournal()};
+$("#toJournal").onclick=()=>show("jour");
 
 /* ---------- checklist ---------- */
 const CK_DEFAULT=["News gecheckt: keine rote USD-News in den nächsten 30 Min.","Trend und Struktur auf höherem Timeframe geprüft","Setup passt zu meiner Strategie","Stop-Loss gesetzt","Risiko max. 1 % (Lot-Rechner)","Chance/Risiko mindestens 1:2","Ruhig, kein Revenge-Trade"];
@@ -840,15 +896,20 @@ $("#rkDef").onclick=()=>{delete state.settings.risk;persist();renderRiskForm();r
 /* ---------- Trump posts (trumpstruth.org via the EA) ---------- */
 const TRUTH_WORDS=["gold","tariff","china","fed","powell","rate","interest","dollar","inflation","trade","deal","iran","russia","war","oil","sanction","economy","stock","market","bitcoin"];
 const isMktTruth=t=>{const x=" "+t.toLowerCase()+" ";return TRUTH_WORDS.some(w=>x.includes(w))};
+let truthAll=false;
 function renderTruth(){
-  const T=((state.mt5&&state.mt5.truths)||[]).map(h=>({t:h.t,d:new Date(h.d),u:h.u})).filter(h=>h.t).slice(0,15), n=Date.now();
+  const all=((state.mt5&&state.mt5.truths)||[]).map(h=>({t:h.t,d:new Date(h.d),u:h.u,o:h.o})).filter(h=>h.t), T=all.slice(0,truthAll?15:5), n=Date.now();
   const when=d=>isNaN(d)?"":(new Date(d).toDateString()===new Date().toDateString()?tf(d):d.toLocaleDateString("de-CH",{day:"2-digit",month:"2-digit"}));
-  $("#truthList").innerHTML=T.length?T.map(h=>`<div class="hl${isMktTruth(h.t)?" g":""}${n-h.d<15*6e4?" new":""}"><span class="ht">${when(h.d)}</span><span class="hx">${esc(h.t)}${/^https:\/\/(www\.)?trumpstruth\.org\//.test(h.u||"")?` <a href="${esc(h.u)}" target="_blank" rel="noopener">↗</a>`:""}</span></div>`).join("")
+  const link=h=>/^https:\/\/truthsocial\.com\//.test(h.o||"")?h.o:/^https:\/\/(www\.)?trumpstruth\.org\//.test(h.u||"")?h.u:"";
+  $("#truthList").innerHTML=T.length?T.map(h=>`<div class="hl${isMktTruth(h.t)?" g":""}${n-h.d<15*6e4?" new":""}"><span class="ht">${when(h.d)}${link(h)?`<a class="src" href="${esc(link(h))}" target="_blank" rel="noopener" aria-label="Auf Truth Social öffnen">Post ↗</a>`:""}</span><span class="hx clamp">${esc(h.t)}</span></div>`).join("")
     :`<p class="empty" style="padding:16px">Noch keine Posts.</p>`;
+  $("#truthList").querySelectorAll(".hx.clamp").forEach(x=>x.onclick=()=>x.classList.toggle("clamp"));
+  $("#truthMore").hidden=all.length<=5;$("#truthMore").textContent=truthAll?"Weniger anzeigen":"Mehr anzeigen";
   $("#truthNote").textContent=!state.mt5?"Die Posts kommen über deinen Expert Advisor in MT5. Verbinde zuerst MT5 im Dashboard."
-    :!T.length?"Expert Advisor auf Version 1.40 aktualisieren und in MT5 bei WebRequest zusätzlich https://trumpstruth.org erlauben."
-    :"Fett = marktrelevant (Zölle, Fed, Dollar, Krieg …). Holt dein MT5 etwa alle 2 Minuten.";
+    :!all.length?"Expert Advisor auf Version 1.41 aktualisieren und in MT5 bei WebRequest zusätzlich https://trumpstruth.org erlauben."
+    :"Fett = marktrelevant (Zölle, Fed, Dollar, Krieg …). Text antippen für den ganzen Post, „Post ↗“ öffnet ihn auf Truth Social.";
 }
+$("#truthMore").onclick=()=>{truthAll=!truthAll;renderTruth()};
 
 /* ---------- headlines (FinancialJuice via the EA) ---------- */
 const HL_WORDS=["gold","xau","fed ","fed's","fomc","powell","cpi","pce","nfp","non-farm","payrolls","inflation","rate cut","rate hike","treasury","yields","dollar","dxy","tariff","geopolit","jobless","unemployment","gdp","ism","retail sales","safe haven","central bank"];
@@ -898,7 +959,7 @@ function renderAna(){
   const DOWL=["SO","MO","DI","MI","DO","FR","SA"];
   const basis=hasOpen?"nach Eröffnungszeit, in deiner Ortszeit":"nach Schliesszeit (neuer Expert Advisor liefert die Eröffnungszeit)";
   const NT=state.settings.notes||{};
-  const setupPanel=`<div class="panel"><div class="ph"><h2>Nach Setup</h2></div>${T.some(t=>(NT[t.id]||{}).setup)?bars(group(t=>(NT[t.id]||{}).setup||"Ohne Setup")):`<p class="note">Gib deinen Trades im Dashboard unter „Trades“ mit ＋ ein Setup, dann siehst du hier, welches am besten läuft.</p>`}</div>`;
+  const setupPanel=`<div class="panel"><div class="ph"><h2>Nach Strategie</h2></div>${T.some(t=>(NT[t.id]||{}).setup)?bars(group(t=>(NT[t.id]||{}).setup||"Ohne Strategie")):`<p class="note">Ordne deine Trades im Journal einer Strategie zu (Ichimoku Cloud oder Markterfahrung), dann siehst du hier, welche besser läuft.</p>`}</div>`;
   body.innerHTML=`<div class="panel"><div class="atiles">${tiles.map(([a,b])=>`<div class="at"><span>${a}</span><b>${b}</b></div>`).join("")}</div><p class="note" style="margin-top:10px">Beträge in ${cur}.</p></div>${setupPanel}
   <div class="grid two">
     <div class="panel"><div class="ph"><h2>Long vs. Short</h2></div>${bars(group(t=>t.side==="buy"?"Long":"Short",["Long","Short"]))}</div>

@@ -10,7 +10,7 @@
 //| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.40"
+#property version   "1.41"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
@@ -308,7 +308,7 @@ void FetchTruth()
       if(link == g_truthSeen) reachedSeen = true;
       if(!reachedSeen) { ArrayResize(fresh, nf + 1); fresh[nf++] = text; }
       if(out != "") out += ",";
-      out += "{\"t\":\"" + Esc(text) + "\",\"d\":\"" + Esc(TagText(item, "pubDate")) + "\",\"u\":\"" + Esc(link) + "\"}";
+      out += "{\"t\":\"" + Esc(text) + "\",\"d\":\"" + Esc(TagText(item, "pubDate")) + "\",\"u\":\"" + Esc(link) + "\",\"o\":\"" + Esc(TagText(item, "truth:originalUrl")) + "\"}";
      }
    if(out == "") return;
    if(out != g_truth) g_dirty = true;
