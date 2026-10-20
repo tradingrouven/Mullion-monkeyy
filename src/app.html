@@ -128,6 +128,7 @@ textarea{background:var(--surface-2);border:1px solid var(--line);color:var(--fg
 .hl .ht{font:600 12px var(--font-num);color:var(--muted);padding-top:1px}
 .hl.g .hx{font-weight:600}
 .hl.g .ht{color:var(--accent)}
+.hl a{color:var(--accent);text-decoration:none;margin-left:4px}
 .hl.new{background:color-mix(in srgb,var(--accent) 8%,transparent);border-radius:6px}
 /* onboarding */
 .welcome{background:color-mix(in srgb,var(--accent) 7%,transparent)}
@@ -355,6 +356,11 @@ td.r,th.r{text-align:right}
     <div id="hlList"></div>
     <p class="note" id="hlNote" style="margin-top:8px"></p>
   </div>
+  <div class="panel">
+    <div class="ph"><h2>Trump auf Truth Social</h2><span class="note">trumpstruth.org</span></div>
+    <div id="truthList"></div>
+    <p class="note" id="truthNote" style="margin-top:8px"></p>
+  </div>
   <div class="grid two">
     <div class="panel">
       <div class="lbl">Als Nächstes</div>
@@ -441,7 +447,7 @@ td.r,th.r{text-align:right}
     <li><b>Token erstellen:</b> <a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=Bullion%20Monkey%20MT5" target="_blank" rel="noopener">diesen Link öffnen</a>, bei Ablauf „No expiration“ wählen, ganz unten „Generate token“. Den Code <code>ghp_…</code> kopieren und niemandem schicken.</li>
     <li><b>Expert Advisor holen:</b> am Computer <a href="https://raw.githubusercontent.com/tradingrouven/Mullion-monkeyy/main/mt5/BullionMonkeySync.mq5" target="_blank" rel="noopener">diesen Code</a> öffnen, alles markieren und kopieren.</li>
     <li>In MT5 <b>IDE</b> (F4) öffnen → Datei → Neu → Expert Advisor (Vorlage) → Name <code>BullionMonkeySync</code> → Fertig. Alles darin ersetzen durch den kopierten Code, dann <b>Kompilieren</b> (0 errors).</li>
-    <li>In MT5 <b>Extras → Optionen → Expert Advisors</b>: „Algorithmischen Handel erlauben“ und „WebRequest erlauben“ anhaken, darunter <code>https://api.github.com</code> und <code>https://www.financialjuice.com</code> hinzufügen.</li>
+    <li>In MT5 <b>Extras → Optionen → Expert Advisors</b>: „Algorithmischen Handel erlauben“ und „WebRequest erlauben“ anhaken, darunter <code>https://api.github.com</code>, <code>https://www.financialjuice.com</code> und <code>https://trumpstruth.org</code> hinzufügen.</li>
     <li>Im Navigator unter <b>Experten</b> „BullionMonkeySync“ auf einen Chart ziehen, bei <b>Eingaben</b> im Feld GitHubToken deinen Token einfügen, OK.</li>
     <li>Es erscheint die Meldung „Verbunden. Gist-ID für die App“. Auf dem Handy <a href="https://gist.github.com" target="_blank" rel="noopener">gist.github.com</a> öffnen, „Bullion Monkey MT5“ antippen, den Link kopieren und hier im Dashboard bei <b>MT5-Verbindung</b> einfügen.</li>
     <li>Optional für Push-Nachrichten: MetaQuotes ID aus der MT5-App am Handy (Einstellungen → Nachrichten) in MT5 am Computer unter Extras → Optionen → Benachrichtigungen eintragen.</li>
@@ -765,7 +771,7 @@ async function syncMt5(force){
     mt5Etag=r.headers.get("ETag")||"";
     const g=await r.json(),f=g.files&&g.files[MT5_FILE];if(!f){$("#mt5Note").textContent="Im Gist fehlen die MT5-Daten.";return}
     const txt=f.truncated?await (await fetch(f.raw_url)).text():f.content;
-    state.mt5=JSON.parse(txt);LS.set("bm-mt5",state.mt5);renderMt5();renderDash();renderHeadlines();if(!$("#view-ana").hidden)renderAna();if(!$("#view-calc").hidden)renderCalc();
+    state.mt5=JSON.parse(txt);LS.set("bm-mt5",state.mt5);renderMt5();renderDash();renderHeadlines();renderTruth();if(!$("#view-ana").hidden)renderAna();if(!$("#view-calc").hidden)renderCalc();
   }catch(e){$("#mt5Note").textContent="Keine Verbindung. Angezeigt wird der letzte Stand."}
 }
 $("#mt5Form").onsubmit=e=>{e.preventDefault();const id=$("#mt5Id").value.trim().replace(/^.*gist\.github\.com\/[^/]+\//,"");if(!id)return;
@@ -830,6 +836,19 @@ $("#ckAdd").onsubmit=e=>{e.preventDefault();const v=$("#ckNew").value.trim();if(
 function renderRiskForm(){const L=rk();document.querySelectorAll("[data-rk]").forEach(i=>{if(document.activeElement!==i)i.value=L[i.dataset.rk]})}
 document.querySelectorAll("[data-rk]").forEach(i=>i.oninput=()=>{const v=parseFloat(i.value.replace(",","."));if(isNaN(v)||v<0)return;state.settings.risk={...rk(),[i.dataset.rk]:v};persist();renderRisk()});
 $("#rkDef").onclick=()=>{delete state.settings.risk;persist();renderRiskForm();renderRisk()};
+
+/* ---------- Trump posts (trumpstruth.org via the EA) ---------- */
+const TRUTH_WORDS=["gold","tariff","china","fed","powell","rate","interest","dollar","inflation","trade","deal","iran","russia","war","oil","sanction","economy","stock","market","bitcoin"];
+const isMktTruth=t=>{const x=" "+t.toLowerCase()+" ";return TRUTH_WORDS.some(w=>x.includes(w))};
+function renderTruth(){
+  const T=((state.mt5&&state.mt5.truths)||[]).map(h=>({t:h.t,d:new Date(h.d),u:h.u})).filter(h=>h.t).slice(0,15), n=Date.now();
+  const when=d=>isNaN(d)?"":(new Date(d).toDateString()===new Date().toDateString()?tf(d):d.toLocaleDateString("de-CH",{day:"2-digit",month:"2-digit"}));
+  $("#truthList").innerHTML=T.length?T.map(h=>`<div class="hl${isMktTruth(h.t)?" g":""}${n-h.d<15*6e4?" new":""}"><span class="ht">${when(h.d)}</span><span class="hx">${esc(h.t)}${/^https:\/\/(www\.)?trumpstruth\.org\//.test(h.u||"")?` <a href="${esc(h.u)}" target="_blank" rel="noopener">↗</a>`:""}</span></div>`).join("")
+    :`<p class="empty" style="padding:16px">Noch keine Posts.</p>`;
+  $("#truthNote").textContent=!state.mt5?"Die Posts kommen über deinen Expert Advisor in MT5. Verbinde zuerst MT5 im Dashboard."
+    :!T.length?"Expert Advisor auf Version 1.40 aktualisieren und in MT5 bei WebRequest zusätzlich https://trumpstruth.org erlauben."
+    :"Fett = marktrelevant (Zölle, Fed, Dollar, Krieg …). Holt dein MT5 etwa alle 2 Minuten.";
+}
 
 /* ---------- headlines (FinancialJuice via the EA) ---------- */
 const HL_WORDS=["gold","xau","fed ","fed's","fomc","powell","cpi","pce","nfp","non-farm","payrolls","inflation","rate cut","rate hike","treasury","yields","dollar","dxy","tariff","geopolit","jobless","unemployment","gdp","ism","retail sales","safe haven","central bank"];
@@ -936,7 +955,7 @@ $("#cClear").onclick=()=>{["#cEntry","#cSl","#cTp","#cDist"].forEach(id=>$(id).v
 
 $("#calSub").href="webcal://"+location.host+location.pathname.replace(/[^/]*$/,"")+"gold-news.ics";
 /* ---------- boot ---------- */
-load();if(state.settings.mt5Gist)state.mt5=LS.get("bm-mt5",null);showFirst();renderMt5();renderDash();renderHeadlines();renderNews();renderNewsKpi();renderSessions();
+load();if(state.settings.mt5Gist)state.mt5=LS.get("bm-mt5",null);showFirst();renderMt5();renderDash();renderHeadlines();renderTruth();renderNews();renderNewsKpi();renderSessions();
 async function loadNews(){try{const r=await fetch("news.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;state.news=await r.json()}catch(e){if(!state.news)state.news={events:[]}}renderNewsFilters();renderNews();renderNewsKpi()}
 loadNews();
 syncMt5();setInterval(()=>{if(!document.hidden)syncMt5(true)},60000);

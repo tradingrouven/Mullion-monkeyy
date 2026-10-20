@@ -5,11 +5,12 @@
 //| Setup: Tools > Options > Expert Advisors > "Allow WebRequest for |
 //| listed URL" and add https://api.github.com and                   |
 //| https://www.financialjuice.com (news headlines)                  |
+//| https://trumpstruth.org (Trump's Truth Social posts)              |
 //| Push messages: Tools > Options > Notifications, enter the        |
 //| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.31"
+#property version   "1.40"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
@@ -22,11 +23,15 @@ input int    NoSlMinutes  = 2;   // push when a position has no stop-loss after 
 input int    FeedMinutes  = 2;   // read FinancialJuice headlines every n minutes (0 = off)
 input bool   PushHeadlines = true; // push gold-relevant headlines
 input string HeadlineWords = "gold,xau,fed ,fomc,powell,cpi,pce,nfp,non-farm,payrolls,inflation,rate cut,rate hike,treasury,yields,dollar,dxy,tariff,geopolit"; // comma list for the push filter
+input int    TruthMinutes = 2;   // read Trump's Truth Social posts (trumpstruth.org) every n minutes (0 = off)
+input bool   PushTruth    = true; // push Trump posts that match the words below
+input string TruthWords   = "gold,tariff,china,fed,powell,rate,interest,dollar,inflation,trade,deal,iran,russia,war,oil,sanction,economy,stock,market,bitcoin"; // comma list for the Trump push filter
 
 #define GIST_FILE "bullion-monkey.json"
 #define ID_FILE   "bullion_monkey_gist.txt"
 #define API       "https://api.github.com/gists"
 #define FEED      "https://www.financialjuice.com/feed.ashx?xy=rss"
+#define TRUTH     "https://trumpstruth.org/feed"
 
 string g_gist = "";
 string g_last = "";     // last uploaded trade/balance payload, to skip unchanged uploads
@@ -37,6 +42,10 @@ string g_news = "";                       // JSON array body of the latest headl
 datetime g_newsAt = 0;
 string g_newsSeen = "";                   // newest headline already handled, for the push
 bool   g_feedWarned = false;
+string g_truth = "";                      // JSON array body of the latest Trump posts
+datetime g_truthAt = 0;
+string g_truthSeen = "";                  // newest Trump post already handled, for the push
+bool   g_truthWarned = false;
 
 //+------------------------------------------------------------------+
 int OnInit()
@@ -51,6 +60,7 @@ int OnInit()
       g_gist = ReadSavedId();
    EventSetTimer(SyncSeconds < 10 ? 10 : SyncSeconds);
    if(FeedMinutes > 0) FetchNews();
+   if(TruthMinutes > 0) FetchTruth();
    Sync();
    return(INIT_SUCCEEDED);
   }
@@ -62,6 +72,8 @@ void OnTimer()
    CheckNoSl();
    if(FeedMinutes > 0 && TimeLocal() - g_newsAt >= FeedMinutes * 60)
       FetchNews();
+   if(TruthMinutes > 0 && TimeLocal() - g_truthAt >= TruthMinutes * 60)
+      FetchTruth();
    Sync();
   }
 
@@ -159,10 +171,12 @@ string TagText(const string xml, const string tag)
    return v;
   }
 
-bool IsGoldNews(const string title)
+bool IsGoldNews(const string title) { return HasWord(title, HeadlineWords); }
+
+bool HasWord(const string title, const string words)
   {
    string t = " " + title + " "; StringToLower(t);
-   string w[]; int n = StringSplit(HeadlineWords, ',', w);
+   string w[]; int n = StringSplit(words, ',', w);
    for(int i = 0; i < n; i++)
      {
       string k = w[i]; StringToLower(k); StringTrimLeft(k);
@@ -219,6 +233,90 @@ void FetchNews()
       for(int k = (int)MathMin(nf, 5) - 1; k >= 0; k--)   // oldest first, at most 5 at once
          if(IsGoldNews(fresh[k])) Push("📰 " + fresh[k]);
    g_newsSeen = newest;
+  }
+
+// plain text of a post: HTML tags, "RT: <url>" and "View image" links removed, quoted post cut off
+string PostText(string html)
+  {
+   int q = StringFind(html, "<blockquote"); if(q >= 0) html = StringSubstr(html, 0, q);
+   q = StringFind(html, "Quoted"); if(q >= 0) html = StringSubstr(html, 0, q);
+   string o = ""; bool tag = false;
+   int len = StringLen(html);
+   for(int i = 0; i < len; i++)
+     {
+      ushort c = StringGetCharacter(html, i);
+      if(c == '<') { tag = true; continue; }
+      if(c == '>') { tag = false; o += " "; continue; }
+      if(!tag) o += ShortToString(c);
+     }
+   int r;
+   while((r = StringFind(o, "RT: ")) >= 0)
+     {
+      int e = StringFind(o, " ", r + 4);
+      o = StringSubstr(o, 0, r) + (e < 0 ? "" : StringSubstr(o, e));
+     }
+   StringReplace(o, "View image", ""); StringReplace(o, "View video", "");
+   StringReplace(o, "&nbsp;", " "); StringReplace(o, "&amp;", "&"); StringReplace(o, "&quot;", "\""); StringReplace(o, "&#39;", "'");
+   StringReplace(o, "\n", " "); StringReplace(o, "\r", " ");
+   while(StringFind(o, "  ") >= 0) StringReplace(o, "  ", " ");
+   StringTrimLeft(o); StringTrimRight(o);
+   if(StringLen(o) > 400) o = StringSubstr(o, 0, 397) + "...";
+   return o;
+  }
+
+void FetchTruth()
+  {
+   g_truthAt = TimeLocal();
+   char data[], result[];
+   string resHeaders;
+   ResetLastError();
+   int code = WebRequest("GET", TRUTH, "User-Agent: Mozilla/5.0 (BullionMonkeySync)\r\n", 15000, data, result, resHeaders);
+   if(code != 200)
+     {
+      if(!g_truthWarned)
+        {
+         g_truthWarned = true;
+         if(code == -1 && GetLastError() == 4014)
+            Print("Bullion Monkey: für Trump-Posts https://trumpstruth.org bei WebRequest erlauben.");
+         else
+            Print("Bullion Monkey: trumpstruth.org antwortet ", code);
+        }
+      return;
+     }
+   string xml = CharArrayToString(result, 0, WHOLE_ARRAY, CP_UTF8);
+   string out = "", newest = "";
+   string fresh[]; int nf = 0;
+   bool reachedSeen = (g_truthSeen == "");
+   int pos = 0;
+   for(int i = 0; i < 20; i++)
+     {
+      int a = StringFind(xml, "<item>", pos);
+      if(a < 0) break;
+      int b = StringFind(xml, "</item>", a);
+      if(b < 0) break;
+      pos = b + 7;
+      string item = StringSubstr(xml, a, b - a);
+      string link = TagText(item, "link");
+      string text = TagText(item, "title");
+      if(StringFind(text, " post from ") >= 0 || StringLen(text) >= 100)   // placeholder or shortened title
+        {
+         string body = PostText(TagText(item, "description"));
+         if(body != "") text = body;
+        }
+      if(text == "" || link == "") continue;
+      if(newest == "") newest = link;
+      if(link == g_truthSeen) reachedSeen = true;
+      if(!reachedSeen) { ArrayResize(fresh, nf + 1); fresh[nf++] = text; }
+      if(out != "") out += ",";
+      out += "{\"t\":\"" + Esc(text) + "\",\"d\":\"" + Esc(TagText(item, "pubDate")) + "\",\"u\":\"" + Esc(link) + "\"}";
+     }
+   if(out == "") return;
+   if(out != g_truth) g_dirty = true;
+   g_truth = out;
+   if(PushTruth && g_truthSeen != "")
+      for(int k = (int)MathMin(nf, 5) - 1; k >= 0; k--)
+         if(HasWord(fresh[k], TruthWords)) Push("🇺🇸 Trump: " + StringSubstr(fresh[k], 0, 200));
+   g_truthSeen = newest;
   }
 
 void CheckNoSl()
@@ -379,7 +477,7 @@ string BuildPayload()
                + ",\"volStep\":" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP), 2)
                + ",\"volMax\":" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX), 2) + "}";
 
-   return acc + "," + spec + ",\"headlines\":[" + g_news + "],\"positions\":[" + pos + "],\"trades\":[" + trades + "]";
+   return acc + "," + spec + ",\"headlines\":[" + g_news + "],\"truths\":[" + g_truth + "],\"positions\":[" + pos + "],\"trades\":[" + trades + "]";
   }
 
 //+------------------------------------------------------------------+
