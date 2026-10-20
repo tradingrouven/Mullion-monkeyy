@@ -145,6 +145,40 @@ textarea{background:var(--surface-2);border:1px solid var(--line);color:var(--fg
 .hl a{color:var(--accent);text-decoration:none;margin-left:4px}
 .hl .hx.clamp{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
 .hl .src{display:block;margin-top:4px;font:600 11px var(--font-ui);color:var(--accent);text-decoration:none;padding:2px 0}
+#todayBox{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+.tdg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tdg>div{background:var(--surface-2);border-radius:10px;padding:10px 12px;min-width:0}
+.tdg .v{font:700 20px var(--font-num);margin-top:3px;white-space:nowrap}
+.tdg .s{font-size:11.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tdck{width:100%;margin-top:10px}
+.tdck.done{border-color:color-mix(in srgb,var(--win) 50%,transparent);color:var(--win)}
+#tdState.ok,#clState.on{background:var(--win-bg);color:var(--win)}
+#tdState.warn{background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent)}
+#tdState.stop{background:var(--loss-bg);color:var(--loss)}
+#clState{background:var(--surface-2);color:var(--muted)}
+.btn.review{width:100%;border-color:var(--accent);color:var(--accent)}
+.warnb{width:100%;margin-top:12px;border-color:color-mix(in srgb,var(--accent) 60%,transparent);color:var(--accent);white-space:normal}
+.clform{display:flex;gap:8px;margin-top:10px}
+.clform input{flex:1;min-width:0}
+.rvt{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.rvt div{background:var(--surface-2);border-radius:9px;padding:8px 10px}
+.rvt b{display:block;font:700 15px var(--font-num)}
+.rvl{margin:12px 0 0;padding:0;list-style:none;font-size:13.5px}
+.rvl li{padding:7px 0;border-bottom:1px solid var(--line);display:flex;gap:8px}
+.rvl li:last-child{border-bottom:0}
+.rvl .k{color:var(--muted);flex:none;width:118px}
+.rvok{color:var(--win)}
+.rvbad{color:var(--loss)}
+.ichi{display:grid;gap:6px;margin:6px 0 14px}
+.ichi label{display:flex;gap:10px;align-items:center;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;cursor:pointer}
+.ichi input{width:20px;height:20px;accent-color:var(--accent);flex:none;margin:0}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
+.thumbs img,.thumbs .add{width:72px;height:72px;border-radius:9px;object-fit:cover;border:1px solid var(--line);background:var(--surface-2);cursor:pointer}
+.thumbs .add{display:grid;place-items:center;color:var(--accent);font:600 12px var(--font-ui)}
+.jt .thumbs{margin-top:8px}
+.jt .thumbs img{width:56px;height:56px}
+.imgv img{display:block;width:100%;max-height:72vh;object-fit:contain;border-radius:10px;background:#000}
+#noteDlg{overflow:auto}
 .jsum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
 .jsum div{background:var(--surface-2);border-radius:9px;padding:8px 10px}
 .jsum b{display:block;font:700 15px var(--font-num)}
@@ -308,6 +342,12 @@ td.r,th.r{text-align:right}
     <input id="startBal" type="number" inputmode="decimal" step="0.01" placeholder="Startkapital">
     <button class="btn sm" id="saveStart">Speichern</button>
   </div>
+  <div class="panel" id="todayBox">
+    <div class="ph"><h2>Heute</h2><span class="sp"></span><span class="pill" id="tdState"></span></div>
+    <div class="tdg" id="tdGrid"></div>
+    <button class="btn sm tdck" type="button" id="tdCheck"></button>
+  </div>
+  <button class="btn review" id="reviewBanner" type="button" hidden>📋 Dein Wochenrückblick ist bereit →</button>
   <div class="grid kpis">
     <div class="panel kpi hero"><div class="lbl" id="kBalL">Kontostand</div><div class="v num" id="kBal">–</div><div class="s" id="kBalS"></div></div>
     <div class="panel kpi"><div class="lbl">Diese Woche</div><div class="v num" id="kWeek">–</div><div class="s" id="kWeekS"></div></div>
@@ -432,11 +472,16 @@ td.r,th.r{text-align:right}
     <div class="ph"><h2>Journal</h2><span class="sp"></span><button class="chip" id="jNoted" aria-pressed="false">Nur mit Notiz</button></div>
     <div class="chips" id="jStrat"></div>
     <div class="jsum" id="jSum"></div>
+    <button class="btn sm warnb" id="jCloud" type="button" hidden>⚠️ Notizen sind nur auf diesem Handy. Online-Sicherung einschalten →</button>
   </div>
   <div class="panel"><div id="jList"></div><button class="btn sm" id="jMore" type="button" style="margin-top:10px" hidden>Ältere Trades laden</button></div>
 </section>
 <!-- ANALYSE -->
 <section id="view-ana" class="grid" hidden>
+  <div class="panel" id="revPanel">
+    <div class="ph"><h2>Wochenrückblick</h2><span class="sp"></span><button class="btn sm" id="revPrev" type="button" aria-label="Vorherige Woche">←</button><b id="revTitle" class="num" style="min-width:112px;text-align:center;font-size:13px"></b><button class="btn sm" id="revNext" type="button" aria-label="Nächste Woche">→</button></div>
+    <div id="revBody"></div>
+  </div>
   <div class="panel">
     <div class="ph" style="margin-bottom:0"><h2>Auswertung</h2><span class="sp"></span><div class="chips" id="aPer"></div></div>
   </div>
@@ -485,6 +530,12 @@ td.r,th.r{text-align:right}
     <div class="tbl" style="margin-top:0"><table><thead><tr><th>SL-Abstand</th><th class="r">Lots</th><th class="r">Risiko</th></tr></thead><tbody id="cTab"></tbody></table></div>
     <p class="note" id="cSpec"></p>
   </div>
+  <div class="panel" id="cloudPanel">
+    <div class="ph"><h2>Online-Sicherung</h2><span class="sp"></span><span class="pill" id="clState"></span></div>
+    <p class="note" id="clNote"></p>
+    <form id="clForm" class="clform"><input id="clTok" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="GitHub-Token (ghp_…)"><button class="btn pri sm" type="submit">Einschalten</button></form>
+    <div class="ph" id="clBtns" style="margin:10px 0 0" hidden><button class="btn sm" id="clNow" type="button">Jetzt sichern</button><span class="sp"></span><button class="btn sm" id="clOff" type="button">Ausschalten</button></div>
+  </div>
 </section>
 </main>
 <dialog id="guideDlg" class="sheet guide">
@@ -502,6 +553,10 @@ td.r,th.r{text-align:right}
   </ol>
   <p class="note">MT5 muss am Computer laufen, damit Trades, Positionen und Schlagzeilen aktuell bleiben. News-Kalender, Checkliste und Lot-Rechner gehen auch ohne.</p>
 </dialog>
+<dialog id="imgDlg" class="sheet imgv">
+  <img id="imgBig" alt="Chart-Bild">
+  <div class="ph" style="margin:10px 0 0"><button class="btn sm" id="imgDel" type="button">Bild löschen</button><span class="sp"></span><button class="btn sm" id="imgX" type="button">Schliessen</button></div>
+</dialog>
 <dialog id="noteDlg" class="sheet">
   <form method="dialog" id="noteForm">
     <div class="ph"><h2 id="noteTitle">Trade-Notiz</h2><span class="sp"></span><button class="btn sm" type="button" id="noteX" aria-label="Schliessen">✕</button></div>
@@ -509,7 +564,13 @@ td.r,th.r{text-align:right}
     <div class="lbl">Strategie</div>
     <div class="strat" id="noteChips"></div>
     <input type="hidden" id="noteSetup">
+    <div id="ichiBox" hidden><div class="lbl">Ichimoku-Check</div><div class="ichi" id="ichiList"></div></div>
+    <div class="lbl">Gefühl beim Einstieg</div>
+    <div class="chips" id="emoChips" style="margin:6px 0 14px"></div>
     <label class="fl">Notiz<textarea id="noteText" rows="4" placeholder="Warum rein, was lief gut, was nicht?"></textarea></label>
+    <div class="lbl" style="margin-top:12px">Chart-Bilder</div>
+    <div class="thumbs" id="noteImgs"></div>
+    <input type="file" id="imgIn" accept="image/*" multiple hidden>
     <div class="ph" style="margin:14px 0 0"><button class="btn" type="button" id="noteDel">Löschen</button><span class="sp"></span><button class="btn pri" value="save" type="submit">Speichern</button></div>
   </form>
 </dialog>
@@ -539,7 +600,7 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>show(t.dataset.view))
 const showFirst=()=>show({"#news":"news","#dashboard":"dash","#journal":"jour","#analyse":"ana","#rechner":"calc","#tools":"calc"}[location.hash]||LS.get("view","dash"));
 
 function tick(){const d=new Date();$("#clock").textContent=d.toLocaleDateString("de-CH",{weekday:"short",day:"2-digit",month:"short"})+" · "+d.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"})}
-tick();setInterval(()=>{tick();renderNews();renderNewsKpi()},30000);
+tick();setInterval(()=>{tick();renderNews();renderNewsKpi();renderToday()},30000);
 
 /* ---------- dashboard ---------- */
 const MT5_FILE="bullion-monkey.json";
@@ -607,7 +668,70 @@ function renderRisk(){
   $("#riskNote").textContent=msgs.join(" ")||"Grenzen änderst du unter Tools → Risiko-Grenzen.";
 }
 
+/* ---------- "Heute": the few numbers that matter before the next trade ---------- */
+function renderToday(){
+  const d=riskData(),L=rk(),n=new Date(),tiles=[];let lv=0;
+  if(d){const lim=d.dayStart*L.day/100,left=lim-Math.max(0,-d.day);
+    if(L.day>0&&left<=0)lv=2;else if(L.day>0&&left<lim*0.3)lv=1;
+    if(L.trades>0&&d.trades>=L.trades)lv=2;
+    tiles.push(["PnL heute",`<span class="${cls(d.day)}">${fmt(d.day)}</span>`,d.cur+(Math.abs(d.eq-d.bal)>0.005?" · inkl. offene":"")]);
+    tiles.push(["Trades heute",`${d.trades}${L.trades>0?" / "+L.trades:""}`,L.trades>0?(d.trades>=L.trades?"Limit erreicht":`noch ${L.trades-d.trades} erlaubt`):"kein Limit"]);
+    tiles.push(["Risiko übrig",L.day>0?`<span class="${left<=0?"neg":""}">${plain(Math.max(0,left))}</span>`:"–",L.day>0?`${d.cur} bis Tageslimit ${L.day} %`:"Tageslimit aus"]);
+  }
+  const nx=state.news?events().find(x=>isGold(x)&&x.t>n):null;
+  if(nx&&nx.impact==="High"&&nx.t-n<45*6e4)lv=Math.max(lv,1);
+  tiles.push(["Nächste Gold-News",nx?(ymd(nx.t)===ymd(n)?"":nx.t.toLocaleDateString("de-CH",{weekday:"short"})+" ")+tf(nx.t):"–",nx?`${esc(nx.title)} · ${countdown(nx.t-n)}`:"keine mehr diese Woche"]);
+  $("#tdGrid").innerHTML=tiles.map(([a,b,c])=>`<div><span class="lbl">${a}</span><div class="v">${b}</div><div class="s">${c}</div></div>`).join("");
+  const st=$("#tdState");st.className="pill "+["ok","warn","stop"][lv];st.textContent=["Bereit","Vorsicht","Stopp für heute"][lv];
+  const it=ckItems(),dn=ckDone(),k=it.filter((_,i)=>dn[i]).length,cb=$("#tdCheck");
+  cb.textContent=k>=it.length?"✓ Checkliste erledigt":`Checkliste vor dem Trade: ${k} / ${it.length} →`;cb.classList.toggle("done",k>=it.length);
+  /* weekly review reminder: Friday evening and the weekend */
+  const dow=n.getDay(),wk=ymd(monday(n));
+  $("#reviewBanner").hidden=!((dow===5&&n.getHours()>=17)||dow===6||dow===0)||!mt5Trades().some(t=>ymd(t.c)>=wk)||LS.get("revSeen","")===wk;
+}
+$("#tdCheck").onclick=()=>show("calc");
+$("#reviewBanner").onclick=()=>{LS.set("revSeen",ymd(monday(new Date())));revWeek=0;show("ana")};
+
+/* ---------- weekly review ---------- */
+let revWeek=0;   /* 0 = this week, -1 = last week … */
+function renderReview(){
+  const ws=monday(new Date());ws.setDate(ws.getDate()+7*revWeek);const we=new Date(ws);we.setDate(we.getDate()+7);
+  const dm=d=>d.toLocaleDateString("de-CH",{day:"2-digit",month:"2-digit"});
+  $("#revTitle").textContent=`${dm(ws)} – ${dm(new Date(we-864e5))}`;$("#revNext").disabled=revWeek>=0;
+  const el=$("#revBody");
+  if(!state.mt5){el.innerHTML=`<p class="note">Verbinde zuerst MT5 im Dashboard.</p>`;return}
+  const N=state.settings.notes||{},L=rk(),all=mt5Trades(),T=all.filter(t=>t.c>=ws&&t.c<we).map(t=>({...t,nt:N[t.id]||{}}));
+  if(!T.length){el.innerHTML=`<p class="note">Keine abgeschlossenen Trades in dieser Woche.</p>`;return}
+  const net=T.reduce((a,t)=>a+t.pnl,0),win=T.filter(t=>t.pnl>0).length,rs=T.filter(t=>t.r!=null),cur=(state.mt5.account&&state.mt5.account.currency)||"USD";
+  const bal=+((state.mt5.account||{}).balance)||0,startOf=k=>bal-all.filter(t=>ymd(t.c)>=k).reduce((a,t)=>a+t.pnl,0);
+  const days={};T.forEach(t=>{const k=ymd(t.c);(days[k]=days[k]||[]).push(t)});
+  const dn=k=>new Date(k+"T12:00").toLocaleDateString("de-CH",{weekday:"short",day:"2-digit",month:"2-digit"});
+  const breaks=[];
+  Object.keys(days).sort().forEach(k=>{const p=days[k].reduce((a,t)=>a+t.pnl,0),opened=all.filter(t=>ymd(t.o)===k).length;
+    if(L.day>0&&-p>=startOf(k)*L.day/100)breaks.push(`${dn(k)}: Tageslimit überschritten (${fmt(p)})`);
+    if(L.trades>0&&opened>L.trades)breaks.push(`${dn(k)}: ${opened} Trades statt max. ${L.trades}`)});
+  const noSl=T.filter(t=>t.r==null).length;if(noSl)breaks.push(`${noSl} Trade${noSl>1?"s":""} ohne Stop-Loss beim Einstieg`);
+  const hot=T.filter(t=>t.nt.emo==="FOMO"||t.nt.emo==="Revenge");if(hot.length)breaks.push(`${hot.length}× FOMO oder Revenge (${fmt(hot.reduce((a,t)=>a+t.pnl,0))})`);
+  const best=T.reduce((a,t)=>t.pnl>a.pnl?t:a),worst=T.reduce((a,t)=>t.pnl<a.pnl?t:a);
+  const dsum=Object.entries(days).map(([k,l])=>[k,l.reduce((a,t)=>a+t.pnl,0)]),bd=dsum.reduce((a,x)=>x[1]>a[1]?x:a),wd=dsum.reduce((a,x)=>x[1]<a[1]?x:a);
+  const strat=[...STRATS,"Ohne Strategie"].map(k=>{const l=T.filter(t=>k==="Ohne Strategie"?!STRATS.includes(t.nt.setup):t.nt.setup===k);return l.length?`<li><span class="k">${esc(k)}</span><span><b class="${cls(l.reduce((a,t)=>a+t.pnl,0))}">${fmt(l.reduce((a,t)=>a+t.pnl,0))}</b> · ${l.length} Trade${l.length>1?"s":""} · ${Math.round(l.filter(t=>t.pnl>0).length/l.length*100)} % Treffer</span></li>`:""}).join("");
+  const tt=t=>`${dn(ymd(t.c))} ${t.side==="buy"?"Long":"Short"}`;
+  const open=T.filter(t=>!hasNote(t.nt)).length;
+  el.innerHTML=`<div class="rvt">${[["Netto",`<span class="${cls(net)}">${fmt(net)}</span>`],["Trades",T.length],["Treffer",Math.round(win/T.length*100)+" %"],["Ø R",rs.length?`<span class="${cls(rs.reduce((a,t)=>a+ +t.r,0))}">${fmt(rs.reduce((a,t)=>a+ +t.r,0)/rs.length)}</span>`:"–"]].map(([a,b])=>`<div><span class="lbl">${a}</span><b>${b}</b></div>`).join("")}</div>
+  <ul class="rvl">${strat}
+    <li><span class="k">Bester Trade</span><span><b class="pos">${fmt(best.pnl)}</b> · ${tt(best)}${best.nt.setup?" · "+esc(best.nt.setup):""}</span></li>
+    <li><span class="k">Schlechtester</span><span><b class="${cls(worst.pnl)}">${fmt(worst.pnl)}</b> · ${tt(worst)}${worst.nt.setup?" · "+esc(worst.nt.setup):""}</span></li>
+    <li><span class="k">Bester Tag</span><span>${dn(bd[0])} <b class="${cls(bd[1])}">${fmt(bd[1])}</b>${dsum.length>1?` · schlechtester ${dn(wd[0])} <b class="${cls(wd[1])}">${fmt(wd[1])}</b>`:""}</span></li>
+    <li><span class="k">Regeln</span><span>${breaks.length?breaks.map(b=>`<span class="rvbad">✗ ${b}</span>`).join("<br>"):`<span class="rvok">✓ Keine Regelverstösse, stark! 👏</span>`}</span></li>
+    ${open?`<li><span class="k">Offen</span><span>${open} Trade${open>1?"s":""} ohne Notiz oder Strategie. <a href="#" id="revJ" style="color:var(--accent)">Im Journal nachtragen →</a></span></li>`:""}
+  </ul><p class="note" style="margin-top:8px">Beträge in ${cur}. Grenzen aus Tools → Risiko-Grenzen.</p>`;
+  const rj=$("#revJ");if(rj)rj.onclick=e=>{e.preventDefault();show("jour")};
+}
+$("#revPrev").onclick=()=>{revWeek--;renderReview()};
+$("#revNext").onclick=()=>{if(revWeek<0){revWeek++;renderReview()}};
+
 function renderDash(){
+  renderToday();
   renderRisk();
   renderPositions();
   const acc=state.mt5&&state.mt5.account;
@@ -721,7 +845,8 @@ const KEY="bm-data-v1";
 const SEED={settings:{currency:"USD"},trades:[]};   /* new users start empty; their data stays on their phone */
 function setSave(msg){$("#saveState").textContent=msg}
 function load(){const d=LS.get(KEY,null)||SEED;state.trades=d.trades||[];state.settings=d.settings||{}}
-function persist(){try{localStorage.setItem(KEY,JSON.stringify({settings:state.settings,trades:state.trades}))}catch(e){setSave("Speichern fehlgeschlagen: kein Speicherplatz auf dem Gerät.")}}
+function persist(){persistLocal();cloudSoon()}
+function persistLocal(){try{localStorage.setItem(KEY,JSON.stringify({settings:state.settings,trades:state.trades}))}catch(e){setSave("Speichern fehlgeschlagen: kein Speicherplatz auf dem Gerät.")}}
 function delTrade(id){state.trades=state.trades.filter(t=>t.id!==id);persist();renderDash()}
 $("#saveStart").onclick=()=>{const v=parseFloat($("#startBal").value);if(isNaN(v))return;
   state.settings.startBalance=v;persist();renderDash()};
@@ -834,29 +959,131 @@ $("#shareApp").onclick=async()=>{const url=location.origin+location.pathname;
   try{await navigator.clipboard.writeText(url);$("#shareApp").textContent="Link kopiert ✓"}catch(e){prompt("Link zum Teilen:",url)}};
 
 /* ---------- trade notes ---------- */
-let noteId=null;
+let noteId=null,noteEmo="",noteIchi=[],noteImgs=[],addedImgs=[];
 const STRATS=["Ichimoku Cloud","Markterfahrung"];
+const EMO=["Ruhig","Fokussiert","FOMO","Revenge","Müde","Gestresst"];
+const ICHI=[["kumo","Preis klar über/unter der Wolke","Über/unter Wolke"],["tk","Tenkan/Kijun-Kreuz in Trade-Richtung","TK-Kreuz"],["chikou","Chikou Span frei","Chikou frei"],["future","Wolke voraus in Trade-Richtung","Wolke voraus"],["kijun","Stop hinter Kijun oder Wolke","Stop hinter Kijun"]];
+const hasNote=n=>!!(n&&(n.setup||n.text||n.emo||(n.ichi&&n.ichi.length)||(n.imgs&&n.imgs.length)));
+function renderIchi(){
+  $("#ichiBox").hidden=$("#noteSetup").value!=="Ichimoku Cloud";
+  $("#ichiList").innerHTML=ICHI.map(([k,l])=>`<label><input type="checkbox" data-ichi="${k}"${noteIchi.includes(k)?" checked":""}>${l}</label>`).join("");
+  $("#ichiList").querySelectorAll("input").forEach(i=>i.onchange=()=>{noteIchi=i.checked?[...noteIchi,i.dataset.ichi]:noteIchi.filter(x=>x!==i.dataset.ichi)});
+}
+function renderEmo(){const el=$("#emoChips");el.innerHTML="";EMO.forEach(v=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=v;b.setAttribute("aria-pressed",noteEmo===v);b.onclick=()=>{noteEmo=noteEmo===v?"":v;renderEmo()};el.appendChild(b)})}
+function renderNoteImgs(){
+  const el=$("#noteImgs");el.innerHTML=noteImgs.map(id=>`<img data-img="${esc(id)}" alt="Chart-Bild">`).join("")+(noteImgs.length<4?`<label class="add" for="imgIn">＋ Bild</label>`:"");
+  fillImgs(el);el.querySelectorAll("img").forEach(im=>im.onclick=()=>openImg(im.dataset.img,id=>{noteImgs=noteImgs.filter(x=>x!==id);renderNoteImgs()}));
+}
 function openNote(id){
   noteId=id;const nt=(state.settings.notes||{})[id]||{};
   const t=((state.mt5&&state.mt5.trades)||[]).find(x=>x.id===id), p=((state.mt5&&state.mt5.positions)||[]).find(x=>"mt5-"+x.id===id), x=t||p;
   $("#noteTitle").textContent=p&&!t?"Notiz zur offenen Position":"Trade-Notiz";
   $("#noteSub").innerHTML=x?`${esc(x.asset)} · ${x.side==="buy"?"Long":"Short"} ${(+x.volume).toFixed(2)} Lot · <span class="${cls(+x.pnl)}">${fmt(+x.pnl)}</span> · ${x.openUtc?"Einstieg "+new Date(x.openUtc).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"}):""}${x.closeUtc?" · Ausstieg "+new Date(x.closeUtc).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"}):""}`:"";
   $("#noteSetup").value=nt.setup||"";$("#noteText").value=nt.text||"";
-  if(!nt.setup&&!nt.text)$("#noteSetup").value=LS.get("lastStrat","");   /* new note: start with the last strategy used */
-  const ch=$("#noteChips"),paint=()=>ch.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.textContent===$("#noteSetup").value));
+  if(!hasNote(nt))$("#noteSetup").value=LS.get("lastStrat","");   /* new note: start with the last strategy used */
+  noteEmo=nt.emo||"";noteIchi=(nt.ichi||[]).slice();noteImgs=(nt.imgs||[]).slice();addedImgs=[];
+  const ch=$("#noteChips"),paint=()=>{ch.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.textContent===$("#noteSetup").value));renderIchi()};
   ch.innerHTML="";STRATS.forEach(v=>{const b=document.createElement("button");b.type="button";b.textContent=v;b.onclick=()=>{$("#noteSetup").value=$("#noteSetup").value===v?"":v;paint()};ch.appendChild(b)});paint();
-  $("#noteDel").hidden=!(nt.setup||nt.text);
+  renderEmo();renderNoteImgs();
+  $("#noteDel").hidden=!hasNote(nt);
   $("#noteDlg").showModal();
 }
 function saveNote(val){
-  const N=state.settings.notes=state.settings.notes||{};
-  if(val&&(val.setup||val.text))N[noteId]=val;else delete N[noteId];
+  const N=state.settings.notes=state.settings.notes||{},old=N[noteId]||{},keep=hasNote(val)?val.imgs||[]:[];
+  (old.imgs||[]).filter(id=>!keep.includes(id)).forEach(dropImg);
+  N[noteId]=hasNote(val)?{...val,at:Date.now()}:{at:Date.now()};   /* an empty entry marks a deleted note, so the online backup forgets it too */
   if(val&&STRATS.includes(val.setup))LS.set("lastStrat",val.setup);
   persist();renderDash();if(!$("#view-ana").hidden)renderAna();if(!$("#view-jour").hidden)renderJournal();
 }
-$("#noteDlg").addEventListener("close",()=>{if($("#noteDlg").returnValue==="save")saveNote({setup:$("#noteSetup").value.trim(),text:$("#noteText").value.trim()})});
+$("#noteDlg").addEventListener("close",()=>{
+  if($("#noteDlg").returnValue==="save"){const setup=$("#noteSetup").value.trim();
+    saveNote({setup,text:$("#noteText").value.trim(),emo:noteEmo,ichi:setup==="Ichimoku Cloud"?noteIchi:[],imgs:noteImgs})}
+  else addedImgs.forEach(dropImg);   /* cancelled: forget pictures added just now */
+  addedImgs=[];
+});
 $("#noteX").onclick=()=>$("#noteDlg").close("cancel");
 $("#noteDel").onclick=()=>{saveNote(null);$("#noteDlg").close("cancel")};
+
+/* ---------- chart pictures (compressed, kept in IndexedDB on this phone) ---------- */
+const IDB=(()=>{let p;const db=()=>p=p||new Promise((res,rej)=>{const r=indexedDB.open("bm-img",1);r.onupgradeneeded=()=>r.result.createObjectStore("img");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+  const run=(mode,fn)=>db().then(d=>new Promise((res,rej)=>{const t=d.transaction("img",mode),r=fn(t.objectStore("img"));t.oncomplete=()=>res(r.result);t.onerror=()=>rej(t.error)}));
+  return {get:k=>run("readonly",s=>s.get(k)),set:(k,v)=>run("readwrite",s=>s.put(v,k)),del:k=>run("readwrite",s=>s.delete(k))}})();
+function shrink(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();
+  im.onload=()=>{const k=Math.min(1,1400/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL("image/jpeg",0.75))};
+  im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("bild"))};im.src=u})}
+const imgCache={};
+async function imgSrc(id){
+  if(imgCache[id])return imgCache[id];
+  let v=await IDB.get(id).catch(()=>null);
+  if(!v&&cloud.imgGist&&cloud.user){   /* new phone: fetch it back from the online backup */
+    try{const r=await fetch(`https://gist.githubusercontent.com/${encodeURIComponent(cloud.user)}/${encodeURIComponent(cloud.imgGist)}/raw/img-${encodeURIComponent(id)}.txt`);
+      if(r.ok){v=await r.text();if(/^data:image\/(jpeg|png|webp);base64,/.test(v)){IDB.set(id,v).catch(()=>{});if(!cloud.up.includes(id)){cloud.up.push(id);saveCloud()}}else v=null}}catch(e){}}
+  return imgCache[id]=v||"";
+}
+function fillImgs(root){root.querySelectorAll("img[data-img]").forEach(async im=>{const v=await imgSrc(im.dataset.img);if(v)im.src=v;else im.alt="Bild fehlt"})}
+function dropImg(id){delete imgCache[id];IDB.del(id).catch(()=>{});cloudDelImg(id)}
+$("#imgIn").onchange=async e=>{const fs=[...e.target.files].slice(0,4-noteImgs.length);e.target.value="";
+  for(const f of fs){try{const d=await shrink(f),id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);await IDB.set(id,d);imgCache[id]=d;noteImgs.push(id);addedImgs.push(id)}catch(_){}}
+  renderNoteImgs()};
+let viewImg=null,viewDel=null;
+function openImg(id,onDel){viewImg=id;viewDel=onDel||null;$("#imgBig").src=imgCache[id]||"";imgSrc(id).then(v=>{if(viewImg===id&&v)$("#imgBig").src=v});$("#imgDel").hidden=!onDel;$("#imgDlg").showModal()}
+$("#imgX").onclick=()=>$("#imgDlg").close();
+$("#imgDel").onclick=()=>{if(viewDel)viewDel(viewImg);$("#imgDlg").close()};
+
+/* ---------- online backup: own secret gist, written with the GitHub token on this phone ---------- */
+const cloud=Object.assign({token:"",gist:"",imgGist:"",user:"",at:0,up:[]},LS.get("bm-cloud",{}));
+const saveCloud=()=>LS.set("bm-cloud",cloud);
+let clErr="",clPulled=0,clTimer=0;
+async function gh(path,opt={}){
+  const r=await fetch("https://api.github.com"+path,{...opt,cache:"no-store",headers:{Authorization:"Bearer "+cloud.token,Accept:"application/vnd.github+json",...(opt.body?{"Content-Type":"application/json"}:{})}});
+  if(r.status===401)throw new Error("token");if(!r.ok)throw new Error("http "+r.status);return r.status===204?null:r.json();
+}
+async function findGist(desc,file,content){
+  for(let page=1;page<=5;page++){const L=await gh("/gists?per_page=100&page="+page),g=L.find(x=>x.description===desc);if(g)return g;if(L.length<100)break}
+  return gh("/gists",{method:"POST",body:JSON.stringify({description:desc,public:false,files:{[file]:{content}}})});
+}
+const backupData=()=>JSON.stringify({v:1,savedAt:new Date().toISOString(),settings:state.settings,trades:state.trades});
+async function cloudPull(){
+  if(!cloud.token||!cloud.gist)return;clPulled=Date.now();
+  const g=await gh("/gists/"+cloud.gist),f=g.files&&g.files["backup.json"];if(!f)return;
+  let d;try{d=JSON.parse(f.truncated?await (await fetch(f.raw_url)).text():f.content)}catch(e){return}
+  const rs=d.settings||{},ls=state.settings,RN=rs.notes||{},LN=ls.notes=ls.notes||{};let changed=false;
+  for(const k of Object.keys(rs))if(k!=="notes"&&ls[k]==null){ls[k]=rs[k];changed=true}   /* fills a new phone, never overwrites */
+  for(const id in RN)if(!LN[id]||(RN[id].at||0)>(LN[id].at||0)){LN[id]=RN[id];changed=true}   /* per note, the newer one wins */
+  if(!state.trades.length&&Array.isArray(d.trades)&&d.trades.length){state.trades=d.trades;changed=true}
+  if(changed){persistLocal();if(state.settings.mt5Gist&&!state.mt5)syncMt5(true);renderMt5();renderDash();if(!$("#view-jour").hidden)renderJournal();if(!$("#view-ana").hidden)renderAna()}
+}
+async function cloudPush(){
+  if(!cloud.token||!cloud.gist)return;
+  await gh("/gists/"+cloud.gist,{method:"PATCH",body:JSON.stringify({files:{"backup.json":{content:backupData()}}})});
+  const ids=new Set(Object.values(state.settings.notes||{}).flatMap(n=>n.imgs||[]));
+  for(const id of ids){if(cloud.up.includes(id))continue;const d=await IDB.get(id).catch(()=>null);if(!d)continue;
+    await gh("/gists/"+cloud.imgGist,{method:"PATCH",body:JSON.stringify({files:{["img-"+id+".txt"]:{content:d}}})});cloud.up.push(id);saveCloud()}
+  cloud.at=Date.now();clErr="";saveCloud();renderCloud();
+}
+function cloudDelImg(id){if(!cloud.token||!cloud.up.includes(id))return;
+  gh("/gists/"+cloud.imgGist,{method:"PATCH",body:JSON.stringify({files:{["img-"+id+".txt"]:null}})}).then(()=>{cloud.up=cloud.up.filter(x=>x!==id);saveCloud()}).catch(()=>{})}
+const cloudFail=e=>{clErr=e&&e.message==="token"?"Der Token gilt nicht mehr. Bitte ausschalten und neu einschalten.":"Sicherung gerade nicht möglich. Ich versuche es später nochmal.";renderCloud()};
+function cloudSoon(){if(!cloud.token)return;clearTimeout(clTimer);clTimer=setTimeout(()=>cloudPush().catch(cloudFail),3000)}
+async function cloudOn(token){
+  cloud.token=token;clErr="Verbinde mit GitHub …";renderCloud();
+  try{cloud.user=(await gh("/user")).login;
+    cloud.gist=(await findGist("Bullion Monkey Backup","backup.json",backupData())).id;
+    cloud.imgGist=(await findGist("Bullion Monkey Bilder","info.txt","Chart-Bilder aus Bullion Monkey")).id;
+    saveCloud();await cloudPull();await cloudPush();
+  }catch(e){const m=e.message==="token"?"Dieser Token gilt nicht. Prüfe ihn (Häkchen bei „gist“).":"Keine Verbindung zu GitHub. Versuch es nochmal.";Object.assign(cloud,{token:"",gist:"",imgGist:""});saveCloud();clErr=m}
+  renderCloud();
+}
+function renderCloud(){
+  const on=!!cloud.token;$("#clState").className="pill"+(on?" on":"");$("#clState").textContent=on?"Aktiv":"Aus";
+  $("#clForm").hidden=on;$("#clBtns").hidden=!on;$("#jCloud").hidden=on;
+  $("#clNote").textContent=clErr||(on?`Notizen, Strategien, Gefühle, Bilder, Checkliste und Einstellungen werden automatisch in deinem geheimen GitHub-Gist gesichert${cloud.at?" · zuletzt "+new Date(cloud.at).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):""}. Auf einem neuen Handy hier denselben Token eingeben, dann kommt alles zurück.`
+    :"Deine Notizen und Bilder sind im Moment nur auf diesem Handy. Gib deinen GitHub-Token ein (derselbe wie im MT5-EA, Häkchen nur bei „gist“), dann wird alles automatisch online gesichert.");
+}
+$("#clForm").onsubmit=e=>{e.preventDefault();const t=$("#clTok").value.trim();if(t.length<20)return;$("#clTok").value="";cloudOn(t)};
+$("#clNow").onclick=()=>{clErr="Sichere …";renderCloud();cloudPull().then(cloudPush).catch(cloudFail)};
+$("#clOff").onclick=()=>{Object.assign(cloud,{token:"",gist:"",imgGist:"",at:0});saveCloud();clErr="";renderCloud()};
+$("#jCloud").onclick=()=>{show("calc");setTimeout(()=>$("#cloudPanel").scrollIntoView({behavior:"smooth"}),50)};
 
 /* ---------- journal ---------- */
 let jStrat=LS.get("jStrat","Alle"),jNoted=false,jLimit=40;
@@ -870,7 +1097,7 @@ function renderJournal(){
   const T=((state.mt5&&state.mt5.trades)||[]).map(t=>({...t,nt:N[t.id]||{}})).sort((a,b)=>String(b.closeUtc).localeCompare(String(a.closeUtc)));
   const sf=$("#jStrat");sf.innerHTML="";["Alle",...STRATS,"Ohne"].forEach(v=>{const b=document.createElement("button");b.className="chip";b.textContent=v==="Ohne"?"Ohne Strategie":v;b.setAttribute("aria-pressed",jStrat===v);b.onclick=()=>{jStrat=v;LS.set("jStrat",v);jLimit=40;renderJournal()};sf.appendChild(b)});
   $("#jNoted").setAttribute("aria-pressed",jNoted);
-  const L=T.filter(t=>(jStrat==="Alle"||(jStrat==="Ohne"?!STRATS.includes(t.nt.setup):t.nt.setup===jStrat))&&(!jNoted||t.nt.text));
+  const L=T.filter(t=>(jStrat==="Alle"||(jStrat==="Ohne"?!STRATS.includes(t.nt.setup):t.nt.setup===jStrat))&&(!jNoted||hasNote(t.nt)));
   const pnl=L.reduce((a,t)=>a+(+t.pnl||0),0),win=L.filter(t=>+t.pnl>0).length,rs=L.filter(t=>t.r!=null),rsum=rs.reduce((a,t)=>a+(+t.r||0),0);
   $("#jSum").innerHTML=[["Trades",L.length],["Treffer",L.length?Math.round(win/L.length*100)+" %":"–"],["PnL",`<span class="${cls(pnl)}">${fmt(pnl)}</span>`],["Ø R",rs.length?`<span class="${cls(rsum)}">${fmt(rsum/rs.length)}</span>`:"–"]].map(([a,b])=>`<div><span class="lbl">${a}</span><b>${b}</b></div>`).join("");
   $("#jList").innerHTML=!state.mt5?`<p class="empty">Verbinde zuerst MT5 im Dashboard, dann erscheinen hier deine Trades.</p>`
@@ -878,9 +1105,10 @@ function renderJournal(){
     :L.slice(0,jLimit).map(t=>{const d=new Date(t.closeUtc),o=t.openUtc?new Date(t.openUtc):null,st=t.nt.setup;return `<button class="jt" type="button" data-note="${esc(t.id)}">
       <div class="l1"><span>${esc(t.asset)} · ${t.side==="buy"?"Long":"Short"} ${(+t.volume).toFixed(2)}</span><span class="sp"></span><span class="pn ${cls(+t.pnl)}">${fmt(+t.pnl)}</span></div>
       <div class="tm"><span><i>Einstieg</i>${o?(zd(o)!==zd(d)?zd(o)+" ":"")+zt(o):"–"}</span><span><i>Ausstieg</i>${zt(d)}</span>${o?`<span><i>Dauer</i>${zdur(d-o)}</span>`:""}</div>
-      <div class="l2"><span class="d">${zd(d)}</span><span class="st${st?"":" none"}">${st?esc(st):"Keine Strategie"}</span>${t.r!=null?`<span class="d">${fmt(+t.r)} R</span>`:""}</div>
-      <div class="tx${t.nt.text?"":" mut"}">${t.nt.text?esc(t.nt.text):"Noch keine Notiz. Tippen zum Schreiben."}</div></button>`}).join("");
+      <div class="l2"><span class="d">${zd(d)}</span><span class="st${st?"":" none"}">${st?esc(st):"Keine Strategie"}</span>${t.nt.emo?`<span class="st none">${esc(t.nt.emo)}</span>`:""}${st==="Ichimoku Cloud"&&t.nt.ichi&&t.nt.ichi.length?`<span class="d">☁ ${t.nt.ichi.length}/5</span>`:""}${t.r!=null?`<span class="d">${fmt(+t.r)} R</span>`:""}</div>
+      <div class="tx${t.nt.text?"":" mut"}">${t.nt.text?esc(t.nt.text):"Noch keine Notiz. Tippen zum Schreiben."}</div>${t.nt.imgs&&t.nt.imgs.length?`<div class="thumbs">${t.nt.imgs.map(id=>`<img data-img="${esc(id)}" alt="Chart-Bild">`).join("")}</div>`:""}</button>`}).join("");
   $("#jList").querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openNote(b.dataset.note));
+  fillImgs($("#jList"));$("#jList").querySelectorAll("img[data-img]").forEach(im=>im.onclick=e=>{e.stopPropagation();openImg(im.dataset.img)});
   $("#jMore").hidden=L.length<=jLimit;
 }
 $("#jNoted").onclick=()=>{jNoted=!jNoted;jLimit=40;renderJournal()};
@@ -954,6 +1182,7 @@ const PER={m:"Dieser Monat",q:"3 Monate",a:"Alles"};
 state.per=LS.get("aPer","a");
 function mt5Trades(){return ((state.mt5&&state.mt5.trades)||[]).map(t=>({...t,pnl:+t.pnl||0,o:new Date(t.openUtc||t.closeUtc),c:new Date(t.closeUtc)})).sort((a,b)=>a.c-b.c)}
 function renderAna(){
+  renderReview();
   const pe=$("#aPer");pe.innerHTML="";Object.entries(PER).forEach(([k,v])=>{const b=document.createElement("button");b.className="chip";b.textContent=v;b.setAttribute("aria-pressed",state.per===k);b.onclick=()=>{state.per=k;LS.set("aPer",k);renderAna()};pe.appendChild(b)});
   const body=$("#anaBody");
   if(!state.mt5){body.innerHTML=`<div class="panel empty">Verbinde zuerst MT5 im Dashboard, dann siehst du hier deine Auswertung.</div>`;return}
@@ -983,7 +1212,13 @@ function renderAna(){
   const basis=hasOpen?"nach Eröffnungszeit, in deiner Ortszeit":"nach Schliesszeit (neuer Expert Advisor liefert die Eröffnungszeit)";
   const NT=state.settings.notes||{};
   const setupPanel=`<div class="panel"><div class="ph"><h2>Nach Strategie</h2></div>${T.some(t=>(NT[t.id]||{}).setup)?bars(group(t=>(NT[t.id]||{}).setup||"Ohne Strategie")):`<p class="note">Ordne deine Trades im Journal einer Strategie zu (Ichimoku Cloud oder Markterfahrung), dann siehst du hier, welche besser läuft.</p>`}</div>`;
-  body.innerHTML=`<div class="panel"><div class="atiles">${tiles.map(([a,b])=>`<div class="at"><span>${a}</span><b>${b}</b></div>`).join("")}</div><p class="note" style="margin-top:10px">Beträge in ${cur}.</p></div>${setupPanel}
+  const emoPanel=T.some(t=>(NT[t.id]||{}).emo)?`<div class="panel"><div class="ph"><h2>Nach Gefühl</h2></div>${bars(group(t=>(NT[t.id]||{}).emo||"Ohne Angabe",[...EMO,"Ohne Angabe"]))}</div>`:"";
+  const IT=T.filter(t=>(NT[t.id]||{}).setup==="Ichimoku Cloud"&&((NT[t.id]||{}).ichi||[]).length), ic=t=>(NT[t.id].ichi||[]).length;
+  const ichiPanel=IT.length?`<div class="panel"><div class="ph"><h2>Ichimoku-Check</h2><span class="sp"></span><span class="note">${IT.length} Trades mit Check</span></div>
+    ${bars([5,4,3,2,1].map(n=>({k:n+" von 5 erfüllt",list:IT.filter(t=>ic(t)===n)})).filter(r=>r.list.length))}
+    <div class="lbl" style="margin:12px 0 2px">Wenn die Bedingung erfüllt war</div>
+    ${bars(ICHI.map(([k,,l])=>({k:l,list:IT.filter(t=>NT[t.id].ichi.includes(k))})).filter(r=>r.list.length))}</div>`:"";
+  body.innerHTML=`<div class="panel"><div class="atiles">${tiles.map(([a,b])=>`<div class="at"><span>${a}</span><b>${b}</b></div>`).join("")}</div><p class="note" style="margin-top:10px">Beträge in ${cur}.</p></div>${setupPanel}${ichiPanel}${emoPanel}
   <div class="grid two">
     <div class="panel"><div class="ph"><h2>Long vs. Short</h2></div>${bars(group(t=>t.side==="buy"?"Long":"Short",["Long","Short"]))}</div>
     <div class="panel"><div class="ph"><h2>Sessions</h2><span class="sp"></span><span class="note">Asien ${lh(21)}–${lh(7)} · London ${lh(7)}–${lh(12)} · NY ${lh(12)}–${lh(21)} Uhr</span></div>${bars(group(sess,["Asien","London","New York"]),k=>sessLbl[k])}</div>
@@ -1040,10 +1275,11 @@ $("#cClear").onclick=()=>{["#cEntry","#cSl","#cTp","#cDist"].forEach(id=>$(id).v
 $("#calSub").href="webcal://"+location.host+location.pathname.replace(/[^/]*$/,"")+"gold-news.ics";
 /* ---------- boot ---------- */
 load();if(state.settings.mt5Gist)state.mt5=LS.get("bm-mt5",null);showFirst();renderMt5();renderDash();renderHeadlines();renderTruth();renderNews();renderNewsKpi();renderSessions();
-async function loadNews(){try{const r=await fetch("news.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;state.news=await r.json()}catch(e){if(!state.news)state.news={events:[]}}renderNewsFilters();renderNews();renderNewsKpi()}
+async function loadNews(){try{const r=await fetch("news.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;state.news=await r.json()}catch(e){if(!state.news)state.news={events:[]}}renderNewsFilters();renderNews();renderNewsKpi();renderToday()}
 loadNews();
 syncMt5();setInterval(()=>{if(!document.hidden)syncMt5(true)},60000);
-document.addEventListener("visibilitychange",()=>{if(!document.hidden){loadNews();syncMt5();renderDash()}});
+renderCloud();if(cloud.token)cloudPull().then(cloudPush).catch(cloudFail);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){loadNews();syncMt5();renderDash();if(cloud.token&&Date.now()-clPulled>5*6e4)cloudPull().catch(cloudFail)}});
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 })();
 </script>
