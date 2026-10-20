@@ -55,6 +55,8 @@ main{padding-block:20px 48px}
 .panel h2{font-family:var(--font-brand);font-size:15px;margin:0;font-weight:700;letter-spacing:.01em;text-wrap:balance}
 .ph{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
 .ph .sp{flex:1}
+.ph.nav{flex-wrap:nowrap;gap:6px}
+.ph.nav b{min-width:0!important;white-space:nowrap}
 .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600}
 .kpis{grid-template-columns:2fr 1fr 1fr}
 .kpi .v{font-size:24px;font-weight:600;margin-top:4px}
@@ -322,6 +324,50 @@ td.r,th.r{text-align:right}
   .news tr.dayrow td{display:block;border-radius:6px}
   .sess .bar{font-size:11px;padding:3px 5px}
 }
+/* privacy */
+.eye{border:1px solid var(--line);background:var(--surface-2);color:var(--muted);width:36px;height:36px;border-radius:50%;display:grid;place-items:center;cursor:pointer;flex:none;padding:0}
+.eye[aria-pressed="true"]{color:var(--accent);border-color:var(--accent)}
+.eye svg{width:20px;height:20px}
+/* pause after losses */
+.pausebox{border:1px solid color-mix(in srgb,var(--loss) 55%,transparent);background:var(--loss-bg);border-radius:12px;padding:12px 14px}
+.pausebox .pt{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.pausebox .pt b{font:700 16px var(--font-brand);color:var(--loss)}
+.pausebox .pt span{font:600 14px var(--font-num)}
+.pausebox p{margin:4px 0 0;font-size:13px}
+.tdstreak{width:100%;margin-top:10px;text-align:left}
+.tdstreak.on{border-color:color-mix(in srgb,var(--accent) 55%,transparent);color:var(--accent)}
+/* daily plan */
+.strat.three{grid-template-columns:repeat(3,1fr)}
+.plan{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pdir{font:700 12px var(--font-ui);letter-spacing:.04em;padding:4px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line)}
+.pdir.buy{background:var(--win-bg);color:var(--win);border-color:color-mix(in srgb,var(--win) 45%,transparent)}
+.pdir.sell{background:var(--loss-bg);color:var(--loss);border-color:color-mix(in srgb,var(--loss) 45%,transparent)}
+.pz{font:600 12.5px var(--font-num);color:var(--accent)}
+.ptx{margin:8px 0 0;white-space:pre-wrap;font-size:13.5px}
+.pcmp{margin-top:10px;background:var(--surface-2);border-radius:9px;padding:8px 10px;font-size:13px}
+/* month calendar */
+.mcal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.mcal .mh{font:600 10px var(--font-ui);letter-spacing:.08em;color:var(--muted);text-align:center;padding-bottom:2px}
+.md{aspect-ratio:1/1.05;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:2px;min-width:0;font:inherit;cursor:pointer}
+.md .dn{font-size:12px;font-weight:600}
+.md .dp{font-size:10px;font-weight:700;letter-spacing:-.03em;white-space:nowrap;overflow:hidden;max-width:100%}
+.md.win{background:color-mix(in srgb,var(--win) var(--a),transparent);border-color:color-mix(in srgb,var(--win) 50%,transparent);color:var(--fg)}
+.md.loss{background:color-mix(in srgb,var(--loss) var(--a),transparent);border-color:color-mix(in srgb,var(--loss) 50%,transparent);color:var(--fg)}
+.md.today{box-shadow:inset 0 0 0 2px var(--accent)}
+.md.sel{outline:2px solid var(--fg);outline-offset:1px}
+.mcsum{display:flex;gap:6px 16px;flex-wrap:wrap;margin-top:10px;font-size:13px}
+.mcsum b{font-family:var(--font-num)}
+.mcd{margin-top:10px;background:var(--surface-2);border-radius:9px;padding:8px 10px;font-size:13px}
+.mcr{display:flex;gap:8px;width:100%;text-align:left;background:transparent;border:0;border-top:1px solid var(--line);color:inherit;font:inherit;padding:7px 0 0;margin-top:7px;cursor:pointer}
+.mcr .sp{flex:1}
+/* discipline */
+.dots{display:flex;flex-wrap:wrap;gap:4px}
+.dots span{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font:700 11px var(--font-ui)}
+.dots .ok{background:var(--win-bg);color:var(--win)}
+.dots .bad{background:var(--loss-bg);color:var(--loss)}
+#discPill{background:var(--surface-2);color:var(--muted)}
+#discPill.on{background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent)}
+@media (max-width:640px){.eye{margin-left:auto}.rvt.dsc{grid-template-columns:1fr 1fr}}
 @media (prefers-reduced-motion:no-preference){.tab,.btn,.chip{transition:background .15s,border-color .15s,color .15s}}
 </style>
 </head><body>
@@ -336,6 +382,7 @@ td.r,th.r{text-align:right}
     <button class="tab" role="tab" id="tab-calc" aria-selected="false" data-view="calc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="2.2"/><path d="M8.5 7.5h7v3h-7zM8.5 14h.01M12 14h.01M15.5 14h.01M8.5 17.2h.01M12 17.2h.01M15.5 17.2h.01"/></svg><span>Tools</span></button>
   </nav>
   <div class="clock num" id="clock"></div>
+  <button class="eye" id="privBtn" type="button" aria-pressed="false" aria-label="Beträge verstecken"></button>
 </div></header>
 
 <main class="wrap">
@@ -349,10 +396,16 @@ td.r,th.r{text-align:right}
     <input id="startBal" type="number" inputmode="decimal" step="0.01" placeholder="Startkapital">
     <button class="btn sm" id="saveStart">Speichern</button>
   </div>
+  <div class="pausebox" id="pauseBox" hidden></div>
   <div class="panel" id="todayBox">
     <div class="ph"><h2>Heute</h2><span class="sp"></span><span class="pill" id="tdState"></span></div>
     <div class="tdg" id="tdGrid"></div>
+    <button class="btn sm tdstreak" type="button" id="tdStreak" hidden></button>
     <button class="btn sm tdck" type="button" id="tdCheck"></button>
+  </div>
+  <div class="panel" id="planPanel">
+    <div class="ph"><h2>Tagesplan</h2><span class="sp"></span><span class="note" id="planDate"></span></div>
+    <div id="planBody"></div>
   </div>
   <button class="btn review" id="reviewBanner" type="button" hidden>📋 Dein Wochenrückblick ist bereit →</button>
   <div class="grid kpis">
@@ -486,8 +539,20 @@ td.r,th.r{text-align:right}
 <!-- ANALYSE -->
 <section id="view-ana" class="grid" hidden>
   <div class="panel" id="revPanel">
-    <div class="ph"><h2>Wochenrückblick</h2><span class="sp"></span><button class="btn sm" id="revPrev" type="button" aria-label="Vorherige Woche">←</button><b id="revTitle" class="num" style="min-width:112px;text-align:center;font-size:13px"></b><button class="btn sm" id="revNext" type="button" aria-label="Nächste Woche">→</button></div>
+    <div class="ph nav"><h2>Wochenrückblick</h2><span class="sp"></span><button class="btn sm" id="revPrev" type="button" aria-label="Vorherige Woche">←</button><b id="revTitle" class="num" style="min-width:112px;text-align:center;font-size:13px"></b><button class="btn sm" id="revNext" type="button" aria-label="Nächste Woche">→</button></div>
     <div id="revBody"></div>
+  </div>
+  <div class="panel" id="mcPanel">
+    <div class="ph nav"><h2>Monatskalender</h2><span class="sp"></span><button class="btn sm" id="mcPrev" type="button" aria-label="Vorheriger Monat">←</button><b id="mcTitle" style="min-width:104px;text-align:center;font-size:13px"></b><button class="btn sm" id="mcNext" type="button" aria-label="Nächster Monat">→</button></div>
+    <div class="mcal" id="mcGrid"></div>
+    <div class="mcsum" id="mcSum"></div>
+    <div id="mcDay"></div>
+    <button class="btn sm" id="mcPdf" type="button" style="margin-top:12px;width:100%;padding:8px">📄 Monatsbericht als PDF</button>
+    <p class="note" id="mcPdfNote" style="margin-top:6px"></p>
+  </div>
+  <div class="panel" id="discPanel">
+    <div class="ph"><h2>Disziplin</h2><span class="sp"></span><span class="pill" id="discPill"></span></div>
+    <div id="discBody"></div>
   </div>
   <div class="panel">
     <div class="ph" style="margin-bottom:0"><h2>Auswertung</h2><span class="sp"></span><div class="chips" id="aPer"></div></div>
@@ -512,6 +577,8 @@ td.r,th.r{text-align:right}
       <label>Max. Trades pro Tag<input data-rk="trades" type="number" inputmode="numeric" step="1" min="0"></label>
       <label>Max. Drawdown vom Hoch (%)<input data-rk="dd" type="number" inputmode="decimal" step="0.5" min="0"></label>
       <label class="full">Max. offenes Risiko aller Positionen (%)<input data-rk="open" type="number" inputmode="decimal" step="0.25" min="0"></label>
+      <label>Pause nach … Verlusten am Tag<input data-rk="loss" type="number" inputmode="numeric" step="1" min="0"></label>
+      <label>Pause-Dauer (Min.)<input data-rk="pause" type="number" inputmode="numeric" step="5" min="0"></label>
     </div>
     <p class="note" style="margin-top:10px">0 schaltet eine Grenze aus. Push-Nachrichten aufs Handy kommen vom Expert Advisor in MT5, dort stellst du Tageslimit und Trades separat ein.</p>
   </div>
@@ -590,8 +657,10 @@ const DOW=["MO","DI","MI","DO","FR","SA","SO"];
 const MON=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
 const pad=n=>String(n).padStart(2,"0");
 const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
-const fmt=(n,dig=2)=>(n>0?"+":n<0?"−":"")+Math.abs(n).toLocaleString("de-CH",{minimumFractionDigits:dig,maximumFractionDigits:dig});
-const plain=n=>n.toLocaleString("de-CH",{minimumFractionDigits:2,maximumFractionDigits:2});
+let priv=LS.get("priv",false);   /* "Beträge verstecken": money shows as •••• */
+const fmtR=(n,dig=2)=>(n>0?"+":n<0?"−":"")+Math.abs(n).toLocaleString("de-CH",{minimumFractionDigits:dig,maximumFractionDigits:dig});   /* R values stay visible */
+const fmt=(n,dig=2)=>priv?"••••":fmtR(n,dig);
+const plain=n=>priv?"••••":n.toLocaleString("de-CH",{minimumFractionDigits:2,maximumFractionDigits:2});
 const cls=n=>n>0?"pos":n<0?"neg":"mut";
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/864e5+1)/7)}
@@ -639,7 +708,7 @@ function renderPositions(){
   $("#posNote").textContent="Stand "+up.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"})+(age>5?` (vor ${age} Min., läuft MT5 noch?)`:" · aktualisiert sich etwa jede Minute");
 }
 
-const RK_DEF={day:3,week:6,trades:3,dd:10,open:2};
+const RK_DEF={day:3,week:6,trades:3,dd:10,open:2,loss:2,pause:30};
 function rk(){return {...RK_DEF,...(state.settings.risk||{})}}
 function riskData(){
   const m=state.mt5;if(!m||!m.account)return null;
@@ -689,7 +758,11 @@ function renderToday(){
   if(nx&&nx.impact==="High"&&nx.t-n<45*6e4)lv=Math.max(lv,1);
   tiles.push(["Nächste Gold-News",nx?(ymd(nx.t)===ymd(n)?"":nx.t.toLocaleDateString("de-CH",{weekday:"short"})+" ")+tf(nx.t):"–",nx?`${esc(nx.title)} · ${countdown(nx.t-n)}`:"keine mehr diese Woche"]);
   $("#tdGrid").innerHTML=tiles.map(([a,b,c])=>`<div><span class="lbl">${a}</span><div class="v">${b}</div><div class="s">${c}</div></div>`).join("");
-  const st=$("#tdState");st.className="pill "+["ok","warn","stop"][lv];st.textContent=["Bereit","Vorsicht","Stopp für heute"][lv];
+  const pz=pauseInfo(),pb=$("#pauseBox");pb.hidden=!pz;
+  if(pz){lv=Math.max(lv,1);pb.innerHTML=`<div class="pt"><b>⏸ Pause bis ${tf(new Date(pz.end))}</b><span>noch ${pauseLeft(pz)}</span></div><p>${pz.n} Verluste heute. Kurz weg vom Chart, durchatmen, kein Revenge-Trade.</p>`}
+  const st=$("#tdState");st.className="pill "+["ok","warn","stop"][lv];st.textContent=lv===1&&pz?"Pause":["Bereit","Vorsicht","Stopp für heute"][lv];
+  const ds=state.mt5?discipline():null,sb=$("#tdStreak");sb.hidden=!ds||!ds.ks.length;
+  if(ds&&ds.ks.length){sb.classList.toggle("on",ds.cur>0);sb.textContent=ds.cur?`🔥 Disziplin-Serie: ${ds.cur} Handelstag${ds.cur>1?"e":""} · ${ds.pts} Punkte →`:`Disziplin-Serie: 0 · der nächste saubere Tag startet sie neu →`}
   const it=ckItems(),dn=ckDone(),k=it.filter((_,i)=>dn[i]).length,cb=$("#tdCheck");
   cb.textContent=k>=it.length?"✓ Checkliste erledigt":`Checkliste vor dem Trade: ${k} / ${it.length} →`;cb.classList.toggle("done",k>=it.length);
   /* weekly review reminder: Friday evening and the weekend */
@@ -697,6 +770,85 @@ function renderToday(){
   $("#reviewBanner").hidden=!((dow===5&&n.getHours()>=17)||dow===6||dow===0)||!mt5Trades().some(t=>ymd(t.c)>=wk)||LS.get("revSeen","")===wk;
 }
 $("#tdCheck").onclick=()=>show("calc");
+$("#tdStreak").onclick=()=>{show("ana");setTimeout(()=>$("#discPanel").scrollIntoView({behavior:"smooth"}),50)};
+
+/* ---------- pause after losses: stops revenge trading ---------- */
+function pauseInfo(){
+  const L=rk();if(!(L.loss>0)||!(L.pause>0)||!state.mt5)return null;
+  const today=ymd(new Date()),ls=mt5Trades().filter(t=>t.pnl<0&&ymd(t.c)===today);
+  if(ls.length<L.loss)return null;
+  const end=+ls[ls.length-1].c+L.pause*6e4;return end>Date.now()?{end,n:ls.length}:null;
+}
+const pauseLeft=pz=>Math.max(1,Math.ceil((pz.end-Date.now())/6e4))+" Min.";
+
+/* ---------- discipline: a trading day earns a point when no rule was broken ---------- */
+function dayBreaks(){
+  if(!state.mt5)return {};
+  const N=state.settings.notes||{},P=state.settings.plans||{},L=rk(),all=mt5Trades(),bal=+((state.mt5.account||{}).balance)||0,closed={},opened={};
+  all.forEach(t=>{(closed[ymd(t.c)]=closed[ymd(t.c)]||[]).push(t);(opened[ymd(t.o)]=opened[ymd(t.o)]||[]).push(t)});
+  const out={};let after=0;   /* PnL closed after a day, to get the balance at its start */
+  [...new Set([...Object.keys(closed),...Object.keys(opened)])].sort().reverse().forEach(k=>{
+    const cl=closed[k]||[],op=opened[k]||[],p=cl.reduce((a,t)=>a+t.pnl,0),start=bal-after-p,b=[];after+=p;
+    if(L.day>0&&-p>=start*L.day/100)b.push(`Tageslimit überschritten (${fmt(p)})`);
+    if(L.trades>0&&op.length>L.trades)b.push(`${op.length} Trades statt max. ${L.trades}`);
+    const noSl=op.filter(t=>t.r==null).length;if(noSl)b.push(`${noSl}× ohne Stop-Loss`);
+    const hot=op.filter(t=>["FOMO","Revenge"].includes((N[t.id]||{}).emo)).length;if(hot)b.push(`${hot}× FOMO oder Revenge`);
+    if(L.loss>0&&L.pause>0){const ls=cl.filter(t=>t.pnl<0),inP=op.filter(t=>{const bf=ls.filter(x=>x.c<=t.o);return bf.length>=L.loss&&t.o-bf[bf.length-1].c<L.pause*6e4}).length;
+      if(inP)b.push(`${inP}× während der Pause gehandelt`)}
+    const pl=P[k];if(pl&&(pl.dir==="Long"||pl.dir==="Short")){const ag=op.filter(t=>+t.o>=(pl.made||0)&&(t.side==="buy"?"Long":"Short")!==pl.dir).length;if(ag)b.push(`${ag}× gegen den Tagesplan (${pl.dir})`)}
+    out[k]=b});
+  return out;
+}
+function discipline(){const B=dayBreaks(),ks=Object.keys(B).sort();let run=0,best=0,pts=0;
+  ks.forEach(k=>{if(B[k].length)run=0;else{run++;pts++;best=Math.max(best,run)}});return {B,ks,cur:run,best,pts}}
+function renderDisc(){
+  const el=$("#discBody"),pill=$("#discPill");
+  if(!state.mt5){el.innerHTML=`<p class="note">Verbinde zuerst MT5 im Dashboard.</p>`;pill.textContent="";return}
+  const d=discipline(),last=d.ks.slice(-30),tg=n=>n+" Tag"+(n===1?"":"e");
+  pill.className="pill"+(d.cur?" on":"");pill.textContent="🔥 "+d.cur;
+  const dn=k=>new Date(k+"T12:00").toLocaleDateString("de-CH",{weekday:"short",day:"2-digit",month:"2-digit"});
+  const bad=d.ks.filter(k=>d.B[k].length).slice(-5).reverse();
+  el.innerHTML=!d.ks.length?`<p class="note">Noch keine Handelstage.</p>`:`<div class="rvt dsc">${[["Serie",tg(d.cur)],["Beste Serie",tg(d.best)],["Punkte",d.pts],["Saubere Tage",Math.round(d.pts/d.ks.length*100)+" %"]].map(([a,b])=>`<div><span class="lbl">${a}</span><b>${b}</b></div>`).join("")}</div>
+    <div class="lbl" style="margin:12px 0 6px">Letzte ${last.length} Handelstage</div>
+    <div class="dots">${last.map(k=>`<span class="${d.B[k].length?"bad":"ok"}" title="${dn(k)}">${d.B[k].length?"✗":"✓"}</span>`).join("")}</div>
+    ${bad.length?`<div class="lbl" style="margin:12px 0 0">Letzte Regelverstösse</div><ul class="rvl" style="margin-top:4px">${bad.map(k=>`<li><span class="k">${dn(k)}</span><span class="rvbad">${d.B[k].map(esc).join("<br>")}</span></li>`).join("")}</ul>`:`<p class="rvok" style="margin:10px 0 0">✓ Keine Regelverstösse, stark! 👏</p>`}
+    <p class="note" style="margin-top:8px">Ein Handelstag gibt einen Punkt, wenn alle Regeln eingehalten sind: Tageslimit, max. Trades, Stop-Loss, kein FOMO oder Revenge, Pause nach Verlusten und Tagesplan.</p>`;
+}
+
+/* ---------- daily plan: written in the morning, compared in the evening ---------- */
+let planEdit=false;
+const DIRS=["Long","Short","Abwarten"];
+function renderPlan(force){
+  const k=ymd(new Date()),el=$("#planBody"),a=document.activeElement;
+  /* never wipe what is being typed when the sync re-renders */
+  if(!force&&el.dataset.day===k&&(el.dataset.form==="1"||(a&&a.id==="planRev")))return;
+  const P=state.settings.plans||{},pl=P[k]||{},has=!!(pl.dir||pl.zone||pl.text);
+  el.dataset.day=k;$("#planDate").textContent=new Date().toLocaleDateString("de-CH",{weekday:"long",day:"2-digit",month:"2-digit"});
+  if(!has||planEdit){
+    el.dataset.form="1";let dir=pl.dir||"";
+    el.innerHTML=`<div class="lbl">Richtung</div><div class="strat three" id="planDir">${DIRS.map(d=>`<button type="button" aria-pressed="${pl.dir===d}">${d}</button>`).join("")}</div>
+      <label class="fl">Wichtige Gold-Zone<input id="planZone" maxlength="80" autocomplete="off" placeholder="z. B. 4150–4160 Unterstützung" value="${esc(pl.zone||"")}"></label>
+      <label class="fl" style="margin-top:10px">Mein Plan<textarea id="planText" rows="3" placeholder="Wann steige ich ein? Wann lasse ich es?">${esc(pl.text||"")}</textarea></label>
+      <div class="ph" style="margin:12px 0 0"><span class="sp"></span>${has?`<button class="btn sm" type="button" id="planCancel">Abbrechen</button>`:""}<button class="btn pri sm" type="button" id="planSave">Plan speichern</button></div>`;
+    el.querySelectorAll("#planDir button").forEach(b=>b.onclick=()=>{dir=dir===b.textContent?"":b.textContent;el.querySelectorAll("#planDir button").forEach(x=>x.setAttribute("aria-pressed",x.textContent===dir))});
+    $("#planSave").onclick=()=>{const v={...pl,dir,zone:$("#planZone").value.trim(),text:$("#planText").value.trim()};if(!(v.dir||v.zone||v.text))return;savePlan(v);planEdit=false;renderPlan(true)};
+    if(has)$("#planCancel").onclick=()=>{planEdit=false;renderPlan(true)};
+    return;
+  }
+  el.dataset.form="0";
+  const T=mt5Trades(),op=T.filter(t=>ymd(t.o)===k),pos=((state.mt5&&state.mt5.positions)||[]).filter(p=>ymd(new Date(p.openUtc))===k);
+  const sides=[...op,...pos].map(t=>t.side),nL=sides.filter(x=>x==="buy").length,nS=sides.length-nL;
+  const later=[...op.map(t=>[+t.o,t.side]),...pos.map(p=>[+new Date(p.openUtc),p.side])].filter(([o])=>o>=(pl.made||0)).map(x=>x[1]),against=pl.dir==="Long"?later.filter(x=>x!=="buy").length:pl.dir==="Short"?later.filter(x=>x==="buy").length:0,cl=T.filter(t=>ymd(t.c)===k),pnl=cl.reduce((s,t)=>s+t.pnl,0);
+  const eve=new Date().getHours()>=15||!!pl.rev;
+  el.innerHTML=`<div class="plan"><span class="pdir ${pl.dir==="Long"?"buy":pl.dir==="Short"?"sell":""}">${esc(pl.dir||"Ohne Richtung")}</span>${pl.zone?`<span class="pz">Zone ${esc(pl.zone)}</span>`:""}</div>
+    ${pl.text?`<p class="ptx">${esc(pl.text)}</p>`:""}
+    <div class="pcmp">${sides.length?`Heute ${sides.length} Trade${sides.length>1?"s":""}: ${nL} Long, ${nS} Short${against?` · <b class="neg">${against}× gegen den Plan</b>`:later.length&&(pl.dir==="Long"||pl.dir==="Short")?` · <b class="pos">alle nach Plan ✓</b>`:""}${cl.length?` · PnL <b class="${cls(pnl)}">${fmt(pnl)}</b>`:""}`:pl.dir==="Abwarten"?"Noch keine Trades. Abwarten ist auch ein Plan 👍":"Noch keine Trades heute."}</div>
+    ${eve?`<label class="fl" style="margin-top:10px">Am Abend: Was ist passiert?<textarea id="planRev" rows="2" placeholder="Hat der Plan gepasst? Was mache ich morgen anders?">${esc(pl.rev||"")}</textarea></label>`:""}
+    <div class="ph" style="margin:10px 0 0"><button class="btn sm" type="button" id="planEdit">Plan ändern</button><span class="sp"></span>${eve?`<button class="btn sm pri" type="button" id="planRevSave">Rückblick speichern</button>`:""}</div>`;
+  $("#planEdit").onclick=()=>{planEdit=true;renderPlan(true)};
+  if(eve)$("#planRevSave").onclick=()=>{savePlan({...pl,rev:$("#planRev").value.trim()});$("#planRevSave").textContent="Gespeichert ✓"};
+}
+function savePlan(v){const P=state.settings.plans=state.settings.plans||{};P[ymd(new Date())]={...v,made:v.made||Date.now(),at:Date.now()};persist();renderToday()}   /* trades before "made" do not count against the plan */
 $("#reviewBanner").onclick=()=>{LS.set("revSeen",ymd(monday(new Date())));revWeek=0;show("ana")};
 
 /* ---------- weekly review ---------- */
@@ -707,28 +859,24 @@ function renderReview(){
   $("#revTitle").textContent=`${dm(ws)} – ${dm(new Date(we-864e5))}`;$("#revNext").disabled=revWeek>=0;
   const el=$("#revBody");
   if(!state.mt5){el.innerHTML=`<p class="note">Verbinde zuerst MT5 im Dashboard.</p>`;return}
-  const N=state.settings.notes||{},L=rk(),all=mt5Trades(),T=all.filter(t=>t.c>=ws&&t.c<we).map(t=>({...t,nt:N[t.id]||{}}));
+  const N=state.settings.notes||{},all=mt5Trades(),T=all.filter(t=>t.c>=ws&&t.c<we).map(t=>({...t,nt:N[t.id]||{}}));
   if(!T.length){el.innerHTML=`<p class="note">Keine abgeschlossenen Trades in dieser Woche.</p>`;return}
   const net=T.reduce((a,t)=>a+t.pnl,0),win=T.filter(t=>t.pnl>0).length,rs=T.filter(t=>t.r!=null),cur=(state.mt5.account&&state.mt5.account.currency)||"USD";
-  const bal=+((state.mt5.account||{}).balance)||0,startOf=k=>bal-all.filter(t=>ymd(t.c)>=k).reduce((a,t)=>a+t.pnl,0);
   const days={};T.forEach(t=>{const k=ymd(t.c);(days[k]=days[k]||[]).push(t)});
   const dn=k=>new Date(k+"T12:00").toLocaleDateString("de-CH",{weekday:"short",day:"2-digit",month:"2-digit"});
-  const breaks=[];
-  Object.keys(days).sort().forEach(k=>{const p=days[k].reduce((a,t)=>a+t.pnl,0),opened=all.filter(t=>ymd(t.o)===k).length;
-    if(L.day>0&&-p>=startOf(k)*L.day/100)breaks.push(`${dn(k)}: Tageslimit überschritten (${fmt(p)})`);
-    if(L.trades>0&&opened>L.trades)breaks.push(`${dn(k)}: ${opened} Trades statt max. ${L.trades}`)});
-  const noSl=T.filter(t=>t.r==null).length;if(noSl)breaks.push(`${noSl} Trade${noSl>1?"s":""} ohne Stop-Loss beim Einstieg`);
-  const hot=T.filter(t=>t.nt.emo==="FOMO"||t.nt.emo==="Revenge");if(hot.length)breaks.push(`${hot.length}× FOMO oder Revenge (${fmt(hot.reduce((a,t)=>a+t.pnl,0))})`);
+  const DB=dayBreaks(),breaks=[];Object.keys(DB).filter(k=>k>=ymd(ws)&&k<ymd(we)).sort().forEach(k=>DB[k].forEach(b=>breaks.push(`${dn(k)}: ${esc(b)}`)));
+  const PL=state.settings.plans||{},planned=Object.keys(days).filter(k=>PL[k]&&(PL[k].dir||PL[k].zone||PL[k].text)).length;
   const best=T.reduce((a,t)=>t.pnl>a.pnl?t:a),worst=T.reduce((a,t)=>t.pnl<a.pnl?t:a);
   const dsum=Object.entries(days).map(([k,l])=>[k,l.reduce((a,t)=>a+t.pnl,0)]),bd=dsum.reduce((a,x)=>x[1]>a[1]?x:a),wd=dsum.reduce((a,x)=>x[1]<a[1]?x:a);
   const strat=[...STRATS,"Ohne Strategie"].map(k=>{const l=T.filter(t=>k==="Ohne Strategie"?!STRATS.includes(t.nt.setup):t.nt.setup===k);return l.length?`<li><span class="k">${esc(k)}</span><span><b class="${cls(l.reduce((a,t)=>a+t.pnl,0))}">${fmt(l.reduce((a,t)=>a+t.pnl,0))}</b> · ${l.length} Trade${l.length>1?"s":""} · ${Math.round(l.filter(t=>t.pnl>0).length/l.length*100)} % Treffer</span></li>`:""}).join("");
   const tt=t=>`${dn(ymd(t.c))} ${t.side==="buy"?"Long":"Short"}`;
   const open=T.filter(t=>!hasNote(t.nt)).length;
-  el.innerHTML=`<div class="rvt">${[["Netto",`<span class="${cls(net)}">${fmt(net)}</span>`],["Trades",T.length],["Treffer",Math.round(win/T.length*100)+" %"],["Ø R",rs.length?`<span class="${cls(rs.reduce((a,t)=>a+ +t.r,0))}">${fmt(rs.reduce((a,t)=>a+ +t.r,0)/rs.length)}</span>`:"–"]].map(([a,b])=>`<div><span class="lbl">${a}</span><b>${b}</b></div>`).join("")}</div>
+  el.innerHTML=`<div class="rvt">${[["Netto",`<span class="${cls(net)}">${fmt(net)}</span>`],["Trades",T.length],["Treffer",Math.round(win/T.length*100)+" %"],["Ø R",rs.length?`<span class="${cls(rs.reduce((a,t)=>a+ +t.r,0))}">${fmtR(rs.reduce((a,t)=>a+ +t.r,0)/rs.length)}</span>`:"–"]].map(([a,b])=>`<div><span class="lbl">${a}</span><b>${b}</b></div>`).join("")}</div>
   <ul class="rvl">${strat}
     <li><span class="k">Bester Trade</span><span><b class="pos">${fmt(best.pnl)}</b> · ${tt(best)}${best.nt.setup?" · "+esc(best.nt.setup):""}</span></li>
     <li><span class="k">Schlechtester</span><span><b class="${cls(worst.pnl)}">${fmt(worst.pnl)}</b> · ${tt(worst)}${worst.nt.setup?" · "+esc(worst.nt.setup):""}</span></li>
     <li><span class="k">Bester Tag</span><span>${dn(bd[0])} <b class="${cls(bd[1])}">${fmt(bd[1])}</b>${dsum.length>1?` · schlechtester ${dn(wd[0])} <b class="${cls(wd[1])}">${fmt(wd[1])}</b>`:""}</span></li>
+    <li><span class="k">Tagesplan</span><span>an ${planned} von ${Object.keys(days).length} Handelstag${Object.keys(days).length>1?"en":""} gemacht</span></li>
     <li><span class="k">Regeln</span><span>${breaks.length?breaks.map(b=>`<span class="rvbad">✗ ${b}</span>`).join("<br>"):`<span class="rvok">✓ Keine Regelverstösse, stark! 👏</span>`}</span></li>
     ${open?`<li><span class="k">Offen</span><span>${open} Trade${open>1?"s":""} ohne Notiz oder Strategie. <a href="#" id="revJ" style="color:var(--accent)">Im Journal nachtragen →</a></span></li>`:""}
   </ul><p class="note" style="margin-top:8px">Beträge in ${cur}. Grenzen aus Tools → Risiko-Grenzen.</p>`;
@@ -739,6 +887,7 @@ $("#revNext").onclick=()=>{if(revWeek<0){revWeek++;renderReview()}};
 
 function renderDash(){
   renderToday();
+  renderPlan();
   renderRisk();
   renderPositions();
   const acc=state.mt5&&state.mt5.account;
@@ -758,7 +907,7 @@ function renderDash(){
   const monthDays=Object.entries(days).filter(([k])=>k.startsWith(mKey)).sort();
   const mp=monthDays.reduce((a,[,v])=>a+v.pnl,0), mr=monthDays.reduce((a,[,v])=>a+v.r,0);
   $("#monTitle").textContent=MON[m]+" "+y;
-  const pill=$("#monPill");pill.className="pill "+cls(mp);pill.textContent=fmt(mp)+" "+cur+" · "+fmt(mr)+" R";
+  const pill=$("#monPill");pill.className="pill "+cls(mp);pill.textContent=fmt(mp)+" "+cur+" · "+fmtR(mr)+" R";
 
   /* weeks: one card per week, Mo–Fr (weekend only when traded) */
   const cal=$("#cal"), first=new Date(y,m,1), last=new Date(y,m+1,0), todayK=ymd(new Date()), curWk=ymd(monday(new Date()));
@@ -774,7 +923,7 @@ function renderDash(){
     const isCur=keys[0]===curWk, wc=wd?(wp>0?"win":wp<0?"loss":""):"";
     h+=`<div class="wkc ${wc}${isCur?" now":""}"><div class="wkh"><b>KW ${isoWeek(d)}</b><span class="mut wdr">${dm(keys[0])}–${dm(keys[6])}</span>${isCur?`<span class="tag">Diese Woche</span>`:""}<span class="sp"></span>`
       +(wd?`<span class="wp num ${cls(wp)}">${fmt(wp)}</span>`:`<span class="mut wnone">Keine Trades</span>`)+`</div>`
-      +(wd?`<div class="wks"><span class="num ${cls(wr)}">${fmt(wr)} R</span><span>${ww}/${wd} Gewinntag${wd>1?"e":""}</span><span>${vs.reduce((a,v)=>a+(v?v.n:0),0)} Trades</span></div>`:"")
+      +(wd?`<div class="wks"><span class="num ${cls(wr)}">${fmtR(wr)} R</span><span>${ww}/${wd} Gewinntag${wd>1?"e":""}</span><span>${vs.reduce((a,v)=>a+(v?v.n:0),0)} Trades</span></div>`:"")
       +`<div class="wkd" style="--n:${show.filter(Boolean).length}">`;
     ds.forEach((x,i)=>{if(!show[i])return;const k=keys[i],v=vs[i];
       const c=v?(v.pnl>0?"win":v.pnl<0?"loss":"be"):"";
@@ -796,9 +945,9 @@ function renderDash(){
   const wk=Object.entries(byDay(TT)).filter(([k])=>k>=ymd(ws)&&k<=ymd(we));
   const wP=wk.reduce((a,[,v])=>a+v.pnl,0),wR=wk.reduce((a,[,v])=>a+v.r,0);
   $("#kWeek").className="v num "+cls(wP);$("#kWeek").textContent=fmt(wP)+" "+cur;
-  $("#kWeekS").textContent=`KW ${isoWeek(new Date())} · ${fmt(wR)} R · ${wk.length} Handelstag${wk.length===1?"":"e"}`;
+  $("#kWeekS").textContent=`KW ${isoWeek(new Date())} · ${fmtR(wR)} R · ${wk.length} Handelstag${wk.length===1?"":"e"}`;
   $("#kMonL").textContent=MON[m]+" "+y;$("#kMon").className="v num "+cls(mp);$("#kMon").textContent=fmt(mp)+" "+cur;
-  $("#kMonS").textContent=`${fmt(mr)} R · ${monthDays.length} Handelstage`;
+  $("#kMonS").textContent=`${fmtR(mr)} R · ${monthDays.length} Handelstage`;
 
   /* stats */
   $("#statTitle").textContent="Statistik "+MON[m];
@@ -813,7 +962,7 @@ function renderDash(){
     ["Win-Rate Tage",n?((wins+be)/n*100).toFixed(1)+" %":"–"],["Gewinn- / Verlusttage",`${wins} / ${n-wins-be}`],
     ["Ø Tages-PnL",n?`<span class="${cls(mp/n)}">${fmt(mp/n)} ${cur}</span>`:"–"],["Bester Tag",best?`<span class="${cls(best[1].pnl)}">${fmt(best[1].pnl)} (${dd(best[0])})</span>`:"–"],
     ["Profit-Faktor",gl?(gp/gl).toFixed(2):gp?"∞":"–"],["Schlechtester Tag",worst?`<span class="${cls(worst[1].pnl)}">${fmt(worst[1].pnl)} (${dd(worst[0])})</span>`:"–"],
-    ["Gesamt R",`<span class="${cls(mr)}">${fmt(mr)} R</span>`],["Ø R pro Trade",tr?`<span class="${cls(mr/tr)}">${fmt(mr/tr)} R</span>`:"–"],
+    ["Gesamt R",`<span class="${cls(mr)}">${fmtR(mr)} R</span>`],["Ø R pro Trade",tr?`<span class="${cls(mr/tr)}">${fmtR(mr/tr)} R</span>`:"–"],
   ];
   $("#stats").innerHTML=rows.map(([a,b])=>`<div class="row"><span class="mut">${a}</span><b class="num">${b}</b></div>`).join("");
   $("#curLbl").textContent=cur;
@@ -821,7 +970,7 @@ function renderDash(){
 
   /* table */
   const tb=$("#tradeRows");const sorted=TT.slice().sort((a,b)=>b.date.localeCompare(a.date));
-  tb.innerHTML=sorted.length?sorted.slice(0,8).map(t=>`<tr><td class="num">${dd(t.date)}<span class="hm">${t.date.slice(0,4)}</span></td><td>${esc(t.asset)}${t.lot?` <span class="mut hm">${esc(t.lot)}</span>`:""}${t.strategy||t.note?`<div class="tn">${t.strategy?`<b>${esc(t.strategy)}</b>`:""}${t.strategy&&t.note?" · ":""}${esc((t.note||"").slice(0,80))}</div>`:""}</td><td class="r num ${cls(+t.pnl)}">${fmt(+t.pnl)}</td><td class="r num ${cls(+t.r||0)}">${t.r!=null&&t.r!==""?fmt(+t.r):"–"}</td><td class="r num hm">${t.count||1}</td><td>${t.src==="mt5"?`<button class="btn sm nb" data-note="${esc(t.id)}" aria-label="Notiz">${t.strategy||t.note?"✎":"＋"}</button>`:`<button class="btn sm" data-del="${esc(t.id)}" aria-label="Eintrag löschen">✕</button>`}</td></tr>`).join(""):`<tr><td colspan="6" class="empty">Noch keine Trades. Verbinde oben MT5, dann erscheinen sie hier.</td></tr>`;
+  tb.innerHTML=sorted.length?sorted.slice(0,8).map(t=>`<tr><td class="num">${dd(t.date)}<span class="hm">${t.date.slice(0,4)}</span></td><td>${esc(t.asset)}${t.lot?` <span class="mut hm">${esc(t.lot)}</span>`:""}${t.strategy||t.note?`<div class="tn">${t.strategy?`<b>${esc(t.strategy)}</b>`:""}${t.strategy&&t.note?" · ":""}${esc((t.note||"").slice(0,80))}</div>`:""}</td><td class="r num ${cls(+t.pnl)}">${fmt(+t.pnl)}</td><td class="r num ${cls(+t.r||0)}">${t.r!=null&&t.r!==""?fmtR(+t.r):"–"}</td><td class="r num hm">${t.count||1}</td><td>${t.src==="mt5"?`<button class="btn sm nb" data-note="${esc(t.id)}" aria-label="Notiz">${t.strategy||t.note?"✎":"＋"}</button>`:`<button class="btn sm" data-del="${esc(t.id)}" aria-label="Eintrag löschen">✕</button>`}</td></tr>`).join(""):`<tr><td colspan="6" class="empty">Noch keine Trades. Verbinde oben MT5, dann erscheinen sie hier.</td></tr>`;
   tb.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>delTrade(b.dataset.del));
   tb.querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openNote(b.dataset.note));
 }
@@ -834,7 +983,7 @@ function drawChart(monthDays){
   const vals=pts.map(p=>p.v);let lo=Math.min(0,...vals),hi=Math.max(0,...vals);if(hi===lo)hi=lo+1;
   const step=niceStep((hi-lo)/4);lo=Math.floor(lo/step)*step;hi=Math.ceil(hi/step)*step;
   const x=i=>L+(W-L-R)*(pts.length===1?0:i/(pts.length-1)), yv=v=>T+(H-T-B)*(1-(v-lo)/(hi-lo));
-  let g="";for(let v=lo;v<=hi+1e-9;v+=step){g+=`<line x1="${L}" x2="${W-R}" y1="${yv(v)}" y2="${yv(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L-8}" y="${yv(v)+4}" text-anchor="end">${Math.round(v)}</text>`}
+  let g="";for(let v=lo;v<=hi+1e-9;v+=step){g+=`<line x1="${L}" x2="${W-R}" y1="${yv(v)}" y2="${yv(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L-8}" y="${yv(v)+4}" text-anchor="end">${priv?"":Math.round(v)}</text>`}
   const line=pts.map((p,i)=>`${i?"L":"M"}${x(i).toFixed(1)},${yv(p.v).toFixed(1)}`).join("");
   const area=line+`L${x(pts.length-1)},${yv(0)}L${x(0)},${yv(0)}Z`;
   const end=pts[pts.length-1], col=end.v>=0?"var(--win)":"var(--loss)";
@@ -1054,9 +1203,9 @@ async function cloudPull(){
   if(!cloud.token||!cloud.gist)return;clPulled=Date.now();
   const g=await gh("/gists/"+cloud.gist),f=g.files&&g.files["backup.json"];if(!f)return;
   let d;try{d=JSON.parse(f.truncated?await (await fetch(f.raw_url)).text():f.content)}catch(e){return}
-  const rs=d.settings||{},ls=state.settings,RN=rs.notes||{},LN=ls.notes=ls.notes||{};let changed=false;
-  for(const k of Object.keys(rs))if(k!=="notes"&&ls[k]==null){ls[k]=rs[k];changed=true}   /* fills a new phone, never overwrites */
-  for(const id in RN)if(!LN[id]||(RN[id].at||0)>(LN[id].at||0)){LN[id]=RN[id];changed=true}   /* per note, the newer one wins */
+  const rs=d.settings||{},ls=state.settings,MERGE=["notes","plans"];let changed=false;
+  for(const k of Object.keys(rs))if(!MERGE.includes(k)&&ls[k]==null){ls[k]=rs[k];changed=true}   /* fills a new phone, never overwrites */
+  for(const k of MERGE){const R=rs[k]||{},L=ls[k]=ls[k]||{};for(const id in R)if(!L[id]||(R[id].at||0)>(L[id].at||0)){L[id]=R[id];changed=true}}   /* per note and per day plan, the newer one wins */
   if(!state.trades.length&&Array.isArray(d.trades)&&d.trades.length){state.trades=d.trades;changed=true}
   if(changed){persistLocal();if(state.settings.mt5Gist&&!state.mt5)syncMt5(true);renderMt5();renderDash();if(!$("#view-jour").hidden)renderJournal();if(!$("#view-ana").hidden)renderAna()}
 }
@@ -1084,7 +1233,7 @@ async function cloudOn(token){
 function renderCloud(){
   const on=!!cloud.token;$("#clState").className="pill"+(on?" on":"");$("#clState").textContent=on?"Aktiv":"Aus";
   $("#clForm").hidden=on;$("#clBtns").hidden=!on;$("#jCloud").hidden=on;
-  $("#clNote").textContent=clErr||(on?`Notizen, Strategien, Gefühle, Bilder, Checkliste und Einstellungen werden automatisch in deinem geheimen GitHub-Gist gesichert${cloud.at?" · zuletzt "+new Date(cloud.at).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):""}. Auf einem neuen Handy hier denselben Token eingeben, dann kommt alles zurück.`
+  $("#clNote").textContent=clErr||(on?`Notizen, Strategien, Gefühle, Bilder, Tagespläne, Checkliste und Einstellungen werden automatisch in deinem geheimen GitHub-Gist gesichert${cloud.at?" · zuletzt "+new Date(cloud.at).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):""}. Auf einem neuen Handy hier denselben Token eingeben, dann kommt alles zurück.`
     :"Deine Notizen und Bilder sind im Moment nur auf diesem Handy. Gib deinen GitHub-Token ein (derselbe wie im MT5-EA, Häkchen nur bei „gist“), dann wird alles automatisch online gesichert.");
 }
 $("#clForm").onsubmit=e=>{e.preventDefault();const t=$("#clTok").value.trim();if(t.length<20)return;$("#clTok").value="";cloudOn(t)};
@@ -1106,13 +1255,13 @@ function renderJournal(){
   $("#jNoted").setAttribute("aria-pressed",jNoted);
   const L=T.filter(t=>(jStrat==="Alle"||(jStrat==="Ohne"?!STRATS.includes(t.nt.setup):t.nt.setup===jStrat))&&(!jNoted||hasNote(t.nt)));
   const pnl=L.reduce((a,t)=>a+(+t.pnl||0),0),win=L.filter(t=>+t.pnl>0).length,rs=L.filter(t=>t.r!=null),rsum=rs.reduce((a,t)=>a+(+t.r||0),0);
-  $("#jSum").innerHTML=[["Trades",L.length],["Treffer",L.length?Math.round(win/L.length*100)+" %":"–"],["PnL",`<span class="${cls(pnl)}">${fmt(pnl)}</span>`],["Ø R",rs.length?`<span class="${cls(rsum)}">${fmt(rsum/rs.length)}</span>`:"–"]].map(([a,b])=>`<div><span class="lbl">${a}</span><b>${b}</b></div>`).join("");
+  $("#jSum").innerHTML=[["Trades",L.length],["Treffer",L.length?Math.round(win/L.length*100)+" %":"–"],["PnL",`<span class="${cls(pnl)}">${fmt(pnl)}</span>`],["Ø R",rs.length?`<span class="${cls(rsum)}">${fmtR(rsum/rs.length)}</span>`:"–"]].map(([a,b])=>`<div><span class="lbl">${a}</span><b>${b}</b></div>`).join("");
   $("#jList").innerHTML=!state.mt5?`<p class="empty">Verbinde zuerst MT5 im Dashboard, dann erscheinen hier deine Trades.</p>`
     :!L.length?`<p class="empty">Keine Trades für diesen Filter.</p>`
     :L.slice(0,jLimit).map(t=>{const d=new Date(t.closeUtc),o=t.openUtc?new Date(t.openUtc):null,st=t.nt.setup;return `<button class="jt" type="button" data-note="${esc(t.id)}">
       <div class="l1"><span>${esc(t.asset)} · ${t.side==="buy"?"Long":"Short"} ${(+t.volume).toFixed(2)}</span><span class="sp"></span><span class="pn ${cls(+t.pnl)}">${fmt(+t.pnl)}</span></div>
       <div class="tm"><span><i>Einstieg</i>${o?(zd(o)!==zd(d)?zd(o)+" ":"")+zt(o):"–"}</span><span><i>Ausstieg</i>${zt(d)}</span>${o?`<span><i>Dauer</i>${zdur(d-o)}</span>`:""}</div>
-      <div class="l2"><span class="d">${zd(d)}</span><span class="st${st?"":" none"}">${st?esc(st):"Keine Strategie"}</span>${t.nt.emo?`<span class="st none">${esc(t.nt.emo)}</span>`:""}${st==="Ichimoku Cloud"&&t.nt.ichi&&t.nt.ichi.length?`<span class="d">☁ ${t.nt.ichi.length}/5</span>`:""}${t.r!=null?`<span class="d">${fmt(+t.r)} R</span>`:""}</div>
+      <div class="l2"><span class="d">${zd(d)}</span><span class="st${st?"":" none"}">${st?esc(st):"Keine Strategie"}</span>${t.nt.emo?`<span class="st none">${esc(t.nt.emo)}</span>`:""}${st==="Ichimoku Cloud"&&t.nt.ichi&&t.nt.ichi.length?`<span class="d">☁ ${t.nt.ichi.length}/5</span>`:""}${t.r!=null?`<span class="d">${fmtR(+t.r)} R</span>`:""}</div>
       <div class="tx${t.nt.text?"":" mut"}">${t.nt.text?esc(t.nt.text):"Noch keine Notiz. Tippen zum Schreiben."}</div>${t.nt.imgs&&t.nt.imgs.length?`<div class="thumbs">${t.nt.imgs.map(id=>`<img data-img="${esc(id)}" alt="Chart-Bild">`).join("")}</div>`:""}</button>`}).join("");
   $("#jList").querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openNote(b.dataset.note));
   fillImgs($("#jList"));$("#jList").querySelectorAll("img[data-img]").forEach(im=>im.onclick=e=>{e.stopPropagation();openImg(im.dataset.img)});
@@ -1131,7 +1280,8 @@ function renderCheck(){
   const items=ckItems(),done=ckDone(),n=items.filter(t=>done[t]).length;
   const pr=$("#ckProg");pr.textContent=`${n} / ${items.length}`;pr.className="pill"+(n===items.length&&n?" done":"");
   const now=new Date(),soon=events().filter(x=>isGold(x)&&x.impact==="High"&&x.t>now&&x.t-now<45*6e4);
-  $("#ckWarn").innerHTML=soon.map(e=>`<div class="ckwarn">⚠️ ${esc(e.title)} ${countdown(e.t-now)}</div>`).join("");
+  const pz=pauseInfo();
+  $("#ckWarn").innerHTML=(pz?`<div class="ckwarn">⏸ Pause nach ${pz.n} Verlusten, noch ${pauseLeft(pz)}</div>`:"")+soon.map(e=>`<div class="ckwarn">⚠️ ${esc(e.title)} ${countdown(e.t-now)}</div>`).join("");
   $("#ckList").innerHTML=items.map((t,i)=>`<div class="ck${done[t]?" on":""}" data-i="${i}" role="checkbox" aria-checked="${!!done[t]}" tabindex="0"><span class="bx">${done[t]?"✓":""}</span><span class="tx">${esc(t)}</span>${ckEdit?`<button class="btn sm rm" data-rm="${i}" aria-label="Regel entfernen">✕</button>`:""}</div>`).join("")
     +(n===items.length&&n&&!ckEdit?`<div class="ckok">Alles erledigt, viel Erfolg beim Trade! 🐒</div>`:"");
   $("#ckAdd").hidden=!ckEdit;$("#ckEdit").textContent=ckEdit?"Fertig":"Regeln bearbeiten";
@@ -1189,7 +1339,7 @@ const PER={m:"Dieser Monat",q:"3 Monate",a:"Alles"};
 state.per=LS.get("aPer","a");
 function mt5Trades(){return ((state.mt5&&state.mt5.trades)||[]).map(t=>({...t,pnl:+t.pnl||0,o:new Date(t.openUtc||t.closeUtc),c:new Date(t.closeUtc)})).sort((a,b)=>a.c-b.c)}
 function renderAna(){
-  renderReview();
+  renderReview();renderMonthCal();renderDisc();
   const pe=$("#aPer");pe.innerHTML="";Object.entries(PER).forEach(([k,v])=>{const b=document.createElement("button");b.className="chip";b.textContent=v;b.setAttribute("aria-pressed",state.per===k);b.onclick=()=>{state.per=k;LS.set("aPer",k);renderAna()};pe.appendChild(b)});
   const body=$("#anaBody");
   if(!state.mt5){body.innerHTML=`<div class="panel empty">Verbinde zuerst MT5 im Dashboard, dann siehst du hier deine Auswertung.</div>`;return}
@@ -1205,7 +1355,7 @@ function renderAna(){
   const hasOpen=T.some(t=>t.openUtc), held=hasOpen?T.filter(t=>t.openUtc).reduce((a,t)=>a+(t.c-t.o),0)/T.filter(t=>t.openUtc).length:0;
   const dur=ms=>{const m=Math.round(ms/6e4);return m<60?m+" Min.":Math.floor(m/60)+" h "+(m%60)+" Min."};
   const tiles=[["Trades",T.length],["Win-Rate",(W.length/T.length*100).toFixed(0)+" %"],["Netto",`<span class="${cls(net)}">${fmt(net)}</span>`],["Profit-Faktor",gl?(gw/gl).toFixed(2):"∞"],
-    ["Ø Gewinn",`<span class="pos">${fmt(aw)}</span>`],["Ø Verlust",`<span class="neg">${fmt(-al)}</span>`],["Erwartung / Trade",`<span class="${cls(net/T.length)}">${fmt(net/T.length)}</span>`],["Ø R",avgR==null?"–":`<span class="${cls(avgR)}">${fmt(avgR)}</span>`],
+    ["Ø Gewinn",`<span class="pos">${fmt(aw)}</span>`],["Ø Verlust",`<span class="neg">${fmt(-al)}</span>`],["Erwartung / Trade",`<span class="${cls(net/T.length)}">${fmt(net/T.length)}</span>`],["Ø R",avgR==null?"–":`<span class="${cls(avgR)}">${fmtR(avgR)}</span>`],
     ["Grösster Gewinn",`<span class="pos">${fmt(Math.max(0,...T.map(t=>t.pnl)))}</span>`],["Grösster Verlust",`<span class="neg">${fmt(Math.min(0,...T.map(t=>t.pnl)))}</span>`],["Längste Verlustserie",maxL+" Trades"],["Ø Haltedauer",hasOpen?dur(held):"–"]];
   const group=(keyFn,order)=>{const g={};T.forEach(t=>{const k=keyFn(t);(g[k]=g[k]||[]).push(t)});return (order||Object.keys(g).sort()).filter(k=>g[k]).map(k=>({k,list:g[k]}))};
   const bars=(rows,label)=>{const mx=Math.max(...rows.map(r=>Math.abs(r.list.reduce((a,t)=>a+t.pnl,0))),1);
@@ -1235,6 +1385,107 @@ function renderAna(){
     <div class="panel"><div class="ph"><h2>Uhrzeit</h2><span class="sp"></span><span class="note">${basis}</span></div>${bars(group(t=>pad(t.o.getHours())),k=>k+":00")}</div>
   </div>`;
 }
+
+/* ---------- month calendar: every day as a green or red square ---------- */
+let mcM=new Date(new Date().getFullYear(),new Date().getMonth(),1),mcSel="";
+function renderMonthCal(){
+  const y=mcM.getFullYear(),m=mcM.getMonth(),mk=y+"-"+pad(m+1),days=byDay(allTrades()),todayK=ymd(new Date()),n0=new Date();
+  $("#mcTitle").textContent=MON[m]+" "+y;$("#mcNext").disabled=y>n0.getFullYear()||(y===n0.getFullYear()&&m>=n0.getMonth());
+  const inM=Object.entries(days).filter(([k])=>k.startsWith(mk)),mx=Math.max(1,...inM.map(([,v])=>Math.abs(v.pnl)));
+  let h=DOW.map(d=>`<span class="mh">${d}</span>`).join("");
+  for(let i=0;i<(new Date(y,m,1).getDay()+6)%7;i++)h+=`<span></span>`;
+  for(let d=1,n=new Date(y,m+1,0).getDate();d<=n;d++){const k=mk+"-"+pad(d),v=days[k];
+    h+=`<button type="button" class="md${v?(v.pnl>=0?" win":" loss"):""}${k===todayK?" today":""}${k===mcSel?" sel":""}" data-k="${k}"${v?` style="--a:${Math.round(18+52*Math.min(1,Math.abs(v.pnl)/mx))}%"`:""}><span class="dn">${d}</span>${v?`<span class="dp num">${fmt(v.pnl,0)}</span>`:""}</button>`}
+  $("#mcGrid").innerHTML=h;
+  $("#mcGrid").querySelectorAll(".md").forEach(b=>b.onclick=()=>{mcSel=mcSel===b.dataset.k?"":b.dataset.k;renderMonthCal()});
+  const net=inM.reduce((a,[,v])=>a+v.pnl,0),w=inM.filter(([,v])=>v.pnl>0).length,l=inM.filter(([,v])=>v.pnl<0).length;
+  $("#mcSum").innerHTML=inM.length?`<span>Monat <b class="${cls(net)}">${fmt(net)}</b></span><span><b class="pos">${w}</b> Gewinntag${w===1?"":"e"}</span><span><b class="neg">${l}</b> Verlusttag${l===1?"":"e"}</span>`:`<span class="mut">Keine Trades in diesem Monat.</span>`;
+  /* tapped day: its trades, each opens its note */
+  const N=state.settings.notes||{},sel=mcSel.startsWith(mk)?mt5Trades().filter(t=>ymd(t.c)===mcSel):[];
+  $("#mcDay").innerHTML=mcSel.startsWith(mk)?`<div class="mcd"><b>${new Date(mcSel+"T12:00").toLocaleDateString("de-CH",{weekday:"long",day:"2-digit",month:"2-digit"})}</b>${sel.length?sel.map(t=>`<button type="button" class="mcr" data-note="${esc(t.id)}"><span class="num">${zt(t.o)}–${zt(t.c)}</span><span>${t.side==="buy"?"Long":"Short"} ${(+t.volume).toFixed(2)}${(N[t.id]||{}).setup?" · "+esc(N[t.id].setup):""}</span><span class="sp"></span><b class="num ${cls(t.pnl)}">${fmt(t.pnl)}</b></button>`).join(""):`<p class="note" style="margin:6px 0 0">Keine Trade-Details für diesen Tag.</p>`}</div>`:"";
+  $("#mcDay").querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openNote(b.dataset.note));
+  $("#mcPdf").textContent=`📄 Monatsbericht ${MON[m]} als PDF`;
+}
+$("#mcPrev").onclick=()=>{mcM=new Date(mcM.getFullYear(),mcM.getMonth()-1,1);renderMonthCal()};
+$("#mcNext").onclick=()=>{mcM=new Date(mcM.getFullYear(),mcM.getMonth()+1,1);renderMonthCal()};
+
+/* ---------- monthly report as PDF (jsPDF, loaded only when needed) ---------- */
+let jspdfP=null;
+const loadPdf=()=>jspdfP=jspdfP||new Promise((res,rej)=>{const s=document.createElement("script");s.src="jspdf.umd.min.js";s.onload=()=>res(window.jspdf.jsPDF);s.onerror=()=>{jspdfP=null;rej(new Error("pdf"))};document.head.appendChild(s)});
+const pn=(n,d=2)=>(n>0?"+":n<0?"-":"")+Math.abs(n).toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g,"'");
+function buildPdf(JsPDF){
+  const doc=new JsPDF({unit:"mm",format:"a4"}),W=210,M=14,y0=mcM.getFullYear(),m=mcM.getMonth(),mk=y0+"-"+pad(m+1);
+  const N=state.settings.notes||{},acc=state.mt5.account||{},cur=acc.currency||"USD",all=mt5Trades(),T=all.filter(t=>ymd(t.c).startsWith(mk));
+  const GOLD=[214,160,52],INK=[28,24,18],MUT=[120,112,95],GRN=[24,140,92],RED=[200,62,58],col=v=>v>0?GRN:v<0?RED:INK;
+  const clean=s=>String(s).replace(/[–—−]/g,"-").replace(/…/g,"...").replace(/[’‘]/g,"'").replace(/[^\x00-\xFF]/g,"").trim();
+  const tx=(s,x,y,o={})=>{doc.setFont("helvetica",o.b?"bold":"normal");doc.setFontSize(o.s||9.5);doc.setTextColor(...(o.c||INK));doc.text(clean(s),x,y,o.a?{align:o.a}:undefined)};
+  let y=0;const need=h=>{if(y+h>282){doc.addPage();y=18}};
+  const head=t=>{need(14);y+=4;tx(t,M,y,{b:1,s:12});doc.setDrawColor(...GOLD);doc.setLineWidth(.5);doc.line(M,y+1.8,W-M,y+1.8);y+=8};
+  doc.setFillColor(8,8,8);doc.rect(0,0,W,30,"F");doc.setFillColor(...GOLD);doc.rect(0,30,W,1.2,"F");
+  tx("BULLION MONKEY",M,13,{b:1,s:17,c:GOLD});tx("Monatsbericht "+MON[m]+" "+y0,M,22,{s:12,c:[240,236,226]});
+  tx(`Konto ${acc.login||"-"}${acc.server?" · "+acc.server:""}`,W-M,13,{s:9,c:[205,195,172],a:"right"});
+  tx("Erstellt am "+new Date().toLocaleDateString("de-CH")+" · Beträge in "+cur,W-M,22,{s:9,c:[205,195,172],a:"right"});
+  y=40;
+  if(!T.length){tx("Keine abgeschlossenen Trades in diesem Monat.",M,y+4,{s:11,c:MUT});return doc}
+  const net=T.reduce((a,t)=>a+t.pnl,0),Wn=T.filter(t=>t.pnl>0),Ls=T.filter(t=>t.pnl<0),gw=Wn.reduce((a,t)=>a+t.pnl,0),gl=-Ls.reduce((a,t)=>a+t.pnl,0);
+  const Rs=T.filter(t=>t.r!=null),avgR=Rs.length?Rs.reduce((a,t)=>a+ +t.r,0)/Rs.length:null;
+  const endBal=(+acc.balance||0)-all.filter(t=>ymd(t.c)>mk+"-31").reduce((a,t)=>a+t.pnl,0),startBal=endBal-net;
+  const days={};T.forEach(t=>{const k=ymd(t.c);(days[k]=days[k]||[]).push(t)});const dk=Object.keys(days).sort(),dp=k=>days[k].reduce((a,t)=>a+t.pnl,0);
+  const tiles=[["Netto",pn(net)+" "+cur,col(net)],["Rendite",startBal>0?pn(net/startBal*100,1)+" %":"-",col(net)],["Trades",String(T.length)],["Trefferquote",Math.round(Wn.length/T.length*100)+" %"],
+    ["Profit-Faktor",gl?(gw/gl).toFixed(2):"-"],["Ø R",avgR==null?"-":pn(avgR),avgR==null?INK:col(avgR)],["Ø Gewinn",pn(Wn.length?gw/Wn.length:0),GRN],["Ø Verlust",pn(Ls.length?-gl/Ls.length:0),RED],
+    ["Kontostand Start",pn(startBal).replace("+","")],["Kontostand Ende",pn(endBal).replace("+","")],["Gewinntage",dk.filter(k=>dp(k)>0).length+" von "+dk.length],["Grösster Verlust",pn(Math.min(0,...T.map(t=>t.pnl))),RED]];
+  const tw=(W-2*M-9)/4;
+  tiles.forEach(([a,b,c],i)=>{const x=M+(i%4)*(tw+3),yy=y+Math.floor(i/4)*17;doc.setFillColor(246,243,236);doc.roundedRect(x,yy,tw,14,2,2,"F");tx(a,x+3,yy+5,{s:7.5,c:MUT});tx(b,x+3,yy+11,{b:1,s:11,c:c||INK})});
+  y+=3*17+2;
+  head("Verlauf im Monat");
+  { const h=38,x0=M,w=W-2*M;let c=0;const pts=[0,...dk.map(k=>c+=dp(k))],lo=Math.min(0,...pts),hi=Math.max(0,...pts),rg=hi-lo||1;
+    const px=i=>x0+(pts.length<2?0:i/(pts.length-1))*w,py=v=>y+h-(v-lo)/rg*h;
+    doc.setDrawColor(200,195,185);doc.setLineWidth(.2);doc.setLineDashPattern([1,1],0);doc.line(x0,py(0),x0+w,py(0));doc.setLineDashPattern([],0);
+    doc.setDrawColor(...(net>=0?GRN:RED));doc.setLineWidth(.7);for(let i=1;i<pts.length;i++)doc.line(px(i-1),py(pts[i-1]),px(i),py(pts[i]));
+    doc.setFillColor(...(net>=0?GRN:RED));pts.forEach((v,i)=>doc.circle(px(i),py(v),.8,"F"));
+    tx(pn(hi,0),x0+w,y-1,{s:7,c:MUT,a:"right"});tx(pn(lo,0),x0+w,y+h+4,{s:7,c:MUT,a:"right"});y+=h+8 }
+  const table=(rows,cols)=>{need(7);cols.forEach(([t,x,a])=>tx(t,x,y,{s:7.5,c:MUT,b:1,a}));y+=1.5;doc.setDrawColor(225,220,210);doc.setLineWidth(.2);doc.line(M,y,W-M,y);y+=4.5;
+    rows.forEach(r=>{need(5.5);r.forEach((v,i)=>{const [,x,a]=cols[i],o=typeof v==="object"?v:{t:v};tx(o.t,x,y,{s:8.5,c:o.c,b:o.b,a})});y+=5.5})};
+  const grp=(keyFn,order)=>{const g={};T.forEach(t=>{const k=keyFn(t);(g[k]=g[k]||[]).push(t)});return (order||Object.keys(g)).filter(k=>g[k]).map(k=>{const l=g[k],p=l.reduce((a,t)=>a+t.pnl,0);return [k,String(l.length),Math.round(l.filter(t=>t.pnl>0).length/l.length*100)+" %",{t:pn(p),c:col(p),b:1}]})};
+  const gcols=[["",M],["Trades",120,"right"],["Treffer",150,"right"],["PnL",W-M,"right"]];
+  head("Nach Strategie");table(grp(t=>(N[t.id]||{}).setup||"Ohne Strategie",[...STRATS,"Ohne Strategie"]),gcols);
+  if(T.some(t=>(N[t.id]||{}).emo)){head("Nach Gefühl");table(grp(t=>(N[t.id]||{}).emo||"Ohne Angabe",[...EMO,"Ohne Angabe"]),gcols)}
+  head("Disziplin");
+  const DB=dayBreaks(),bd=Object.keys(DB).filter(k=>k.startsWith(mk)).sort(),cleanD=bd.filter(k=>!DB[k].length).length,PL=state.settings.plans||{};
+  tx(`${cleanD} von ${bd.length} Handelstagen ohne Regelverstoss · Tagesplan an ${bd.filter(k=>PL[k]&&(PL[k].dir||PL[k].zone||PL[k].text)).length} Tagen`,M,y,{s:9.5});y+=6;
+  bd.filter(k=>DB[k].length).forEach(k=>{need(5.5);tx(new Date(k+"T12:00").toLocaleDateString("de-CH",{weekday:"short",day:"2-digit",month:"2-digit"}),M,y,{s:8.5,c:MUT});tx(DB[k].join(" · "),M+24,y,{s:8.5,c:RED});y+=5.5});
+  head("Tage");
+  table(dk.map(k=>[new Date(k+"T12:00").toLocaleDateString("de-CH",{weekday:"short",day:"2-digit",month:"2-digit"}),String(days[k].length),{t:pn(dp(k)),c:col(dp(k)),b:1}]),[["Tag",M],["Trades",120,"right"],["PnL",W-M,"right"]]);
+  head("Alle Trades");
+  const zdt=d=>d.toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:ZH});
+  table(T.map(t=>[zdt(t.o),zt(t.c),t.side==="buy"?"Long":"Short",(+t.volume).toFixed(2),{t:pn(t.pnl),c:col(t.pnl),b:1},t.r!=null?pn(+t.r):"-",((N[t.id]||{}).setup||"")+((N[t.id]||{}).emo?" · "+N[t.id].emo:"")]),
+    [["Einstieg",M],["Ausstieg",42],["Richtung",58],["Lots",86,"right"],["PnL",112,"right"],["R",126,"right"],["Strategie · Gefühl",132]]);
+  const np=doc.getNumberOfPages();for(let i=1;i<=np;i++){doc.setPage(i);tx(`Bullion Monkey · ${MON[m]} ${y0} · Seite ${i} von ${np}`,W/2,291,{s:7.5,c:MUT,a:"center"})}
+  return doc;
+}
+let pdfUrl="";
+$("#mcPdf").onclick=async()=>{
+  const btn=$("#mcPdf"),note=$("#mcPdfNote"),label=btn.textContent;
+  if(!state.mt5){note.textContent="Verbinde zuerst MT5 im Dashboard.";return}
+  btn.disabled=true;btn.textContent="PDF wird erstellt …";note.textContent="";
+  const was=priv;priv=false;   /* the report always shows the real numbers */
+  try{
+    const doc=buildPdf(await loadPdf()),name=`Bullion-Monkey-${MON[mcM.getMonth()]}-${mcM.getFullYear()}.pdf`,blob=doc.output("blob");
+    priv=was;if(pdfUrl)URL.revokeObjectURL(pdfUrl);pdfUrl=URL.createObjectURL(blob);
+    note.innerHTML=`Fertig. <a href="${pdfUrl}" target="_blank" rel="noopener" download="${name}" style="color:var(--accent)">PDF öffnen</a>`;
+    const file=new File([blob],name,{type:"application/pdf"});
+    try{if(navigator.canShare&&navigator.canShare({files:[file]}))await navigator.share({files:[file],title:name})}catch(e){}   /* if sharing is refused, the link above still works */
+  }catch(e){note.textContent="Das PDF ging gerade nicht. Versuch es bitte nochmal."}
+  finally{priv=was;btn.disabled=false;btn.textContent=label}
+};
+
+/* ---------- privacy: hide every amount with one tap ---------- */
+const EYE_ON=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const EYE_OFF=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.6A9.9 9.9 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3 3.7M6.5 6.9C3.9 8.6 2.5 12 2.5 12S6 18.5 12 18.5c1.6 0 3-.4 4.2-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>`;
+function renderPriv(){const b=$("#privBtn");b.innerHTML=priv?EYE_OFF:EYE_ON;b.setAttribute("aria-pressed",priv);b.setAttribute("aria-label",priv?"Beträge anzeigen":"Beträge verstecken")}
+$("#privBtn").onclick=()=>{priv=!priv;LS.set("priv",priv);renderPriv();renderDash();renderPlan(true);
+  if(!$("#view-jour").hidden)renderJournal();if(!$("#view-ana").hidden)renderAna();if(!$("#view-calc").hidden)renderCalc()};
+renderPriv();
 
 /* ---------- lot-rechner ---------- */
 const calc=Object.assign({mode:"pct",risk:1,bal:null},LS.get("calc",{}));
