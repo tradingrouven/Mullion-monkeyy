@@ -10,7 +10,7 @@
 //| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.41"
+#property version   "1.42"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
@@ -366,7 +366,7 @@ string BuildPayload()
 
    long     pid[];      // position id
    string   sym[];
-   double   pnl[], volIn[], entry[], sl[];
+   double   pnl[], volIn[], entry[], exitP[], sl[];
    datetime closeT[], openT[];
    int      side[];     // 0 buy, 1 sell
    bool     closed[];
@@ -386,9 +386,9 @@ string BuildPayload()
         {
          k = n++;
          ArrayResize(pid, n); ArrayResize(sym, n); ArrayResize(pnl, n); ArrayResize(volIn, n);
-         ArrayResize(entry, n); ArrayResize(sl, n); ArrayResize(closeT, n); ArrayResize(openT, n); ArrayResize(side, n); ArrayResize(closed, n);
+         ArrayResize(entry, n); ArrayResize(exitP, n); ArrayResize(sl, n); ArrayResize(closeT, n); ArrayResize(openT, n); ArrayResize(side, n); ArrayResize(closed, n);
          pid[k] = p; sym[k] = HistoryDealGetString(tk, DEAL_SYMBOL); pnl[k] = 0; volIn[k] = 0;
-         entry[k] = 0; sl[k] = 0; closeT[k] = 0; openT[k] = 0; side[k] = 0; closed[k] = false;
+         entry[k] = 0; exitP[k] = 0; sl[k] = 0; closeT[k] = 0; openT[k] = 0; side[k] = 0; closed[k] = false;
         }
       long ent = HistoryDealGetInteger(tk, DEAL_ENTRY);
       double comm = HistoryDealGetDouble(tk, DEAL_COMMISSION);
@@ -409,7 +409,7 @@ string BuildPayload()
         {
          pnl[k] += HistoryDealGetDouble(tk, DEAL_PROFIT) + HistoryDealGetDouble(tk, DEAL_SWAP);
          datetime t = (datetime)HistoryDealGetInteger(tk, DEAL_TIME);
-         if(t > closeT[k]) closeT[k] = t;
+         if(t >= closeT[k]) { closeT[k] = t; exitP[k] = HistoryDealGetDouble(tk, DEAL_PRICE); }
          closed[k] = true;
         }
      }
@@ -437,6 +437,8 @@ string BuildPayload()
               + ",\"asset\":\"" + sym[k] + "\""
               + ",\"side\":\"" + (side[k] == 0 ? "buy" : "sell") + "\""
               + ",\"volume\":" + DoubleToString(volIn[k], 2)
+              + (entry[k] > 0 ? ",\"open\":" + DoubleToString(entry[k], (int)SymbolInfoInteger(sym[k], SYMBOL_DIGITS)) : "")
+              + (exitP[k] > 0 ? ",\"close\":" + DoubleToString(exitP[k], (int)SymbolInfoInteger(sym[k], SYMBOL_DIGITS)) : "")
               + ",\"pnl\":" + DoubleToString(pnl[k], 2)
               + ",\"r\":" + r + "}";
      }

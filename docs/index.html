@@ -15,7 +15,7 @@
 <title>Bullion Monkey</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Montserrat:wght@500;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Montserrat:wght@500;700;800&display=swap">
 <style>
 /* Layout: sticky top bar with two tabs; dashboard = KPI strip, calendar with KW column, stats + equity curve, journal; news = week list grouped by day */
 /* Bullion Monkey: black ground, brushed-gold accents from the logo; single dark look by choice */
@@ -368,6 +368,232 @@ td.r,th.r{text-align:right}
 #discPill{background:var(--surface-2);color:var(--muted)}
 #discPill.on{background:color-mix(in srgb,var(--accent) 15%,transparent);color:var(--accent)}
 @media (max-width:640px){.eye{margin-left:auto}.rvt.dsc{grid-template-columns:1fr 1fr}}
+/* ===== look v2: black glass panels, gold hero cards (iPhone mockup) ===== */
+:root{--bg:#050505;--surface:#0e0d0b;--surface-2:#16140f;--line:rgba(255,255,255,.08);--gline:rgba(235,176,58,.38);--soft:#cfc7b4;--font-num:"Figtree",system-ui,-apple-system,sans-serif}
+body{background:radial-gradient(110% 55% at 100% -5%,rgba(235,176,58,.13),transparent 55%),radial-gradient(90% 50% at -10% 105%,rgba(235,176,58,.07),transparent 60%),var(--bg);background-attachment:fixed;min-height:100vh}
+.panel{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012)),#0b0a08;border:1px solid var(--line);border-radius:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+.panel.goldb{border-color:var(--gline);box-shadow:0 0 22px rgba(235,176,58,.07),inset 0 1px 0 rgba(255,255,255,.05)}
+.panel h2{font:700 17px var(--font-ui);letter-spacing:0}
+.ptitle{display:none}
+.gold{color:var(--accent)}
+.chev{display:inline-block;width:8px;height:8px;border-right:2px solid var(--accent);border-top:2px solid var(--accent);transform:rotate(45deg);margin:0 3px 0 4px;flex:none;font-style:normal}
+.go{width:30px;height:30px;border:0;background:transparent;cursor:pointer;display:grid;place-items:center;padding:0;margin:-6px -6px -6px 0}
+.go::after{content:"";width:8px;height:8px;border-right:2px solid var(--accent);border-top:2px solid var(--accent);transform:rotate(45deg)}
+.lnk{border:0;background:transparent;color:var(--muted);font:500 13px var(--font-ui);cursor:pointer;display:flex;align-items:center;gap:2px;padding:4px 0}
+.lnk .chev{width:7px;height:7px}
+.flg{font-size:18px;line-height:1;font-family:system-ui,"Apple Color Emoji","Segoe UI Emoji",sans-serif}
+.flg.big{font-size:32px}
+/* hero cards */
+.hero{display:flex;align-items:center;gap:14px;width:100%;text-align:left;color:var(--fg);font:inherit;padding:16px;border-radius:16px;border:1px solid rgba(235,176,58,.6);background:linear-gradient(120deg,rgba(235,176,58,.18),rgba(235,176,58,.05) 55%,rgba(235,176,58,.10)),#0d0b07;box-shadow:0 0 28px rgba(235,176,58,.12),inset 0 1px 0 rgba(255,255,255,.07)}
+button.hero{cursor:pointer}
+.hico{flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--win);color:var(--win);box-shadow:0 0 14px rgba(63,191,140,.35),inset 0 0 10px rgba(63,191,140,.15)}
+.hico svg{width:24px;height:24px}
+.hico.warn,.status.warn .hico,.status.pause .hico{border-color:var(--accent);color:var(--accent);box-shadow:0 0 14px rgba(235,176,58,.35)}
+.hico.stop,.status.stop .hico{border-color:var(--loss);color:var(--loss);box-shadow:0 0 14px rgba(229,97,92,.35)}
+.htx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.htx b{font:700 18px var(--font-ui)}
+.htx span{font-size:13px;color:var(--soft)}
+.status.stop{border-color:rgba(229,97,92,.7);background:linear-gradient(120deg,rgba(229,97,92,.2),rgba(229,97,92,.05) 60%),#0d0807;box-shadow:0 0 26px rgba(229,97,92,.15)}
+.status.pause .htx b{color:var(--accent)}
+/* number strip */
+.strip{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;padding:0 2px}
+.strip>div{display:flex;flex-direction:column;gap:3px;padding:2px 9px;border-left:1px solid var(--line);min-width:0}
+.strip>div:first-child{border-left:0;padding-left:2px}
+.strip>div>span{font-size:11.5px;color:var(--muted);line-height:1.2}
+.strip b{font:700 17px var(--font-ui);white-space:nowrap;letter-spacing:-.01em}
+.strip>div>i{font-style:normal;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.quick{display:flex;gap:8px}
+.qb{flex:1;border:1px solid var(--line);background:#0e0d0b;color:var(--fg);font:500 13px var(--font-ui);padding:10px;border-radius:12px;cursor:pointer}
+.qb b{color:var(--accent);font-weight:700}
+.qb.done{color:var(--win);border-color:rgba(63,191,140,.4)}
+.qb.on{border-color:rgba(235,176,58,.5)}
+/* risk */
+.rr{display:grid;grid-template-columns:100px minmax(0,1fr) 58px;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--line)}
+.rr:first-child{border-top:0}
+.rr .rl{font-size:13.5px;color:#d9d2c2}
+.rr .rb{height:7px;border-radius:4px;background:rgba(255,255,255,.08);margin:0;overflow:hidden}
+.rr .rb i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#2fae78,#4ee39b)}
+.rr b{text-align:right;font:600 13.5px var(--font-ui);white-space:nowrap}
+.rr.warn .rb i{background:var(--accent)} .rr.stop .rb i{background:var(--loss)}
+.rr.stop .rl,.rr.stop b{color:var(--loss)}
+#riskNote{margin-top:6px;color:var(--loss)}
+/* rows */
+.prow,.trow,.jt,.pat{display:grid;width:100%;background:transparent;border:0;border-top:1px solid var(--line);color:inherit;font:inherit;text-align:left;cursor:pointer;border-radius:0}
+.prow:first-child,.trow:first-child,.jt:first-child,.pat:first-child{border-top:0}
+.bs{display:inline-grid;place-items:center;justify-self:start;font:700 10.5px var(--font-ui);letter-spacing:.04em;padding:3px 6px;border-radius:6px;border:1px solid}
+.bs.buy{color:#4ee39b;background:rgba(63,191,140,.12);border-color:rgba(63,191,140,.45)}
+.bs.sell{color:#ff7a74;background:rgba(229,97,92,.12);border-color:rgba(229,97,92,.45)}
+.prow{grid-template-columns:58px 40px minmax(0,1fr) minmax(0,1fr) 32px auto;gap:3px 8px;align-items:center;padding:11px 0}
+.pa,.pv,.plot,.pr{display:flex;flex-direction:column;min-width:0}
+.pa b{font-size:14px}
+.pa i,.pv i,.plot i{font-style:normal;font-size:11px;color:var(--muted)}
+.pv b{font:500 13px var(--font-ui)}
+.plot{font-size:12.5px;align-items:flex-end}
+.pr{align-items:flex-end}
+.pr b{font:700 14.5px var(--font-ui);white-space:nowrap}
+.pr i{font-style:normal;font-size:11.5px}
+.pd{grid-column:1/-1;font-size:11.5px;color:var(--muted)}
+.trow{grid-template-columns:56px 40px minmax(0,1fr) auto 38px;gap:2px 8px;align-items:center;padding:10px 0}
+.trow .ta{font-size:13.5px}
+.trow .tl{display:none}
+.trow .tp{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#d9d2c2}
+.trow .tv{font:700 13.5px var(--font-ui);text-align:right;white-space:nowrap}
+.trow .tt{font-size:12px;color:var(--muted);text-align:right}
+.tn2{grid-column:1/-1;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tn2 b{color:var(--accent);font-weight:600}
+/* today important */
+.irow{display:grid;grid-template-columns:auto 22px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.irow:first-child,.gday+.irow{border-top:0}
+.irow .it{font:700 15px var(--font-ui);color:var(--accent);white-space:nowrap}
+.irow.past{opacity:.45}
+.irow.next{background:linear-gradient(90deg,rgba(235,176,58,.08),transparent);border-radius:8px}
+.ix{display:flex;flex-direction:column;min-width:0}
+.ix b{font-size:14px;font-weight:600}
+.ix i{font-style:normal;font-size:11.5px;color:var(--muted)}
+.rbadge{font:600 11.5px var(--font-ui);padding:4px 9px;border-radius:7px;white-space:nowrap;border:1px solid rgba(235,176,58,.6);color:var(--accent);background:rgba(235,176,58,.1)}
+.rbadge.Medium{border-color:rgba(232,150,47,.45);color:var(--med);background:rgba(232,150,47,.07)}
+/* news */
+.nhero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:16px}
+.nh1{display:flex;flex-direction:column;gap:8px;min-width:0}
+.nt{font:700 26px var(--font-ui);color:var(--accent);line-height:1}
+.nev{display:flex;gap:10px;align-items:center;min-width:0}
+.nev>span:last-child{display:flex;flex-direction:column;min-width:0}
+.nev b{font:700 17px var(--font-ui);line-height:1.2}
+.nev i{font-style:normal;font-size:12.5px;color:var(--soft)}
+.nh2{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border-left:1px solid rgba(235,176,58,.25);padding-left:12px}
+.cd{display:flex;align-items:flex-end;gap:3px}
+.cu{display:flex;flex-direction:column;align-items:center;min-width:34px}
+.cu i{font-style:normal;font-size:9.5px;color:var(--soft)}
+.cu b{font:700 26px var(--font-ui);color:var(--accent);line-height:1.1}
+.cs{font:700 20px var(--font-ui);color:var(--accent);padding-bottom:3px}
+.ph.sub{margin:4px 2px -4px}
+.ph.sub h2{font:700 19px var(--font-ui);margin:0}
+.tiles3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{display:flex;align-items:center;gap:8px;padding:12px 10px;border-radius:12px;border:1px solid var(--gline);background:linear-gradient(180deg,rgba(235,176,58,.08),rgba(235,176,58,.02)),#0d0b07;color:var(--fg);font:inherit;text-align:left;cursor:pointer;min-width:0}
+.tile svg{width:22px;height:22px;fill:var(--accent);flex:none}
+.tile span{display:flex;flex-direction:column;min-width:0}
+.tile b{font-size:13px;line-height:1.2}
+.tile i{font-style:normal;font-size:11px;color:var(--muted)}
+.ti{display:grid;grid-template-columns:48px 14px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.ti:first-child{border-top:0}
+.ti .tt{font:600 15px var(--font-ui)}
+.ti .td{width:11px;height:11px;border-radius:50%;background:#6f6a5c;justify-self:center}
+.ti.next .tt{color:var(--accent)}
+.ti.next .td{background:var(--accent);box-shadow:0 0 10px rgba(235,176,58,.7)}
+.ti.past{opacity:.5}
+.ti .tx{display:flex;flex-direction:column;min-width:0}
+.ti .tx b{font-size:14px;font-weight:600}
+.ti .tx i{font-style:normal;font-size:12px;color:var(--muted)}
+.ti .flg{font-size:15px;margin-right:6px}
+.sess{height:auto;position:static;margin-top:0}
+.srow{display:grid;grid-template-columns:80px 100px minmax(0,1fr);gap:10px;align-items:center;padding:7px 0}
+.srow b{font-size:14px;font-weight:600}
+.srow span.num{font-size:13px;color:var(--muted);white-space:nowrap}
+.strk{position:relative;height:8px;border-radius:4px;background:rgba(255,255,255,.08)}
+.strk i{position:absolute;top:0;bottom:0;border-radius:4px;background:rgba(235,176,58,.35)}
+.srow.on .strk i{background:linear-gradient(90deg,#f8cf5c,#e6a933)}
+.srow.on b{color:var(--accent)}
+.strk u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--fg);border-radius:1px}
+.live{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.live .dot{width:7px;height:7px;border-radius:50%;background:var(--win);box-shadow:0 0 8px var(--win)}
+.hl{grid-template-columns:44px 10px minmax(0,1fr);align-items:start}
+.hl .dot{width:8px;height:8px;border-radius:50%;background:#6f6a5c;margin-top:6px}
+.hl.g .dot{background:var(--win);box-shadow:0 0 6px rgba(63,191,140,.6)}
+.hl.tr.g .dot{background:var(--loss);box-shadow:0 0 6px rgba(229,97,92,.6)}
+.hl.g .ht{color:var(--muted)}
+.news .flg{font-size:14px;margin-right:5px}
+/* journal */
+.sum4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;padding:14px 6px}
+.sum4>div{display:flex;flex-direction:column;gap:3px;padding:0 8px;border-left:1px solid rgba(235,176,58,.22);min-width:0}
+.sum4>div:first-child{border-left:0}
+.sum4>div>span{font-size:10.5px;color:var(--soft);white-space:nowrap}
+.sum4 b{font:700 19px var(--font-ui);white-space:nowrap}
+.sum4>div>i{font-style:normal;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pills{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px}
+.pills::-webkit-scrollbar{display:none}
+.pill2{flex:none;border:1px solid var(--gline);background:transparent;color:var(--fg);font:500 14px var(--font-ui);padding:8px 16px;border-radius:999px;cursor:pointer}
+.pill2[aria-pressed="true"]{background:var(--gold-grad);color:var(--accent-ink);border-color:transparent;font-weight:600}
+.jt{grid-template-columns:64px 40px minmax(0,1fr) auto;gap:4px 10px;padding:12px 0;align-items:start}
+.jl{display:flex;flex-direction:column}
+.jl b{font-size:14px}
+.jl i{font-style:normal;font-size:11.5px;color:var(--muted)}
+.jm{display:flex;flex-direction:column;gap:3px;min-width:0}
+.tags{display:flex;gap:5px;flex-wrap:wrap}
+.jt .st.emo{color:var(--soft);border-color:var(--line)}
+.jm .px{font:500 12.5px var(--font-ui);color:#d9d2c2}
+.jm .tm{display:block;margin:0;font:500 12px var(--font-ui);color:var(--muted)}
+.jm .tx{margin:0;font-size:12.5px;color:var(--soft);white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.jm .tx.mut{color:var(--muted)}
+.jr{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.jr b{font:700 15px var(--font-ui);white-space:nowrap}
+.jr i{font-style:normal;font-size:12.5px;font-weight:600;white-space:nowrap}
+.jt .thumbs{grid-column:3/-1;margin:2px 0 0}
+.pat{grid-template-columns:44px minmax(0,1fr) 12px;gap:12px;align-items:center;padding:12px 0}
+.pico{width:44px;height:44px;border-radius:50%;display:grid;place-items:center}
+.pico svg{width:22px;height:22px}
+.pico.bad{background:radial-gradient(circle,rgba(229,97,92,.35),rgba(229,97,92,.1));color:#ff6b64}
+.pico.good{background:radial-gradient(circle,rgba(63,191,140,.3),rgba(63,191,140,.08));color:var(--win)}
+.pico.mid{background:radial-gradient(circle,rgba(235,176,58,.3),rgba(235,176,58,.08));color:var(--accent)}
+.pat>span:nth-child(2){display:flex;flex-direction:column;gap:2px;min-width:0}
+.pat b{font-size:14.5px}
+.pat span i{font-style:normal;font-size:12.5px;color:var(--muted)}
+.addnote{display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border-radius:14px;border:1px solid rgba(235,176,58,.7);background:rgba(235,176,58,.05);color:var(--accent);font:600 15px var(--font-ui);cursor:pointer;text-align:left}
+.addnote .pl{width:30px;height:30px;border-radius:50%;border:2px solid var(--accent);display:grid;place-items:center;font-size:17px;flex:none}
+.addnote b{flex:1;font-weight:600}
+.addnote:disabled{opacity:.55;cursor:default}
+/* tools */
+.pc{display:flex;align-items:center;gap:14px;padding:2px 0 12px;border-bottom:1px solid var(--line)}
+.pc b{display:block;font:700 19px var(--font-ui)}
+.pc b.ok{color:var(--win)} .pc b.warn{color:var(--accent)} .pc b.stop{color:var(--loss)}
+#pcSub{font-size:13px;color:var(--soft)}
+.pcg{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;margin-top:12px}
+.pcg span{display:flex;align-items:center;gap:8px;font-size:13.5px}
+.pcg i{width:22px;height:22px;border-radius:50%;border:1.6px solid var(--win);color:var(--win);display:grid;place-items:center;flex:none}
+.pcg i svg{width:13px;height:13px}
+.pcg .n{color:var(--muted)}
+.pcg .n i{border-color:var(--loss);color:var(--loss)}
+.rkt{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.rkb{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;border-radius:12px;border:1px solid var(--line);background:#0e0c09;color:var(--fg);font:inherit;cursor:pointer;text-align:center;min-width:0}
+.rkb i svg{width:26px;height:26px;color:var(--accent)}
+.rkb span{font-size:11px;color:var(--soft);line-height:1.2}
+.rkb b{font:700 17px var(--font-ui);color:var(--accent)}
+details.more{border-top:1px solid var(--line);margin-top:12px;padding-top:10px}
+details.more summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer;font:600 14px var(--font-ui);color:#d9d2c2;padding:2px 0}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary .chev{margin-left:auto;transform:rotate(135deg);transition:transform .2s}
+details.more[open] summary .chev{transform:rotate(-45deg)}
+.srows .sr{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.srows .sr:first-child{border-top:0}
+.sr>i svg{width:20px;height:20px;color:#d9d2c2;display:block}
+.sr b{font-weight:500;color:#d9d2c2;white-space:nowrap}
+.sr .ok{color:var(--win)} .sr .warn{color:var(--accent)}
+.sr .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:currentColor;margin-right:7px;box-shadow:0 0 6px currentColor}
+.st2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stb{display:flex;align-items:center;gap:10px;padding:12px 10px;border-radius:12px;border:1px solid var(--gline);background:#0e0c09;color:var(--fg);font:inherit;text-align:left;cursor:pointer;min-width:0}
+.stb>i:first-child svg{width:26px;height:26px;color:var(--accent);display:block}
+.stb>span{display:flex;flex-direction:column;min-width:0;flex:1}
+.stb b{font-size:14px}
+.stb em{font-style:normal;font-size:11.5px;color:var(--muted)}
+.tab{position:relative}
+@media (max-width:640px){
+  .top{position:relative;top:0;background:transparent;border-image:none;border-bottom:0}
+  .top .wrap{padding-block:16px 0;flex-wrap:nowrap;align-items:center}
+  .ptitle{display:block;order:1;margin:0;font:800 32px var(--font-ui);letter-spacing:-.02em;flex:1}
+  .brand{order:2;flex-direction:column;gap:3px}
+  .brand img{width:36px;height:36px}
+  .wm{align-items:center}
+  .wm b{font-size:12px}
+  .wm em{font-size:7px;letter-spacing:.35em}
+  .eye{order:3;margin-left:4px;width:32px;height:32px}
+  .tab[aria-selected="true"]::after{content:"";position:absolute;bottom:-2px;width:30px;height:2px;border-radius:2px;background:var(--accent)}
+  .strip b{font-size:15px}
+  .news tr:not(.dayrow){grid-template-columns:44px 58px 14px minmax(0,1fr) auto auto}
+  .sum4 b{font-size:16px}
+  .nt{font-size:22px}
+  .cu b{font-size:22px}
+  .cu{min-width:28px}
+  .nev b{font-size:15px}
+}
 @media (prefers-reduced-motion:no-preference){.tab,.btn,.chip{transition:background .15s,border-color .15s,color .15s}}
 </style>
 </head><body>
@@ -381,6 +607,7 @@ td.r,th.r{text-align:right}
     <button class="tab" role="tab" id="tab-ana" aria-selected="false" data-view="ana"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="12" width="4" height="8" rx="1.2"/><rect x="10" y="5" width="4" height="15" rx="1.2"/><rect x="16" y="9" width="4" height="11" rx="1.2"/></svg><span>Analyse</span></button>
     <button class="tab" role="tab" id="tab-calc" aria-selected="false" data-view="calc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="2.2"/><path d="M8.5 7.5h7v3h-7zM8.5 14h.01M12 14h.01M15.5 14h.01M8.5 17.2h.01M12 17.2h.01M15.5 17.2h.01"/></svg><span>Tools</span></button>
   </nav>
+  <h1 class="ptitle" id="pageTitle">Dashboard</h1>
   <div class="clock num" id="clock"></div>
   <button class="eye" id="privBtn" type="button" aria-pressed="false" aria-label="Beträge verstecken"></button>
 </div></header>
@@ -396,39 +623,46 @@ td.r,th.r{text-align:right}
     <input id="startBal" type="number" inputmode="decimal" step="0.01" placeholder="Startkapital">
     <button class="btn sm" id="saveStart">Speichern</button>
   </div>
-  <div class="pausebox" id="pauseBox" hidden></div>
-  <div class="panel" id="todayBox">
-    <div class="ph"><h2>Heute</h2><span class="sp"></span><span class="pill" id="tdState"></span></div>
-    <div class="tdg" id="tdGrid"></div>
-    <button class="btn sm tdstreak" type="button" id="tdStreak" hidden></button>
-    <button class="btn sm tdck" type="button" id="tdCheck"></button>
+  <button class="hero status" id="tdHero" type="button">
+    <span class="hico" id="tdIco"></span>
+    <span class="htx"><b id="tdTitle">Handel erlaubt</b><span id="tdSub"></span></span>
+    <span id="tdState" hidden></span>
+  </button>
+  <div class="strip" id="kStrip">
+    <div><span>Kontostand</span><b class="num" id="kBal">–</b><i id="kBalS"></i></div>
+    <div><span>Heute</span><b class="num" id="kDay">–</b><i id="kDayS"></i></div>
+    <div><span>Woche</span><b class="num" id="kWeek">–</b><i id="kWeekS"></i></div>
+    <div><span>Tagesrisiko frei</span><b class="num" id="kFree">–</b><i id="kFreeS"></i></div>
   </div>
-  <div class="panel" id="planPanel">
-    <div class="ph"><h2>Tagesplan</h2><span class="sp"></span><span class="note" id="planDate"></span></div>
-    <div id="planBody"></div>
-  </div>
+  <div class="quick"><button class="qb" type="button" id="tdCheck"></button><button class="qb" type="button" id="tdStreak" hidden></button></div>
   <button class="btn review" id="reviewBanner" type="button" hidden>📋 Dein Wochenrückblick ist bereit →</button>
-  <div class="grid kpis">
-    <div class="panel kpi hero"><div class="lbl" id="kBalL">Kontostand</div><div class="v num" id="kBal">–</div><div class="s" id="kBalS"></div></div>
-    <div class="panel kpi"><div class="lbl">Diese Woche</div><div class="v num" id="kWeek">–</div><div class="s" id="kWeekS"></div></div>
-    <div class="panel kpi"><div class="lbl" id="kMonL">Monat</div><div class="v num" id="kMon">–</div><div class="s" id="kMonS"></div></div>
-  </div>
 
   <div class="panel" id="riskPanel" hidden>
-    <div class="ph"><h2>Risiko-Wächter</h2><span class="sp"></span><span class="pill" id="riskState"></span></div>
+    <div class="ph"><h2>Risiko</h2><span class="sp"></span><button class="go" type="button" data-go="calc:rkPanel" aria-label="Risiko-Grenzen ändern"></button></div>
     <div id="riskRows"></div>
     <p class="note" id="riskNote"></p>
+    <span id="riskState" hidden></span>
   </div>
 
   <div class="panel" id="posPanel" hidden>
-    <div class="ph"><h2>Offene Positionen</h2><span class="sp"></span><span class="num" id="posTot"></span></div>
+    <div class="ph"><h2>Offene Positionen</h2><span class="sp"></span><b class="num" id="posTot"></b></div>
     <div id="posList"></div>
     <p class="note" id="posNote"></p>
   </div>
 
   <div class="panel" id="todayPanel" hidden>
-    <div class="ph"><h2>Gold-News heute</h2><span class="sp"></span><span class="note">USD · Hoch &amp; Mittel</span></div>
-    <div class="gnews" id="goldToday"></div>
+    <div class="ph"><h2>Heute wichtig</h2><span class="sp"></span><button class="go" type="button" data-go="news" aria-label="Zu den News"></button></div>
+    <div id="goldToday"></div>
+  </div>
+
+  <div class="panel" id="planPanel">
+    <div class="ph"><h2>Tagesplan</h2><span class="sp"></span><span class="note" id="planDate"></span></div>
+    <div id="planBody"></div>
+  </div>
+
+  <div class="panel">
+    <div class="ph"><h2>Letzte Trades</h2><span class="sp"></span><button class="go" type="button" data-go="jour" aria-label="Alle Trades im Journal"></button></div>
+    <div id="tradeRows"></div>
   </div>
 
   <div class="panel">
@@ -453,74 +687,57 @@ td.r,th.r{text-align:right}
       <div class="stats" id="stats"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h2>Kumulierte Ergebnisentwicklung</h2><span class="sp"></span><span class="lbl" id="curLbl">USD</span></div>
+      <div class="ph"><h2>Ergebnis im Monat</h2><span class="sp"></span><span class="lbl" id="curLbl">USD</span></div>
       <div id="chart"></div>
     </div>
   </div>
-
-  <div class="panel" id="mt5Panel">
-    <div class="ph"><h2>MT5-Verbindung</h2><span class="sp"></span><button class="btn sm" type="button" data-guide>Anleitung</button><span class="pill" id="mt5State">Nicht verbunden</span></div>
-    <form class="mt5f" id="mt5Form">
-      <label>Gist-ID aus MT5<input id="mt5Id" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="z. B. 3f2a9c…"></label>
-      <button class="btn pri" type="submit">Verbinden</button>
-      <button class="btn" type="button" id="mt5Off" hidden>Trennen</button>
-    </form>
-    <p class="note" id="mt5Note">Der Expert Advisor „BullionMonkeySync“ in MT5 zeigt dir die Gist-ID beim ersten Start an.</p>
-  </div>
-
-  <div class="panel">
-    <div class="ph"><h2>Trades</h2><span class="sp"></span>
-      <button class="btn sm" id="bkSave" type="button">Backup sichern</button>
-      <label class="btn sm" for="bkLoad" style="cursor:pointer">Backup laden</label>
-      <input type="file" id="bkLoad" accept=".json,application/json" hidden>
-    </div>
-    <p class="note">Die Trades kommen automatisch aus MT5. Das Backup sichert deine Einstellungen und alte Einträge.</p>
-    <div class="tbl"><table><thead><tr><th>Datum</th><th>Trade</th><th class="r">PnL</th><th class="r">R</th><th class="r hm">Trades</th><th></th></tr></thead><tbody id="tradeRows"></tbody></table></div>
-    <button class="btn sm" type="button" id="toJournal" style="margin-top:10px">Alle Trades im Journal →</button>
-    <p class="note" id="saveState"></p>
-  </div>
-  <button class="btn share" id="shareApp" type="button">🐒 Bullion Monkey mit Freunden teilen</button>
 </section>
 
 <!-- NEWS -->
 <section id="view-news" class="grid" hidden>
+  <div class="hero nhero" id="nextUp"></div>
+  <div class="ph sub"><h2>Heute wichtig</h2><span class="sp"></span><button class="lnk" type="button" data-jump="cal">Alle News <i class="chev"></i></button></div>
+  <div class="tiles3">
+    <button class="tile" type="button" data-jump="usd"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="13" width="4" height="7" rx="1"/><rect x="10" y="8" width="4" height="12" rx="1"/><rect x="16" y="4" width="4" height="16" rx="1"/></svg><span><b>USD</b><i>High Impact</i></span></button>
+    <button class="tile" type="button" data-jump="gold"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10l2 6H5zM2 12h9l1.5 7h-12zM13 12h9l1.5 7h-12z" transform="translate(0 .5) scale(.96)"/></svg><span><b>Gold-News</b></span></button>
+    <button class="tile" type="button" data-jump="truth"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 3 7v2h18V7zM5 10.5h2.4v7H5zM10.8 10.5h2.4v7h-2.4zM16.6 10.5H19v7h-2.4zM3 19h18v2.5H3z"/></svg><span><b>Politik</b></span></button>
+  </div>
   <div class="panel">
-    <div class="ph"><h2>Gold-News diese Woche</h2><span class="sp"></span><span class="note">USD · Hoch &amp; Mittel</span></div>
+    <div class="ph"><h2>Zeitplan heute</h2><span class="sp"></span><button class="lnk" type="button" data-jump="cal">Alle Events <i class="chev"></i></button></div>
+    <div class="tl" id="schedule"></div>
+  </div>
+  <div class="panel" id="goldPanel">
+    <div class="ph"><h2>Gold-News diese Woche</h2><span class="sp"></span><span class="note">🇺🇸 USD · Hoch &amp; Mittel</span></div>
     <div class="gnews" id="goldNews"></div>
     <a class="btn calsub" id="calSub" href="#">🔔 Erinnerungen in den iPhone-Kalender</a>
   </div>
-  <div class="grid two">
-    <div class="panel">
-      <div class="lbl">Als Nächstes</div>
-      <div class="nextup" id="nextUp" style="margin-top:8px"></div>
-    </div>
-    <div class="panel">
-      <div class="ph" style="margin-bottom:4px"><h2>Sessions</h2><span class="sp"></span><span class="note">deine Ortszeit</span></div>
-      <div class="ticks" id="sessTicks"></div>
-      <div class="sess" id="sess"></div>
-    </div>
-  </div>
   <div class="panel">
+    <div class="ph"><h2>Sessions</h2><span class="sp"></span><span class="live" id="sessLive"></span></div>
+    <div class="sess" id="sess"></div>
+    <p class="note" style="margin-top:8px">Zeiten in deiner Ortszeit.</p>
+  </div>
+  <div class="panel" id="calPanel">
     <div class="ph">
-      <h2>Wirtschaftskalender</h2><span class="note" id="newsMeta"></span>
+      <h2>Wirtschaftskalender</h2>
       <span class="sp"></span>
       <button class="chip" id="onlyToday" aria-pressed="false">Nur heute</button>
     </div>
+    <p class="note" id="newsMeta" style="margin:-8px 0 12px"></p>
     <div class="ph" style="margin-bottom:10px">
       <span class="lbl" style="width:56px">Impact</span><div class="chips" id="fImp"></div>
     </div>
     <div class="ph" style="margin-bottom:6px">
-      <span class="lbl" style="width:56px">Währung</span><div class="chips" id="fCur"></div>
+      <span class="lbl" style="width:56px">Land</span><div class="chips" id="fCur"></div>
     </div>
-    <div class="tbl"><table class="news"><thead><tr><th>Zeit</th><th>Währung</th><th>Impact</th><th>Event</th><th class="r">Prognose</th><th class="r">Vorher</th></tr></thead><tbody id="newsRows"></tbody></table></div>
+    <div class="tbl"><table class="news"><thead><tr><th>Zeit</th><th>Land</th><th>Impact</th><th>Event</th><th class="r">Prognose</th><th class="r">Vorher</th></tr></thead><tbody id="newsRows"></tbody></table></div>
   </div>
   <div class="panel">
-    <div class="ph"><h2>Live-Schlagzeilen</h2><span class="note">FinancialJuice</span><span class="sp"></span><div class="chips" id="hlF"></div></div>
+    <div class="ph"><h2>Live-Schlagzeilen</h2><span class="sp"></span><div class="chips" id="hlF"></div></div>
     <div id="hlList"></div>
     <p class="note" id="hlNote" style="margin-top:8px"></p>
   </div>
-  <div class="panel">
-    <div class="ph"><h2>Trump auf Truth Social</h2><span class="note">trumpstruth.org</span></div>
+  <div class="panel" id="truthPanel">
+    <div class="ph"><h2>Politik: Trump auf Truth Social</h2></div>
     <div id="truthList"></div>
     <button class="btn sm" id="truthMore" type="button" style="margin-top:8px" hidden>Mehr anzeigen</button>
     <p class="note" id="truthNote" style="margin-top:8px"></p>
@@ -528,13 +745,19 @@ td.r,th.r{text-align:right}
 </section>
 <!-- JOURNAL -->
 <section id="view-jour" class="grid" hidden>
+  <div class="hero sum4" id="jSum"></div>
+  <div class="pills" id="jStrat"></div>
+  <button class="btn sm warnb" id="jCloud" type="button" hidden>⚠️ Notizen sind nur auf diesem Handy. Online-Sicherung einschalten →</button>
   <div class="panel">
-    <div class="ph"><h2>Journal</h2><span class="sp"></span><button class="chip" id="jNoted" aria-pressed="false">Nur mit Notiz</button></div>
-    <div class="chips" id="jStrat"></div>
-    <div class="jsum" id="jSum"></div>
-    <button class="btn sm warnb" id="jCloud" type="button" hidden>⚠️ Notizen sind nur auf diesem Handy. Online-Sicherung einschalten →</button>
+    <div class="ph"><h2>Trades</h2><span class="sp"></span><span class="note" id="jCount"></span></div>
+    <div id="jList"></div>
+    <button class="btn sm" id="jMore" type="button" style="margin-top:12px;width:100%;padding:8px" hidden>Weitere Trades laden</button>
   </div>
-  <div class="panel"><div id="jList"></div><button class="btn sm" id="jMore" type="button" style="margin-top:10px" hidden>Ältere Trades laden</button></div>
+  <div class="panel" id="patPanel" hidden>
+    <div class="ph"><h2>Muster erkannt</h2><span class="sp"></span><button class="lnk" type="button" data-go="ana">Analyse <i class="chev"></i></button></div>
+    <div id="patList"></div>
+  </div>
+  <button class="addnote" id="jAdd" type="button"><span class="pl">＋</span><b id="jAddT">Notiz hinzufügen</b><i class="chev"></i></button>
 </section>
 <!-- ANALYSE -->
 <section id="view-ana" class="grid" hidden>
@@ -562,28 +785,18 @@ td.r,th.r{text-align:right}
 
 <!-- TOOLS -->
 <section id="view-calc" class="grid" hidden>
-  <div class="panel" id="ckPanel">
-    <div class="ph"><h2>Checkliste vor dem Trade</h2><span class="sp"></span><span class="pill" id="ckProg"></span></div>
+  <div class="panel goldb" id="ckPanel">
+    <div class="ph"><h2>Pre-Trade Check</h2><span class="sp"></span><span class="pill" id="ckProg"></span></div>
+    <div class="pc"><span class="hico" id="pcIco"></span><div><b id="pcTitle"></b><span id="pcSub"></span></div></div>
+    <div class="pcg" id="pcGrid"></div>
+    <div class="lbl" style="margin:16px 0 4px">Deine Regeln vor dem Trade</div>
     <div id="ckWarn"></div>
     <div id="ckList"></div>
     <form id="ckAdd" class="ckadd" hidden><input id="ckNew" placeholder="Neue Regel, z. B. „Kein Trade vor 9 Uhr“" maxlength="90"><button class="btn pri" type="submit">Hinzufügen</button></form>
     <div class="ph" style="margin:12px 0 0"><button class="btn sm" id="ckReset" type="button">Neuer Trade</button><span class="sp"></span><button class="btn sm" id="ckEdit" type="button">Regeln bearbeiten</button></div>
   </div>
-  <div class="panel">
-    <div class="ph"><h2>Risiko-Grenzen</h2><span class="sp"></span><button class="btn sm" id="rkDef" type="button">Standard</button></div>
-    <div class="cf" id="rkForm">
-      <label>Max. Tagesverlust (%)<input data-rk="day" type="number" inputmode="decimal" step="0.5" min="0"></label>
-      <label>Max. Wochenverlust (%)<input data-rk="week" type="number" inputmode="decimal" step="0.5" min="0"></label>
-      <label>Max. Trades pro Tag<input data-rk="trades" type="number" inputmode="numeric" step="1" min="0"></label>
-      <label>Max. Drawdown vom Hoch (%)<input data-rk="dd" type="number" inputmode="decimal" step="0.5" min="0"></label>
-      <label class="full">Max. offenes Risiko aller Positionen (%)<input data-rk="open" type="number" inputmode="decimal" step="0.25" min="0"></label>
-      <label>Pause nach … Verlusten am Tag<input data-rk="loss" type="number" inputmode="numeric" step="1" min="0"></label>
-      <label>Pause-Dauer (Min.)<input data-rk="pause" type="number" inputmode="numeric" step="5" min="0"></label>
-    </div>
-    <p class="note" style="margin-top:10px">0 schaltet eine Grenze aus. Push-Nachrichten aufs Handy kommen vom Expert Advisor in MT5, dort stellst du Tageslimit und Trades separat ein.</p>
-  </div>
 
-  <div class="panel">
+  <div class="panel goldb">
     <div class="ph"><h2>Lot-Rechner</h2><span class="sp"></span><span class="pill" id="cSym">XAUUSD</span></div>
     <div class="cf">
       <label class="full">Kontostand<input id="cBal" type="number" inputmode="decimal" step="0.01"></label>
@@ -604,12 +817,55 @@ td.r,th.r{text-align:right}
     <div class="tbl" style="margin-top:0"><table><thead><tr><th>SL-Abstand</th><th class="r">Lots</th><th class="r">Risiko</th></tr></thead><tbody id="cTab"></tbody></table></div>
     <p class="note" id="cSpec"></p>
   </div>
-  <div class="panel" id="cloudPanel">
-    <div class="ph"><h2>Online-Sicherung</h2><span class="sp"></span><span class="pill" id="clState"></span></div>
-    <p class="note" id="clNote"></p>
-    <form id="clForm" class="clform"><input id="clTok" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="GitHub-Token (ghp_…)"><button class="btn pri sm" type="submit">Einschalten</button></form>
-    <div class="ph" id="clBtns" style="margin:10px 0 0" hidden><button class="btn sm" id="clNow" type="button">Jetzt sichern</button><span class="sp"></span><button class="btn sm" id="clOff" type="button">Ausschalten</button></div>
+
+  <div class="panel goldb" id="rkPanel">
+    <div class="ph"><h2>Risiko-Grenzen</h2><span class="sp"></span><button class="btn sm" id="rkDef" type="button">Standard</button></div>
+    <div class="rkt" id="rkTiles"></div>
+    <details class="more" id="rkMore"><summary>Grenzen ändern <i class="chev"></i></summary>
+    <div class="cf" id="rkForm" style="margin-top:12px">
+      <label>Max. Tagesverlust (%)<input data-rk="day" type="number" inputmode="decimal" step="0.5" min="0"></label>
+      <label>Max. Wochenverlust (%)<input data-rk="week" type="number" inputmode="decimal" step="0.5" min="0"></label>
+      <label>Max. Trades pro Tag<input data-rk="trades" type="number" inputmode="numeric" step="1" min="0"></label>
+      <label>Max. Drawdown vom Hoch (%)<input data-rk="dd" type="number" inputmode="decimal" step="0.5" min="0"></label>
+      <label class="full">Max. offenes Risiko aller Positionen (%)<input data-rk="open" type="number" inputmode="decimal" step="0.25" min="0"></label>
+      <label>Pause nach … Verlusten am Tag<input data-rk="loss" type="number" inputmode="numeric" step="1" min="0"></label>
+      <label>Pause-Dauer (Min.)<input data-rk="pause" type="number" inputmode="numeric" step="5" min="0"></label>
+    </div>
+    <p class="note" style="margin-top:10px">0 schaltet eine Grenze aus. Push-Nachrichten aufs Handy kommen vom Expert Advisor in MT5, dort stellst du Tageslimit und Trades separat ein.</p>
+    </details>
   </div>
+
+  <div class="panel goldb" id="syncPanel">
+    <div class="ph"><h2>Daten &amp; Sync</h2></div>
+    <div class="srows" id="syncRows"></div>
+    <details class="more" id="mt5Det"><summary>MT5-Verbindung <span class="pill" id="mt5State">Nicht verbunden</span><i class="chev"></i></summary>
+      <form class="mt5f" id="mt5Form" style="margin-top:12px">
+        <label>Gist-ID aus MT5<input id="mt5Id" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="z. B. 3f2a9c…"></label>
+        <button class="btn pri" type="submit">Verbinden</button>
+        <button class="btn" type="button" id="mt5Off" hidden>Trennen</button>
+      </form>
+      <p class="note" id="mt5Note">Der Expert Advisor „BullionMonkeySync“ in MT5 zeigt dir die Gist-ID beim ersten Start an.</p>
+      <button class="btn sm" type="button" data-guide style="margin-top:8px">Anleitung: MT5 verbinden</button>
+    </details>
+    <details class="more" id="cloudPanel"><summary>Online-Sicherung <span class="pill" id="clState"></span><i class="chev"></i></summary>
+      <p class="note" id="clNote" style="margin-top:10px"></p>
+      <form id="clForm" class="clform"><input id="clTok" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="GitHub-Token (ghp_…)"><button class="btn pri sm" type="submit">Einschalten</button></form>
+      <div class="ph" id="clBtns" style="margin:10px 0 0" hidden><button class="btn sm" id="clNow" type="button">Jetzt sichern</button><span class="sp"></span><button class="btn sm" id="clOff" type="button">Ausschalten</button></div>
+    </details>
+    <details class="more"><summary>Backup-Datei <i class="chev"></i></summary>
+      <p class="note" style="margin-top:10px">Sichert deine Einstellungen und alte Einträge als Datei.</p>
+      <div class="ph" style="margin:8px 0 0"><button class="btn sm" id="bkSave" type="button">Backup sichern</button>
+        <label class="btn sm" for="bkLoad" style="cursor:pointer">Backup laden</label>
+        <input type="file" id="bkLoad" accept=".json,application/json" hidden></div>
+    </details>
+    <p class="note" id="saveState"></p>
+  </div>
+
+  <div class="panel goldb">
+    <div class="ph"><h2>Strategien</h2></div>
+    <div class="st2" id="stratTiles"></div>
+  </div>
+  <button class="btn share" id="shareApp" type="button">🐒 Bullion Monkey mit Freunden teilen</button>
 </section>
 </main>
 <dialog id="guideDlg" class="sheet guide">
@@ -669,9 +925,23 @@ function monday(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.
 const state={trades:[],settings:{},news:null,month:null,fA:"Alle",fS:"Alle",imp:LS.get("imp",["High","Medium","Low","Holiday"]),cur:LS.get("cur",[]),onlyToday:false,db:null};
 const now=new Date();state.month=new Date(now.getFullYear(),now.getMonth(),1);
 
+/* ---------- shared look: flags, icons ---------- */
+const FLAG={USD:"🇺🇸",EUR:"🇪🇺",GBP:"🇬🇧",JPY:"🇯🇵",CHF:"🇨🇭",CAD:"🇨🇦",AUD:"🇦🇺",NZD:"🇳🇿",CNY:"🇨🇳",ALL:"🌐"};
+const LAND={USD:"USA",EUR:"Eurozone",GBP:"Grossbritannien",JPY:"Japan",CHF:"Schweiz",CAD:"Kanada",AUD:"Australien",NZD:"Neuseeland",CNY:"China",ALL:"Alle"};
+const flag=c=>FLAG[c]||"🏳️";
+const RISK_DE={High:"Hohes Risiko",Medium:"Mittleres Risiko",Low:"Tiefes Risiko",Holiday:"Feiertag"};
+const SV=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const ICO={ok:SV('<path d="M6 12.5l4 4 8-9"/>'),warn:SV('<path d="M12 7v6"/><path d="M12 17h.01"/>'),stop:SV('<path d="M7 7l10 10M17 7 7 17"/>'),pause:SV('<path d="M9.5 7v10M14.5 7v10"/>'),
+  down:SV('<path d="M5 7l6 6 3-3 5 5"/><path d="M19 11v4h-4"/>'),up:SV('<path d="M5 17l6-6 3 3 5-5"/><path d="M19 13V9h-4"/>'),bars:SV('<path d="M6 19v-6M12 19V7M18 19v-9"/>')};
+const SIDE=s=>`<span class="bs ${s==="buy"?"buy":"sell"}">${s==="buy"?"BUY":"SELL"}</span>`;
+
 /* ---------- tabs ---------- */
 const VIEWS=["dash","news","jour","ana","calc"];
-function show(v){if(!VIEWS.includes(v))v="dash";window.scrollTo(0,0);document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.view===v));VIEWS.forEach(x=>$("#view-"+x).hidden=x!==v);LS.set("view",v);if(v==="ana")renderAna();if(v==="jour")renderJournal();if(v==="calc"){renderCheck();renderRiskForm();renderCalc()}}
+const TITLES={dash:"Dashboard",news:"News",jour:"Journal",ana:"Analyse",calc:"Tools"};
+function show(v){if(!VIEWS.includes(v))v="dash";window.scrollTo(0,0);$("#pageTitle").textContent=TITLES[v];document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.view===v));VIEWS.forEach(x=>$("#view-"+x).hidden=x!==v);LS.set("view",v);if(v==="ana")renderAna();if(v==="jour")renderJournal();if(v==="calc"){renderCheck();renderRiskForm();renderCalc();renderSync()}if(v==="news")heroClock()}
+/* chevron links: data-go="view" or "view:panelId" */
+document.addEventListener("click",e=>{const g=e.target.closest("[data-go]");if(!g)return;const [v,id]=g.dataset.go.split(":");show(v);
+  if(id)setTimeout(()=>{const el=$("#"+id);if(el){if(el.querySelector("details"))el.querySelector("details").open=true;el.scrollIntoView({behavior:"smooth"})}},60)});
 document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>show(t.dataset.view));
 const showFirst=()=>show({"#news":"news","#dashboard":"dash","#journal":"jour","#analyse":"ana","#rechner":"calc","#tools":"calc"}[location.hash]||LS.get("view","dash"));
 
@@ -694,18 +964,19 @@ function chipRow(el,vals,cur,set){el.innerHTML="";["Alle",...vals].forEach(v=>{c
 function renderPositions(){
   const ps=(state.mt5&&state.mt5.positions)||[], panel=$("#posPanel");
   panel.hidden=!ps.length;if(!ps.length)return;
-  const cur=(state.mt5.account&&state.mt5.account.currency)||"USD";
+  const cur=(state.mt5.account&&state.mt5.account.currency)||"USD",bal=+((state.mt5.account||{}).balance)||0;
   const tot=ps.reduce((a,p)=>a+(+p.pnl||0),0);
   $("#posTot").className="num "+cls(tot);$("#posTot").textContent=fmt(tot)+" "+cur;
-  const tm=iso=>new Date(iso).toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"});
-  $("#posList").innerHTML=ps.map(p=>`<div class="pos1"><div class="ph1"><span class="sd ${p.side==="buy"?"buy":"sell"}">${p.side==="buy"?"BUY":"SELL"}</span>${esc(p.asset)} <span class="mut num" style="font-weight:500">${(+p.volume).toFixed(2)}</span></div>`
-    +`<div class="pp ${cls(+p.pnl)}">${fmt(+p.pnl)}</div>`
-    +`<div class="pd num">${p.open} → ${p.price}${+p.sl?` · SL ${p.sl}`:` · <span class="neg">kein SL</span>`}${+p.tp?` · TP ${p.tp}`:""} · seit ${tm(p.openUtc)}</div>`
-    +(()=>{const nt=(state.settings.notes||{})["mt5-"+p.id]||{};return `<div class="pn">${nt.setup||nt.text?`<span class="tn" style="max-width:none">${nt.setup?`<b>${esc(nt.setup)}</b>`:""}${nt.setup&&nt.text?" · ":""}${esc(nt.text||"")}</span> `:""}<button class="btn sm nb" data-note="mt5-${esc(p.id)}">${nt.setup||nt.text?"✎ Notiz":"＋ Notiz"}</button></div>`})()
-    +`</div>`).join("");
+  const N=state.settings.notes||{};
+  $("#posList").innerHTML=ps.map(p=>{const nt=N["mt5-"+p.id]||{};return `<button type="button" class="prow" data-note="mt5-${esc(p.id)}">`
+    +`<span class="pa"><b>${esc(p.asset)}</b><i>${/XAU/.test(p.asset)?"Gold":(+p.volume).toFixed(2)+" Lot"}</i></span>${SIDE(p.side)}`
+    +`<span class="pv"><i>Einstand</i><b class="num">${p.open}</b></span><span class="pv"><i>Aktuell</i><b class="num">${p.price}</b></span>`
+    +`<span class="plot num">${(+p.volume).toFixed(2)}<i>Lot</i></span>`
+    +`<span class="pr"><b class="num ${cls(+p.pnl)}">${fmt(+p.pnl)}</b>${bal?`<i class="num ${cls(+p.pnl)}">${fmtR(+p.pnl/bal*100)} %</i>`:""}</span>`
+    +`<span class="pd">${+p.sl?`SL ${p.sl}`:`<b class="neg">kein Stop-Loss</b>`}${+p.tp?` · TP ${p.tp}`:""} · seit ${tf(new Date(p.openUtc))}${nt.setup?` · <b class="gold">${esc(nt.setup)}</b>`:""}${nt.text?` · ${esc(nt.text.slice(0,60))}`:""}${nt.setup||nt.text?"":` · <span class="gold">＋ Notiz</span>`}</span></button>`}).join("");
   $("#posList").querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openNote(b.dataset.note));
   const up=new Date(state.mt5.updatedAt), age=Math.round((Date.now()-up)/6e4);
-  $("#posNote").textContent="Stand "+up.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"})+(age>5?` (vor ${age} Min., läuft MT5 noch?)`:" · aktualisiert sich etwa jede Minute");
+  $("#posNote").textContent="Stand "+tf(up)+(age>5?` (vor ${age} Min., läuft MT5 noch?)`:" · aktualisiert sich etwa jede Minute");
 }
 
 const RK_DEF={day:3,week:6,trades:3,dd:10,open:2,loss:2,pause:30};
@@ -727,13 +998,12 @@ function renderRisk(){
   const d=riskData(),panel=$("#riskPanel");panel.hidden=!d;if(!d)return;
   const L=rk(),rows=[];let worst=0;
   const add=(label,used,limit,txt)=>{if(!(limit>0))return;const f=used/limit,lv=f>=1?2:f>=0.7?1:0;worst=Math.max(worst,lv);
-    rows.push(`<div class="rr ${["","warn","stop"][lv]}"><div class="rt"><span>${label}</span><b>${txt}</b></div><div class="rb"><i style="width:${Math.min(100,Math.max(2,f*100))}%"></i></div></div>`)};
-  const money=v=>plain(v)+" "+d.cur;
-  add("Heute",Math.max(0,-d.day),d.dayStart*L.day/100,`${fmt(d.day)} / −${money(d.dayStart*L.day/100)}`);
-  add("Diese Woche",Math.max(0,-d.week),d.wkStart*L.week/100,`${fmt(d.week)} / −${money(d.wkStart*L.week/100)}`);
+    rows.push(`<div class="rr ${["","warn","stop"][lv]}"><span class="rl">${label}</span><div class="rb"><i style="width:${Math.min(100,Math.max(2,f*100))}%"></i></div><b class="num">${txt??Math.round(f*100)+" %"}</b></div>`)};
+  add("Heute",Math.max(0,-d.day),d.dayStart*L.day/100);
+  add("Diese Woche",Math.max(0,-d.week),d.wkStart*L.week/100);
   add("Trades heute",d.trades,L.trades,`${d.trades} / ${L.trades}`);
-  add("Drawdown vom Hoch",d.dd,d.peak*L.dd/100,`${(d.dd/d.peak*100).toFixed(1)} % / ${L.dd} %`);
-  if((d.openRisk>0||d.noSl.length)&&L.open>0)add("Offenes Risiko",d.noSl.length?d.bal:d.openRisk,d.bal*L.open/100,d.noSl.length?`${d.noSl.length}× ohne SL`:`${money(d.openRisk)} (${(d.openRisk/d.bal*100).toFixed(1)} %)`);
+  add("Drawdown",d.dd,d.peak*L.dd/100);
+  if(L.open>0)add("Offenes Risiko",d.noSl.length?d.bal:d.openRisk,d.bal*L.open/100,d.noSl.length?`${d.noSl.length}× kein SL`:undefined);
   $("#riskRows").innerHTML=rows.join("")||`<p class="note">Alle Grenzen sind ausgeschaltet. Stelle sie unter Tools ein.</p>`;
   const st=$("#riskState");st.className="pill "+["ok","warn","stop"][worst];st.textContent=["Alles im grünen Bereich","Vorsicht","Stopp"][worst];
   panel.classList.toggle("stop",worst===2);
@@ -741,35 +1011,41 @@ function renderRisk(){
   if(L.day>0&&-d.day>=d.dayStart*L.day/100)msgs.push("Tageslimit erreicht, heute keine neuen Trades mehr.");
   if(L.trades>0&&d.trades>=L.trades)msgs.push("Maximale Anzahl Trades für heute erreicht.");
   if(d.noSl.length)msgs.push("Mindestens eine Position hat keinen Stop-Loss.");
-  $("#riskNote").textContent=msgs.join(" ")||"Grenzen änderst du unter Tools → Risiko-Grenzen.";
+  $("#riskNote").textContent=msgs.join(" ");$("#riskNote").hidden=!msgs.length;
 }
 
 /* ---------- "Heute": the few numbers that matter before the next trade ---------- */
 function renderToday(){
-  const d=riskData(),L=rk(),n=new Date(),tiles=[];let lv=0;
+  const d=riskData(),L=rk(),n=new Date(),why=[];let lv=0;
   if(d){const lim=d.dayStart*L.day/100,left=lim-Math.max(0,-d.day);
-    if(L.day>0&&left<=0)lv=2;else if(L.day>0&&left<lim*0.3)lv=1;
-    if(L.trades>0&&d.trades>=L.trades)lv=2;
-    tiles.push(["PnL heute",`<span class="${cls(d.day)}">${fmt(d.day)}</span>`,d.cur+(Math.abs(d.eq-d.bal)>0.005?" · inkl. offene":"")]);
-    tiles.push(["Trades heute",`${d.trades}${L.trades>0?" / "+L.trades:""}`,L.trades>0?(d.trades>=L.trades?"Limit erreicht":`noch ${L.trades-d.trades} erlaubt`):"kein Limit"]);
-    tiles.push(["Risiko übrig",L.day>0?`<span class="${left<=0?"neg":""}">${plain(Math.max(0,left))}</span>`:"–",L.day>0?`${d.cur} bis Tageslimit ${L.day} %`:"Tageslimit aus"]);
-  }
+    if(L.day>0&&left<=0){lv=2;why.push("Tageslimit erreicht")}else if(L.day>0&&left<lim*0.3){lv=1;why.push("Tageslimit fast erreicht")}
+    if(L.trades>0&&d.trades>=L.trades){lv=2;why.push("Max. Trades für heute erreicht")}
+    if(d.noSl.length){lv=Math.max(lv,1);why.push("Position ohne Stop-Loss")}}
   const nx=state.news?events().find(x=>isGold(x)&&x.t>n):null;
-  if(nx&&nx.impact==="High"&&nx.t-n<45*6e4)lv=Math.max(lv,1);
-  tiles.push(["Nächste Gold-News",nx?(ymd(nx.t)===ymd(n)?"":nx.t.toLocaleDateString("de-CH",{weekday:"short"})+" ")+tf(nx.t):"–",nx?`${esc(nx.title)} · ${countdown(nx.t-n)}`:"keine mehr diese Woche"]);
-  $("#tdGrid").innerHTML=tiles.map(([a,b,c])=>`<div><span class="lbl">${a}</span><div class="v">${b}</div><div class="s">${c}</div></div>`).join("");
-  const pz=pauseInfo(),pb=$("#pauseBox");pb.hidden=!pz;
-  if(pz){lv=Math.max(lv,1);pb.innerHTML=`<div class="pt"><b>⏸ Pause bis ${tf(new Date(pz.end))}</b><span>noch ${pauseLeft(pz)}</span></div><p>${pz.n} Verluste heute. Kurz weg vom Chart, durchatmen, kein Revenge-Trade.</p>`}
+  if(nx&&nx.impact==="High"&&nx.t-n<45*6e4){lv=Math.max(lv,1);why.push(`${nx.title} ${countdown(nx.t-n)}`)}
+  const pz=pauseInfo();if(pz)lv=Math.max(lv,1);
   const st=$("#tdState");st.className="pill "+["ok","warn","stop"][lv];st.textContent=lv===1&&pz?"Pause":["Bereit","Vorsicht","Stopp für heute"][lv];
+  $("#tdHero").className="hero status "+(lv===2?"stop":pz?"pause":["ok","warn"][lv]);
+  $("#tdIco").innerHTML=lv===2?ICO.stop:pz?ICO.pause:lv===1?ICO.warn:ICO.ok;
+  $("#tdTitle").textContent=lv===2?"Stopp für heute":pz?`Pause bis ${tf(new Date(pz.end))}`:lv===1?"Vorsicht":"Handel erlaubt";
+  $("#tdSub").textContent=lv===2?why.join(" · ")+". Keine neuen Trades mehr.":pz?`Noch ${pauseLeft(pz)} · ${pz.n} Verluste heute, kein Revenge-Trade.`:lv===1?why.join(" · "):d?"Alle Systeme im grünen Bereich":"Verbinde MT5, dann prüfe ich deine Grenzen.";
+  /* number strip */
+  const days=byDay(allTrades()),wsK=ymd(monday(n)),pc=(v,base)=>base>0?`<span class="${cls(v)}">${fmtR(v/base*100,2)} %</span>`:"";
+  const dayP=d?d.day:((days[ymd(n)]||{}).pnl||0),wkP=d?d.week:Object.entries(days).filter(([k])=>k>=wsK).reduce((a,[,v])=>a+v.pnl,0);
+  $("#kDay").className="num "+cls(dayP);$("#kDay").textContent=fmt(dayP);$("#kDayS").innerHTML=d?pc(d.day,d.dayStart):"";
+  $("#kWeek").className="num "+cls(wkP);$("#kWeek").textContent=fmt(wkP);$("#kWeekS").innerHTML=d?pc(d.week,d.wkStart):`KW ${isoWeek(n)}`;
+  if(d&&L.day>0){const lim=d.dayStart*L.day/100,left=Math.max(0,lim-Math.max(0,-d.day));$("#kFree").textContent=Math.round(left/lim*100)+" %";$("#kFree").className="num "+(left<=0?"neg":"");$("#kFreeS").textContent=plain(left)+" "+d.cur}
+  else{$("#kFree").textContent="–";$("#kFree").className="num";$("#kFreeS").textContent=d?"Tageslimit aus":""}
+  const it=ckItems(),dn=ckDone(),k=it.filter(t=>dn[t]).length,cb=$("#tdCheck");
+  cb.innerHTML=k>=it.length?"✓ Checkliste erledigt":`☑︎ Checkliste <b>${k} / ${it.length}</b>`;cb.classList.toggle("done",k>=it.length);
   const ds=state.mt5?discipline():null,sb=$("#tdStreak");sb.hidden=!ds||!ds.ks.length;
-  if(ds&&ds.ks.length){sb.classList.toggle("on",ds.cur>0);sb.textContent=ds.cur?`🔥 Disziplin-Serie: ${ds.cur} Handelstag${ds.cur>1?"e":""} · ${ds.pts} Punkte →`:`Disziplin-Serie: 0 · der nächste saubere Tag startet sie neu →`}
-  const it=ckItems(),dn=ckDone(),k=it.filter((_,i)=>dn[i]).length,cb=$("#tdCheck");
-  cb.textContent=k>=it.length?"✓ Checkliste erledigt":`Checkliste vor dem Trade: ${k} / ${it.length} →`;cb.classList.toggle("done",k>=it.length);
+  if(ds&&ds.ks.length){sb.classList.toggle("on",ds.cur>0);sb.innerHTML=`🔥 Disziplin <b>${ds.cur} Tag${ds.cur===1?"":"e"}</b>`}
   /* weekly review reminder: Friday evening and the weekend */
   const dow=n.getDay(),wk=ymd(monday(n));
   $("#reviewBanner").hidden=!((dow===5&&n.getHours()>=17)||dow===6||dow===0)||!mt5Trades().some(t=>ymd(t.c)>=wk)||LS.get("revSeen","")===wk;
 }
 $("#tdCheck").onclick=()=>show("calc");
+$("#tdHero").onclick=()=>show("calc");
 $("#tdStreak").onclick=()=>{show("ana");setTimeout(()=>$("#discPanel").scrollIntoView({behavior:"smooth"}),50)};
 
 /* ---------- pause after losses: stops revenge trading ---------- */
@@ -932,22 +1208,12 @@ function renderDash(){
   }
   cal.innerHTML=h;
 
-  /* KPIs */
+  /* balance (the rest of the number strip is in renderToday) */
   const allP=TT.reduce((a,t)=>a+(+t.pnl||0),0);
   const sb=state.settings.startBalance;
-  $("#kBalL").textContent="Kontostand"+(state.settings.name?" · "+state.settings.name:"");
-  if(acc){$("#kBalL").textContent="Kontostand · MT5 "+acc.login;$("#kBal").textContent=plain(+acc.balance)+" "+cur;
-    const up=state.mt5.updatedAt?new Date(state.mt5.updatedAt):null;
-    $("#kBalS").innerHTML=`Equity ${plain(+acc.equity)} · Stand ${up?up.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"}):"–"}`;$("#setupBanner").hidden=true}
-  else if(typeof sb==="number"){$("#kBal").textContent=plain(sb+allP)+" "+cur;$("#kBalS").innerHTML=`Start ${plain(sb)} · <span class="${cls(allP)}">${fmt(allP)}</span> total`;$("#setupBanner").hidden=true}
+  if(acc){$("#kBal").textContent=plain(+acc.balance);$("#kBalS").textContent=Math.abs(+acc.equity-+acc.balance)>0.005?"Equity "+plain(+acc.equity):cur;$("#setupBanner").hidden=true}
+  else if(typeof sb==="number"){$("#kBal").textContent=plain(sb+allP);$("#kBalS").textContent=cur;$("#setupBanner").hidden=true}
   else{$("#kBal").textContent="–";$("#kBalS").textContent="Startkapital fehlt";$("#setupBanner").hidden=false}
-  const ws=monday(new Date()),we=new Date(ws);we.setDate(we.getDate()+6);
-  const wk=Object.entries(byDay(TT)).filter(([k])=>k>=ymd(ws)&&k<=ymd(we));
-  const wP=wk.reduce((a,[,v])=>a+v.pnl,0),wR=wk.reduce((a,[,v])=>a+v.r,0);
-  $("#kWeek").className="v num "+cls(wP);$("#kWeek").textContent=fmt(wP)+" "+cur;
-  $("#kWeekS").textContent=`KW ${isoWeek(new Date())} · ${fmtR(wR)} R · ${wk.length} Handelstag${wk.length===1?"":"e"}`;
-  $("#kMonL").textContent=MON[m]+" "+y;$("#kMon").className="v num "+cls(mp);$("#kMon").textContent=fmt(mp)+" "+cur;
-  $("#kMonS").textContent=`${fmtR(mr)} R · ${monthDays.length} Handelstage`;
 
   /* stats */
   $("#statTitle").textContent="Statistik "+MON[m];
@@ -968,9 +1234,15 @@ function renderDash(){
   $("#curLbl").textContent=cur;
   drawChart(monthDays);
 
-  /* table */
-  const tb=$("#tradeRows");const sorted=TT.slice().sort((a,b)=>b.date.localeCompare(a.date));
-  tb.innerHTML=sorted.length?sorted.slice(0,8).map(t=>`<tr><td class="num">${dd(t.date)}<span class="hm">${t.date.slice(0,4)}</span></td><td>${esc(t.asset)}${t.lot?` <span class="mut hm">${esc(t.lot)}</span>`:""}${t.strategy||t.note?`<div class="tn">${t.strategy?`<b>${esc(t.strategy)}</b>`:""}${t.strategy&&t.note?" · ":""}${esc((t.note||"").slice(0,80))}</div>`:""}</td><td class="r num ${cls(+t.pnl)}">${fmt(+t.pnl)}</td><td class="r num ${cls(+t.r||0)}">${t.r!=null&&t.r!==""?fmtR(+t.r):"–"}</td><td class="r num hm">${t.count||1}</td><td>${t.src==="mt5"?`<button class="btn sm nb" data-note="${esc(t.id)}" aria-label="Notiz">${t.strategy||t.note?"✎":"＋"}</button>`:`<button class="btn sm" data-del="${esc(t.id)}" aria-label="Eintrag löschen">✕</button>`}</td></tr>`).join(""):`<tr><td colspan="6" class="empty">Noch keine Trades. Verbinde oben MT5, dann erscheinen sie hier.</td></tr>`;
+  /* last trades */
+  const tb=$("#tradeRows");
+  const MT=mt5Trades().slice(-6).reverse(),N=state.settings.notes||{},tdK=ymd(new Date());
+  const own=state.mt5?[]:TT.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
+  tb.innerHTML=MT.length?MT.map(t=>{const nt=N[t.id]||{};return `<button type="button" class="trow" data-note="${esc(t.id)}"><b class="ta">${esc(t.asset)}</b>${SIDE(t.side)}<span class="tl num">${(+t.volume).toFixed(2)} Lot</span>`
+      +`<span class="tp num">${t.open!=null&&t.close!=null?`${t.open} → ${t.close}`:`${zt(t.o)} → ${zt(t.c)}`}</span><b class="tv num ${cls(t.pnl)}">${fmt(t.pnl)}</b><span class="tt num">${ymd(t.c)===tdK?zt(t.c):dd(ymd(t.c))}</span>`
+      +(nt.setup||nt.text?`<span class="tn2">${nt.setup?`<b>${esc(nt.setup)}</b>`:""}${nt.setup&&nt.text?" · ":""}${esc((nt.text||"").slice(0,70))}</span>`:"")+`</button>`}).join("")
+    :own.length?own.map(t=>`<div class="trow"><b class="ta">${esc(t.asset)}</b><span class="tl">${esc(t.lot||"")}</span><span class="tp"></span><b class="tv num ${cls(+t.pnl)}">${fmt(+t.pnl)}</b><span class="tt num">${dd(t.date)}</span><button class="btn sm" data-del="${esc(t.id)}" aria-label="Eintrag löschen">✕</button></div>`).join("")
+    :`<p class="empty">Noch keine Trades. Verbinde MT5 unter Tools → Daten &amp; Sync.</p>`;
   tb.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>delTrade(b.dataset.del));
   tb.querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openNote(b.dataset.note));
 }
@@ -1023,13 +1295,13 @@ function renderNewsFilters(){
   const ev=events();const curs=[...new Set(ev.map(e=>e.country))].sort();
   const fi=$("#fImp");fi.innerHTML="";["High","Medium","Low","Holiday"].forEach(k=>{const b=document.createElement("button");b.className="chip";b.innerHTML=`<span class="imp ${k}" style="width:8px;height:10px;margin-right:6px"></span>${IMP_DE[k]}`;b.setAttribute("aria-pressed",state.imp.includes(k));b.onclick=()=>{state.imp=state.imp.includes(k)?state.imp.filter(x=>x!==k):[...state.imp,k];LS.set("imp",state.imp);renderNewsFilters();renderNews()};fi.appendChild(b)});
   const fc=$("#fCur");fc.innerHTML="";const all=document.createElement("button");all.className="chip";all.textContent="Alle";all.setAttribute("aria-pressed",!state.cur.length);all.onclick=()=>{state.cur=[];LS.set("cur",[]);renderNewsFilters();renderNews()};fc.appendChild(all);
-  curs.forEach(k=>{const b=document.createElement("button");b.className="chip";b.textContent=k;b.setAttribute("aria-pressed",state.cur.includes(k));b.onclick=()=>{state.cur=state.cur.includes(k)?state.cur.filter(x=>x!==k):[...state.cur,k];LS.set("cur",state.cur);renderNewsFilters();renderNews()};fc.appendChild(b)});
+  curs.forEach(k=>{const b=document.createElement("button");b.className="chip";b.textContent=flag(k)+" "+k;b.setAttribute("aria-pressed",state.cur.includes(k));b.onclick=()=>{state.cur=state.cur.includes(k)?state.cur.filter(x=>x!==k):[...state.cur,k];LS.set("cur",state.cur);renderNewsFilters();renderNews()};fc.appendChild(b)});
 }
 const tf=d=>d.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"});
 function countdown(ms){const m=Math.round(ms/6e4);if(m<60)return "in "+m+" Min.";const h=Math.floor(m/60);return h<24?`in ${h} h ${m%60} Min.`:`in ${Math.floor(h/24)} T ${h%24} h`}
 function renderNews(){
   const tb=$("#newsRows");
-  if(!state.news){tb.innerHTML=`<tr><td colspan="6" class="empty">News werden geladen …</td></tr>`;$("#nextUp").innerHTML=`<span class="mut">Noch keine News geladen.</span>`;return}
+  if(!state.news){tb.innerHTML=`<tr><td colspan="6" class="empty">News werden geladen …</td></tr>`;$("#nextUp").innerHTML=`<span class="mut">News werden geladen …</span>`;return}
   const n=new Date(), tK=ymd(n);
   const ev=events().filter(e=>state.imp.includes(e.impact)&&(!state.cur.length||state.cur.includes(e.country))&&(!state.onlyToday||ymd(e.t)===tK));
   const nxt=ev.find(e=>e.t>n);
@@ -1038,26 +1310,59 @@ function renderNews(){
     const dk=ymd(e.t);
     if(dk!==lastDay){lastDay=dk;lastTime="";h+=`<tr class="dayrow"><td colspan="6">${e.t.toLocaleDateString("de-CH",{weekday:"long",day:"numeric",month:"long"})}${dk===tK?" · Heute":""}</td></tr>`}
     const time=tf(e.t);const showT=time!==lastTime;lastTime=time;
-    h+=`<tr class="${e.t<n?"past":""} ${e===nxt?"next":""}"><td class="num">${showT?time:""}</td><td class="cur">${esc(e.country)}</td><td><span class="imp ${esc(e.impact)}" title="${IMP_DE[e.impact]||e.impact}"></span></td><td class="ev">${esc(e.title)}</td><td class="r num fc">${esc(e.forecast)}</td><td class="r num pv">${esc(e.previous)}</td></tr>`;
+    h+=`<tr class="${e.t<n?"past":""} ${e===nxt?"next":""}"><td class="num">${showT?time:""}</td><td class="cur"><span class="flg">${flag(e.country)}</span>${esc(e.country)}</td><td><span class="imp ${esc(e.impact)}" title="${IMP_DE[e.impact]||e.impact}"></span></td><td class="ev">${esc(e.title)}</td><td class="r num fc">${esc(e.forecast)}</td><td class="r num pv">${esc(e.previous)}</td></tr>`;
   }
   tb.innerHTML=h||`<tr><td colspan="6" class="empty">Keine Events für diese Filter.</td></tr>`;
   const f=state.news.fetchedAt?new Date(state.news.fetchedAt):null;
   $("#newsMeta").textContent=`Quelle: Forex Factory${f?" · aktualisiert "+f.toLocaleDateString("de-CH",{day:"2-digit",month:"2-digit"})+" "+tf(f):""}`;
-  $("#nextUp").innerHTML=nxt?`<span class="big">${tf(nxt.t)}</span><span class="cur">${esc(nxt.country)}</span><span class="imp ${esc(nxt.impact)}"></span><b>${esc(nxt.title)}</b><span class="mut">${countdown(nxt.t-n)}</span>`:`<span class="mut">Für diese Woche keine weiteren Events mit diesen Filtern.</span>`;
-  renderSessions();
+  renderHero();renderSchedule();renderSessions();
 }
 const isGold=x=>(x.impact==="High"||x.impact==="Medium")&&x.country==="USD";   /* what moves XAUUSD */
+/* the big countdown card: next high-impact USD event, else the next gold event */
+let heroEv=null;
+function renderHero(){
+  const n=new Date(),ev=events();heroEv=ev.find(x=>x.country==="USD"&&x.impact==="High"&&x.t>n)||ev.find(x=>isGold(x)&&x.t>n)||null;
+  const el=$("#nextUp");
+  if(!heroEv){el.innerHTML=`<div class="nh1"><span class="mut">Diese Woche keine wichtigen USD-News mehr.</span></div>`;return}
+  const e=heroEv,day=ymd(e.t)===ymd(n)?"":e.t.toLocaleDateString("de-CH",{weekday:"short"})+" ";
+  el.innerHTML=`<div class="nh1"><span class="nt num">${day}${tf(e.t)}</span><div class="nev"><span class="flg big">${flag(e.country)}</span><span><b>${esc(e.title)}</b><i>${esc(LAND[e.country]||e.country)}${e.forecast?" · Prognose "+esc(e.forecast):""}${e.previous?" · Vorher "+esc(e.previous):""}</i></span></div></div>
+    <div class="nh2"><div class="cd" id="heroCd"></div><span class="rbadge ${esc(e.impact)}">${RISK_DE[e.impact]||e.impact}</span></div>`;
+  heroClock();
+}
+function heroClock(){
+  const el=$("#heroCd");if(!el||!heroEv)return;let ms=Math.max(0,heroEv.t-Date.now());
+  if(!ms){renderHero();return}
+  const dd=Math.floor(ms/864e5),h=Math.floor(ms%864e5/36e5),m=Math.floor(ms%36e5/6e4),sec=Math.floor(ms%6e4/1e3);
+  const u=[[dd>0?"Tage":"Stunden",dd>0?dd:h],[dd>0?"Stunden":"Minuten",dd>0?h:m],[dd>0?"Minuten":"Sekunden",dd>0?m:sec]];
+  el.innerHTML=u.map(([l,v],i)=>`${i?`<span class="cs">:</span>`:""}<span class="cu"><i>${l}</i><b class="num">${pad(v)}</b></span>`).join("");
+}
+setInterval(()=>{if(!$("#view-news").hidden)heroClock()},1000);
+/* today's timeline: session opens and the important events */
+function renderSchedule(){
+  const n=new Date(),k=ymd(n),off=-n.getTimezoneOffset()/60,items=[];
+  const dow=n.getDay();
+  if(dow>0&&dow<6)[["London Open","Europäische Handelssession beginnt",7],["New York Open","US-Handelssession beginnt",12]].forEach(([t,sub,u])=>{const d=new Date(n);d.setHours(0,0,0,0);d.setMinutes(Math.round(((u+off)%24+24)%24*60));items.push({t:d,title:t,sub,sess:1})});
+  events().filter(e=>ymd(e.t)===k&&(e.impact==="High"||(e.impact==="Medium"&&e.country==="USD"))).forEach(e=>items.push({t:e.t,title:e.title,sub:(LAND[e.country]||e.country)+(e.forecast?" · Prognose "+e.forecast:""),c:e.country,imp:e.impact}));
+  items.sort((a,b)=>a.t-b.t);const nx=items.find(x=>x.t>n);
+  $("#schedule").innerHTML=items.length?items.map(x=>`<div class="ti${x.t<=n?" past":""}${x===nx?" next":""}"><span class="tt num">${tf(x.t)}</span><span class="td"></span><span class="tx"><b>${x.c?`<span class="flg">${flag(x.c)}</span>`:""}${esc(x.title)}</b><i>${esc(x.sub)}</i></span>${x.imp==="High"?`<span class="rbadge High">Hohes Risiko</span>`:""}</div>`).join("")
+    :`<p class="empty" style="padding:12px">Heute keine wichtigen Termine.</p>`;
+}
+document.querySelectorAll("[data-jump]").forEach(b=>b.onclick=()=>{const j=b.dataset.jump;
+  if(j==="usd"){state.cur=["USD"];state.imp=["High"];LS.set("cur",state.cur);LS.set("imp",state.imp);renderNewsFilters();renderNews()}
+  const id={usd:"calPanel",cal:"calPanel",gold:"goldPanel",truth:"truthPanel"}[j];$("#"+id).scrollIntoView({behavior:"smooth"})});
 function goldRows(list,n,withDays){
   let day="",h="";const nx=list.find(x=>x.t>n),today=ymd(n);
   for(const e of list){const d=ymd(e.t);
     if(withDays&&d!==day){day=d;h+=`<div class="gday">${d===today?"Heute":e.t.toLocaleDateString("de-CH",{weekday:"long",day:"2-digit",month:"2-digit"})}</div>`}
     const past=e.t<=n;
-    h+=`<div class="grow${past?" past":""}${e===nx?" next":""}"><span class="num gt">${tf(e.t)}</span><span class="imp ${esc(e.impact)}"></span><span class="gtitle">${esc(e.title)}</span><span class="mut gc">${past?"vorbei":countdown(e.t-n)}</span>${e.forecast||e.previous?`<span class="mut gf">${e.forecast?"Prog. "+esc(e.forecast):""}${e.forecast&&e.previous?" · ":""}${e.previous?"Vorh. "+esc(e.previous):""}</span>`:""}</div>`}
+    h+=`<div class="irow${past?" past":""}${e===nx?" next":""}"><span class="it num">${!withDays&&d!==today?e.t.toLocaleDateString("de-CH",{weekday:"short"})+" ":""}${tf(e.t)}</span><span class="flg">${flag(e.country)}</span><span class="ix"><b>${esc(e.title)}</b><i>${past?"vorbei":countdown(e.t-n)}${e.forecast?" · Prog. "+esc(e.forecast):""}${e.previous?" · Vorh. "+esc(e.previous):""}</i></span><span class="rbadge ${esc(e.impact)}">${e.impact==="High"?"Hoch":"Mittel"}</span></div>`}
   return h;
 }
 function renderGoldNews(n){
   const el=$("#goldNews"),today=ymd(n);
-  const tl=state.news?events().filter(x=>isGold(x)&&ymd(x.t)===today):[];
+  /* dashboard: today's gold news, or the next one */
+  let tl=state.news?events().filter(x=>isGold(x)&&ymd(x.t)===today):[];
+  if(!tl.length&&state.news){const nx=events().find(x=>isGold(x)&&x.t>n);if(nx)tl=[nx]}
   $("#todayPanel").hidden=!tl.length;$("#goldToday").innerHTML=goldRows(tl,n,false);
   if(!state.news){el.innerHTML=`<p class="empty">News werden geladen …</p>`;return}
   const list=events().filter(x=>isGold(x)&&(x.t>n||ymd(x.t)===today));
@@ -1069,11 +1374,10 @@ $("#onlyToday").onclick=e=>{state.onlyToday=!state.onlyToday;e.currentTarget.set
 /* sessions in UTC hours, shown in local time */
 const SESS=[["Sydney",21,6],["Tokyo",0,9],["London",7,16],["New York",12,21]];
 function renderSessions(){
-  const off=-new Date().getTimezoneOffset()/60;const el=$("#sess");let h="";
-  SESS.forEach(([name,s,e],i)=>{let a=(s+off+24)%24,b=(e+off+24)%24;const segs=b>a?[[a,b]]:[[a,24],[0,b]];
-    segs.forEach(([x,y],j)=>{h+=`<div class="bar" style="left:${x/24*100}%;width:${(y-x)/24*100}%;top:${i*28}px">${j===0||segs.length===1?name+" "+pad(Math.floor(a))+":00–"+pad(Math.floor(b))+":00":""}</div>`})});
-  const d=new Date();h+=`<div class="now" style="left:${(d.getHours()+d.getMinutes()/60)/24*100}%"></div>`;
-  el.innerHTML=h;$("#sessTicks").innerHTML=[0,4,8,12,16,20,24].map(x=>`<span>${pad(x%24)}h</span>`).join("");
+  const off=-new Date().getTimezoneOffset()/60,d=new Date(),nowH=d.getHours()+d.getMinutes()/60,live=[];
+  $("#sess").innerHTML=SESS.map(([name,s,e])=>{const a=(s+off+24)%24,b=(e+off+24)%24,segs=b>a?[[a,b]]:[[a,24],[0,b]],on=segs.some(([x,y])=>nowH>=x&&nowH<y);if(on)live.push(name);
+    return `<div class="srow${on?" on":""}"><b>${name}</b><span class="num">${pad(a)}:00 – ${pad(b)}:00</span><span class="strk">${segs.map(([x,y])=>`<i style="left:${x/24*100}%;width:${(y-x)/24*100}%"></i>`).join("")}<u style="left:${nowH/24*100}%"></u></span></div>`}).join("");
+  $("#sessLive").innerHTML=live.length?`<span class="dot"></span>Live: ${live.join(", ")}`:"Geschlossen";
 }
 
 /* ---------- MT5 sync (secret gist written by the EA) ---------- */
@@ -1084,6 +1388,8 @@ function renderMt5(){
   if(state.mt5&&id){const up=new Date(state.mt5.updatedAt);st.className="pill on";st.textContent="Verbunden";
     const a=state.mt5.account||{};$("#mt5Note").textContent=`${a.login?"Konto "+a.login+(a.server?" ("+a.server+")":"")+" · ":""}${(state.mt5.trades||[]).length} Trades aus MT5 · letzter Sync ${up.toLocaleDateString("de-CH",{day:"2-digit",month:"2-digit"})} ${up.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit"})}`}
   else{st.className="pill";st.textContent=id?"Wird geladen…":"Nicht verbunden"}
+  if(!id)$("#mt5Det").open=true;
+  if(!$("#view-calc").hidden)renderSync();
 }
 let mt5At=0,mt5Pause=0;
 async function syncMt5(force){
@@ -1232,17 +1538,17 @@ async function cloudOn(token){
 }
 function renderCloud(){
   const on=!!cloud.token;$("#clState").className="pill"+(on?" on":"");$("#clState").textContent=on?"Aktiv":"Aus";
-  $("#clForm").hidden=on;$("#clBtns").hidden=!on;$("#jCloud").hidden=on;
+  $("#clForm").hidden=on;$("#clBtns").hidden=!on;$("#jCloud").hidden=on;if(!on&&clErr)$("#cloudPanel").open=true;if(!$("#view-calc").hidden)renderSync();
   $("#clNote").textContent=clErr||(on?`Notizen, Strategien, Gefühle, Bilder, Tagespläne, Checkliste und Einstellungen werden automatisch in deinem geheimen GitHub-Gist gesichert${cloud.at?" · zuletzt "+new Date(cloud.at).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):""}. Auf einem neuen Handy hier denselben Token eingeben, dann kommt alles zurück.`
     :"Deine Notizen und Bilder sind im Moment nur auf diesem Handy. Gib deinen GitHub-Token ein (derselbe wie im MT5-EA, Häkchen nur bei „gist“), dann wird alles automatisch online gesichert.");
 }
 $("#clForm").onsubmit=e=>{e.preventDefault();const t=$("#clTok").value.trim();if(t.length<20)return;$("#clTok").value="";cloudOn(t)};
 $("#clNow").onclick=()=>{clErr="Sichere …";renderCloud();cloudPull().then(cloudPush).catch(cloudFail)};
 $("#clOff").onclick=()=>{Object.assign(cloud,{token:"",gist:"",imgGist:"",at:0});saveCloud();clErr="";renderCloud()};
-$("#jCloud").onclick=()=>{show("calc");setTimeout(()=>$("#cloudPanel").scrollIntoView({behavior:"smooth"}),50)};
+$("#jCloud").onclick=()=>{show("calc");setTimeout(()=>{$("#cloudPanel").open=true;$("#cloudPanel").scrollIntoView({behavior:"smooth"})},50)};
 
 /* ---------- journal ---------- */
-let jStrat=LS.get("jStrat","Alle"),jNoted=false,jLimit=40;
+let jStrat=LS.get("jStrat","Alle"),jNoted=false,jLimit=10;
 /* journal times always in Swiss time, whatever the phone is set to */
 const ZH="Europe/Zurich";
 const zt=d=>d.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit",timeZone:ZH});
@@ -1251,32 +1557,74 @@ const zdur=ms=>{const m=Math.round(ms/6e4);return m<60?m+" Min.":m<1440?Math.flo
 function renderJournal(){
   const N=state.settings.notes||{};
   const T=((state.mt5&&state.mt5.trades)||[]).map(t=>({...t,nt:N[t.id]||{}})).sort((a,b)=>String(b.closeUtc).localeCompare(String(a.closeUtc)));
-  const sf=$("#jStrat");sf.innerHTML="";["Alle",...STRATS,"Ohne"].forEach(v=>{const b=document.createElement("button");b.className="chip";b.textContent=v==="Ohne"?"Ohne Strategie":v;b.setAttribute("aria-pressed",jStrat===v);b.onclick=()=>{jStrat=v;LS.set("jStrat",v);jLimit=40;renderJournal()};sf.appendChild(b)});
-  $("#jNoted").setAttribute("aria-pressed",jNoted);
+  const sf=$("#jStrat");sf.innerHTML="";
+  [["Alle","Alle"],["Ichimoku Cloud","Ichimoku"],["Markterfahrung","Markterfahrung"],["Ohne","Ohne Strategie"]].forEach(([v,l])=>{const b=document.createElement("button");b.className="pill2";b.type="button";b.textContent=l;b.setAttribute("aria-pressed",jStrat===v);b.onclick=()=>{jStrat=v;LS.set("jStrat",v);jLimit=10;renderJournal()};sf.appendChild(b)});
+  const nb=document.createElement("button");nb.className="pill2";nb.type="button";nb.id="jNoted";nb.textContent="Nur Notiz";nb.setAttribute("aria-pressed",jNoted);nb.onclick=()=>{jNoted=!jNoted;jLimit=10;renderJournal()};sf.appendChild(nb);
   const L=T.filter(t=>(jStrat==="Alle"||(jStrat==="Ohne"?!STRATS.includes(t.nt.setup):t.nt.setup===jStrat))&&(!jNoted||hasNote(t.nt)));
   const pnl=L.reduce((a,t)=>a+(+t.pnl||0),0),win=L.filter(t=>+t.pnl>0).length,rs=L.filter(t=>t.r!=null),rsum=rs.reduce((a,t)=>a+(+t.r||0),0);
-  $("#jSum").innerHTML=[["Trades",L.length],["Treffer",L.length?Math.round(win/L.length*100)+" %":"–"],["PnL",`<span class="${cls(pnl)}">${fmt(pnl)}</span>`],["Ø R",rs.length?`<span class="${cls(rsum)}">${fmtR(rsum/rs.length)}</span>`:"–"]].map(([a,b])=>`<div><span class="lbl">${a}</span><b>${b}</b></div>`).join("");
-  $("#jList").innerHTML=!state.mt5?`<p class="empty">Verbinde zuerst MT5 im Dashboard, dann erscheinen hier deine Trades.</p>`
+  const ds=state.mt5?discipline():{ks:[],pts:0},bal=+((state.mt5&&state.mt5.account||{}).balance)||0;
+  $("#jSum").innerHTML=[["Trefferquote",L.length?Math.round(win/L.length*100)+" %":"–",`${win} von ${L.length}`],
+    ["Gesamt-PnL",`<span class="${cls(pnl)}">${fmt(pnl)}</span>`,bal&&L.length?`<span class="${cls(pnl)}">${fmtR(pnl/(bal-pnl)*100,1)} %</span>`:""],
+    ["Ø R",rs.length?`<span class="${cls(rsum)}">${fmtR(rsum/rs.length)}</span>`:"–",`${rs.length} mit SL`],
+    ["Regelkonformität",ds.ks.length?Math.round(ds.pts/ds.ks.length*100)+" %":"–",ds.ks.length?`${ds.pts} von ${ds.ks.length} Tagen`:""]].map(([a,b,c])=>`<div><span>${a}</span><b class="num">${b}</b><i>${c}</i></div>`).join("");
+  $("#jCount").textContent=L.length?`${Math.min(jLimit,L.length)} von ${L.length}`:"";
+  $("#jList").innerHTML=!state.mt5?`<p class="empty">Verbinde zuerst MT5 unter Tools, dann erscheinen hier deine Trades.</p>`
     :!L.length?`<p class="empty">Keine Trades für diesen Filter.</p>`
     :L.slice(0,jLimit).map(t=>{const d=new Date(t.closeUtc),o=t.openUtc?new Date(t.openUtc):null,st=t.nt.setup;return `<button class="jt" type="button" data-note="${esc(t.id)}">
-      <div class="l1"><span>${esc(t.asset)} · ${t.side==="buy"?"Long":"Short"} ${(+t.volume).toFixed(2)}</span><span class="sp"></span><span class="pn ${cls(+t.pnl)}">${fmt(+t.pnl)}</span></div>
-      <div class="tm"><span><i>Einstieg</i>${o?(zd(o)!==zd(d)?zd(o)+" ":"")+zt(o):"–"}</span><span><i>Ausstieg</i>${zt(d)}</span>${o?`<span><i>Dauer</i>${zdur(d-o)}</span>`:""}</div>
-      <div class="l2"><span class="d">${zd(d)}</span><span class="st${st?"":" none"}">${st?esc(st):"Keine Strategie"}</span>${t.nt.emo?`<span class="st none">${esc(t.nt.emo)}</span>`:""}${st==="Ichimoku Cloud"&&t.nt.ichi&&t.nt.ichi.length?`<span class="d">☁ ${t.nt.ichi.length}/5</span>`:""}${t.r!=null?`<span class="d">${fmtR(+t.r)} R</span>`:""}</div>
-      <div class="tx${t.nt.text?"":" mut"}">${t.nt.text?esc(t.nt.text):"Noch keine Notiz. Tippen zum Schreiben."}</div>${t.nt.imgs&&t.nt.imgs.length?`<div class="thumbs">${t.nt.imgs.map(id=>`<img data-img="${esc(id)}" alt="Chart-Bild">`).join("")}</div>`:""}</button>`}).join("");
+      <span class="jl"><b>${esc(t.asset)}</b><i>${zd(d)}</i><i class="num">${(+t.volume).toFixed(2)} Lot</i></span>${SIDE(t.side)}
+      <span class="jm"><span class="tags"><span class="st${st?"":" none"}">${st?esc(st==="Ichimoku Cloud"?"Ichimoku":st):"Keine Strategie"}</span>${t.nt.emo?`<span class="st emo">${esc(t.nt.emo)}</span>`:""}${st==="Ichimoku Cloud"&&t.nt.ichi&&t.nt.ichi.length?`<span class="st emo">☁ ${t.nt.ichi.length}/5</span>`:""}</span>
+        ${t.open!=null&&t.close!=null?`<span class="px num">${t.open} → ${t.close}</span>`:""}
+        <span class="tm num">${o?(zd(o)!==zd(d)?zd(o)+" ":"")+zt(o):"–"} → ${zt(d)}${o?` · ${zdur(d-o)}`:""}</span>
+        <span class="tx${t.nt.text?"":" mut"}">${t.nt.text?esc(t.nt.text):"Noch keine Notiz. Tippen zum Schreiben."}</span></span>
+      <span class="jr"><b class="num ${cls(+t.pnl)}">${fmt(+t.pnl)}</b>${t.r!=null?`<i class="num ${cls(+t.r)}">${fmtR(+t.r,1)} R</i>`:`<i class="mut">kein SL</i>`}</span>
+      ${t.nt.imgs&&t.nt.imgs.length?`<span class="thumbs">${t.nt.imgs.map(id=>`<img data-img="${esc(id)}" alt="Chart-Bild">`).join("")}</span>`:""}</button>`}).join("");
   $("#jList").querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openNote(b.dataset.note));
   fillImgs($("#jList"));$("#jList").querySelectorAll("img[data-img]").forEach(im=>im.onclick=e=>{e.stopPropagation();openImg(im.dataset.img)});
   $("#jMore").hidden=L.length<=jLimit;
+  renderPatterns();
+  const open=T.find(t=>!hasNote(t.nt));$("#jAdd").hidden=!state.mt5||!T.length;$("#jAdd").disabled=!open;$("#jAddT").textContent=open?"Notiz zum letzten Trade ohne Notiz":"Alle Trades haben eine Notiz ✓";$("#jAdd").dataset.id=open?open.id:"";
 }
-$("#jNoted").onclick=()=>{jNoted=!jNoted;jLimit=40;renderJournal()};
-$("#jMore").onclick=()=>{jLimit+=40;renderJournal()};
-$("#toJournal").onclick=()=>show("jour");
+/* simple patterns from the trade history, worst first */
+function renderPatterns(){
+  const T=mt5Trades(),N=state.settings.notes||{},out=[],cur=((state.mt5||{}).account||{}).currency||"USD";
+  if(T.length>=5){
+    const wr=l=>l.length?Math.round(l.filter(t=>t.pnl>0).length/l.length*100):0,sum=l=>l.reduce((a,t)=>a+t.pnl,0),money=v=>`${fmt(v)} ${cur}`;
+    const losses=T.filter(t=>t.pnl<0),after=T.filter(t=>losses.some(x=>x!==t&&x.c<=t.o&&t.o-x.c<30*6e4)),rest=T.filter(t=>!after.includes(t));
+    if(after.length>=2){const a=wr(after),b=wr(rest);out.push({tone:a<b-5?"bad":"mid",t:"Trades direkt nach Verlust",x:`${after.length} Trades innerhalb 30 Min. nach einem Verlust: ${a} % Treffer (sonst ${b} %), Ergebnis ${money(sum(after))}.`})}
+    const noSl=T.filter(t=>t.r==null);if(noSl.length)out.push({tone:sum(noSl)<0?"bad":"mid",t:"Trades ohne Stop-Loss",x:`${noSl.length} Trade${noSl.length>1?"s":""} ohne SL beim Einstieg, Ergebnis ${money(sum(noSl))}.`});
+    const sess=t=>{const h=t.o.getUTCHours();return h>=7&&h<12?"London":h>=12&&h<21?"New York":"Asien"};
+    const g=(fn)=>{const m={};T.forEach(t=>{const k=fn(t);if(k)(m[k]=m[k]||[]).push(t)});return Object.entries(m).filter(([,l])=>l.length>=2).map(([k,l])=>({k,l,p:sum(l)})).sort((a,b)=>a.p-b.p)};
+    const S=g(sess);if(S.length>1){const w=S[0],b=S[S.length-1];if(w.p<0)out.push({tone:"bad",t:`Schwächste Session: ${w.k}`,x:`${money(w.p)} in ${w.l.length} Trades, ${wr(w.l)} % Treffer.`});if(b.p>0)out.push({tone:"good",t:`Stärkste Session: ${b.k}`,x:`${money(b.p)} in ${b.l.length} Trades, ${wr(b.l)} % Treffer.`})}
+    const E=g(t=>(N[t.id]||{}).emo);if(E.length&&E[0].p<0)out.push({tone:"bad",t:`Gefühl „${E[0].k}“ kostet dich`,x:`${money(E[0].p)} in ${E[0].l.length} Trades mit diesem Gefühl.`});
+    const St=g(t=>(N[t.id]||{}).setup).filter(x=>STRATS.includes(x.k));if(St.length===2){const a=St[1],b=St[0];const av=x=>x.p/x.l.length;if(av(a)>av(b))out.push({tone:"good",t:`${a.k} läuft besser`,x:`Ø ${fmt(av(a))} pro Trade, ${b.k} Ø ${fmt(av(b))}.`})}
+    const ls=g(t=>t.side==="buy"?"Long":"Short");if(ls.length===2&&ls[0].p<0&&ls[1].p>0)out.push({tone:"bad",t:`${ls[0].k}-Trades verlieren`,x:`${money(ls[0].p)} mit ${ls[0].k}, ${money(ls[1].p)} mit ${ls[1].k}.`});
+  }
+  const ord={bad:0,mid:1,good:2};out.sort((a,b)=>ord[a.tone]-ord[b.tone]);
+  $("#patPanel").hidden=!out.length;
+  $("#patList").innerHTML=out.slice(0,4).map(p=>`<button type="button" class="pat" data-go="ana"><span class="pico ${p.tone}">${p.tone==="bad"?ICO.down:p.tone==="good"?ICO.up:ICO.bars}</span><span><b>${esc(p.t)}</b><i>${esc(p.x)}</i></span><i class="chev"></i></button>`).join("");
+}
+$("#jMore").onclick=()=>{jLimit+=20;renderJournal()};
+$("#jAdd").onclick=()=>{const id=$("#jAdd").dataset.id;if(id)openNote(id)};
 
 /* ---------- checklist ---------- */
 const CK_DEFAULT=["News gecheckt: keine rote USD-News in den nächsten 30 Min.","Trend und Struktur auf höherem Timeframe geprüft","Setup passt zu meiner Strategie","Stop-Loss gesetzt","Risiko max. 1 % (Lot-Rechner)","Chance/Risiko mindestens 1:2","Ruhig, kein Revenge-Trade"];
 let ckEdit=false;
 function ckItems(){return state.settings.checklist||CK_DEFAULT}
 function ckDone(){const d=LS.get("bm-check",{});return d.at&&Date.now()-d.at<6*3600e3?d.done||{}:{}}   /* ticks expire after 6 h */
+/* automatic part of the pre-trade check */
+function preCheck(){
+  const u=new Date(),wd=u.getUTCDay(),h=u.getUTCHours(),d=riskData(),L=rk(),pz=pauseInfo();
+  const open=!(wd===6||(wd===0&&h<22)||(wd===5&&h>=21));   /* gold: Sunday evening to Friday evening (UTC) */
+  const mt=!!(state.mt5&&Date.now()-new Date(state.mt5.updatedAt)<10*6e4);
+  const data=!!(state.news&&(state.news.events||[]).length);
+  const lim=!!d&&!pz&&!(L.day>0&&-d.day>=d.dayStart*L.day/100)&&!(L.trades>0&&d.trades>=L.trades);
+  return [["Markt geöffnet",open],["MT5 verbunden",mt],["News-Daten da",data],["Risikogrenzen OK",lim]];
+}
 function renderCheck(){
+  const pc=preCheck(),ok=pc.filter(x=>x[1]).length,lvl=ok===4?"ok":ok===3?"warn":"stop";
+  $("#pcIco").className="hico "+lvl;$("#pcIco").innerHTML=ok===4?ICO.ok:ok===3?ICO.warn:ICO.stop;
+  $("#pcTitle").className=lvl;$("#pcTitle").textContent=ok===4?"Bereit":ok===3?"Fast bereit":"Nicht bereit";$("#pcSub").textContent=`${ok} von 4 Kriterien erfüllt`;
+  $("#pcGrid").innerHTML=pc.map(([l,v])=>`<span class="${v?"y":"n"}"><i>${v?ICO.ok:ICO.stop}</i>${l}</span>`).join("");
   const items=ckItems(),done=ckDone(),n=items.filter(t=>done[t]).length;
   const pr=$("#ckProg");pr.textContent=`${n} / ${items.length}`;pr.className="pill"+(n===items.length&&n?" done":"");
   const now=new Date(),soon=events().filter(x=>isGold(x)&&x.impact==="High"&&x.t>now&&x.t-now<45*6e4);
@@ -1297,8 +1645,30 @@ $("#ckEdit").onclick=()=>{ckEdit=!ckEdit;renderCheck()};
 $("#ckAdd").onsubmit=e=>{e.preventDefault();const v=$("#ckNew").value.trim();if(!v)return;state.settings.checklist=[...ckItems(),v];$("#ckNew").value="";persist();renderCheck()};
 
 /* ---------- risk limits ---------- */
-function renderRiskForm(){const L=rk();document.querySelectorAll("[data-rk]").forEach(i=>{if(document.activeElement!==i)i.value=L[i.dataset.rk]})}
-document.querySelectorAll("[data-rk]").forEach(i=>i.oninput=()=>{const v=parseFloat(i.value.replace(",","."));if(isNaN(v)||v<0)return;state.settings.risk={...rk(),[i.dataset.rk]:v};persist();renderRisk()});
+function renderRiskForm(){const L=rk();document.querySelectorAll("[data-rk]").forEach(i=>{if(document.activeElement!==i)i.value=L[i.dataset.rk]});
+  const v=(x,u)=>x>0?x+u:"aus";
+  $("#rkTiles").innerHTML=[["Max. Tagesverlust",v(L.day," %"),SV('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>')],["Max. Wochenverlust",v(L.week," %"),SV('<rect x="4" y="5.5" width="16" height="14" rx="2"/><path d="M4 10h16M9 3.5v4M15 3.5v4"/>')],
+    ["Max. Drawdown",v(L.dd," %"),SV('<path d="M4 5v14h16"/><path d="M7 9l4 4 3-3 5 5"/>')],["Max. Trades / Tag",v(L.trades,""),SV('<ellipse cx="12" cy="6.5" rx="7" ry="2.8"/><path d="M5 6.5v5c0 1.6 3.1 2.8 7 2.8s7-1.2 7-2.8v-5M5 11.5v5c0 1.6 3.1 2.8 7 2.8s7-1.2 7-2.8v-5"/>')]]
+    .map(([l,x,ic])=>`<button type="button" class="rkb" data-rkopen><i>${ic}</i><span>${l}</span><b class="num">${x}</b></button>`).join("");
+  document.querySelectorAll("[data-rkopen]").forEach(b=>b.onclick=()=>{$("#rkMore").open=true;$("#rkMore").scrollIntoView({behavior:"smooth"})});
+}
+document.querySelectorAll("[data-rk]").forEach(i=>i.oninput=()=>{const v=parseFloat(i.value.replace(",","."));if(isNaN(v)||v<0)return;state.settings.risk={...rk(),[i.dataset.rk]:v};persist();renderRisk();renderToday();renderRiskForm()});
+
+/* ---------- data & sync overview ---------- */
+function renderSync(){
+  const m=state.mt5,id=state.settings.mt5Gist,up=m&&m.updatedAt?new Date(m.updatedAt):null,fresh=up&&Date.now()-up<10*6e4;
+  let bytes=0;try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);bytes+=k.length+(localStorage.getItem(k)||"").length}}catch(e){}
+  const when=d=>ymd(d)===ymd(new Date())?"Heute, "+tf(d):d.toLocaleDateString("de-CH",{day:"2-digit",month:"2-digit"})+", "+tf(d);
+  $("#syncRows").innerHTML=[[SV('<path d="M6 19v-6M12 19V7M18 19v-9"/>'),"MT5-Verbindung",m&&id?`<span class="${fresh?"ok":"warn"}"><i class="dot"></i>${fresh?"Verbunden":"Kein aktueller Sync"}</span>`:`<span class="mut">Nicht verbunden</span>`],
+    [SV('<path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20v-4h-4"/>'),"Letzter Sync",up?when(up):"–"],
+    [SV('<ellipse cx="12" cy="6" rx="7" ry="2.8"/><path d="M5 6v12c0 1.6 3.1 2.8 7 2.8s7-1.2 7-2.8V6M5 12c0 1.6 3.1 2.8 7 2.8s7-1.2 7-2.8"/>'),"Lokaler Speicher",`Aktiv (${bytes>1e6?(bytes/1e6).toFixed(1)+" MB":Math.max(1,Math.round(bytes/1e3))+" KB"})`],
+    [SV('<path d="M7 18.5h10a4 4 0 0 0 .7-7.9A5.5 5.5 0 0 0 7 9.5a4.5 4.5 0 0 0 0 9z"/>'),"Online-Sicherung",cloud.token?`<span class="ok"><i class="dot"></i>Automatisch</span>`:`<span class="mut">Aus</span>`]]
+    .map(([ic,l,v])=>`<div class="sr"><i>${ic}</i><span>${l}</span><b>${v}</b></div>`).join("");
+  $("#stratTiles").innerHTML=[["Ichimoku Cloud","Trend · Wolke · Signale",SV('<path d="M7 4v3M7 16v4M17 6v3M17 15v5"/><rect x="5" y="7" width="4" height="9" rx="1"/><rect x="15" y="9" width="4" height="6" rx="1"/>')],["Markterfahrung","Wissen · Disziplin · Routine",SV('<path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c1.5 1.5 3.5 2.2 5.5 2.2s4-.7 5.5-2.2V11"/>')]]
+    .map(([k,sub,ic])=>{const l=mt5Trades().filter(t=>((state.settings.notes||{})[t.id]||{}).setup===k),p=l.reduce((a,t)=>a+t.pnl,0);
+      return `<button type="button" class="stb" data-strat="${k}"><i>${ic}</i><span><b>${k}</b><em>${l.length?`${l.length} Trades · <span class="${cls(p)}">${fmt(p)}</span>`:sub}</em></span><i class="chev"></i></button>`}).join("");
+  document.querySelectorAll("[data-strat]").forEach(b=>b.onclick=()=>{jStrat=b.dataset.strat;LS.set("jStrat",jStrat);jLimit=10;show("jour")});
+}
 $("#rkDef").onclick=()=>{delete state.settings.risk;persist();renderRiskForm();renderRisk()};
 
 /* ---------- Trump posts (trumpstruth.org via the EA) ---------- */
@@ -1309,13 +1679,13 @@ function renderTruth(){
   const all=((state.mt5&&state.mt5.truths)||[]).map(h=>({t:h.t,d:new Date(h.d),u:h.u,o:h.o})).filter(h=>h.t), T=all.slice(0,truthAll?15:5), n=Date.now();
   const when=d=>isNaN(d)?"":(new Date(d).toDateString()===new Date().toDateString()?tf(d):d.toLocaleDateString("de-CH",{day:"2-digit",month:"2-digit"}));
   const link=h=>/^https:\/\/truthsocial\.com\//.test(h.o||"")?h.o:/^https:\/\/(www\.)?trumpstruth\.org\//.test(h.u||"")?h.u:"";
-  $("#truthList").innerHTML=T.length?T.map(h=>`<div class="hl${isMktTruth(h.t)?" g":""}${n-h.d<15*6e4?" new":""}"><span class="ht">${when(h.d)}${link(h)?`<a class="src" href="${esc(link(h))}" target="_blank" rel="noopener" aria-label="Auf Truth Social öffnen">Post ↗</a>`:""}</span><span class="hx clamp">${esc(h.t)}</span></div>`).join("")
+  $("#truthList").innerHTML=T.length?T.map(h=>`<div class="hl tr${isMktTruth(h.t)?" g":""}${n-h.d<15*6e4?" new":""}"><span class="ht num">${when(h.d)}${link(h)?`<a class="src" href="${esc(link(h))}" target="_blank" rel="noopener" aria-label="Auf Truth Social öffnen">Post ↗</a>`:""}</span><span class="dot"></span><span class="hx clamp">${esc(h.t)}</span></div>`).join("")
     :`<p class="empty" style="padding:16px">Noch keine Posts.</p>`;
   $("#truthList").querySelectorAll(".hx.clamp").forEach(x=>x.onclick=()=>x.classList.toggle("clamp"));
   $("#truthMore").hidden=all.length<=5;$("#truthMore").textContent=truthAll?"Weniger anzeigen":"Mehr anzeigen";
   $("#truthNote").textContent=!state.mt5?"Die Posts kommen über deinen Expert Advisor in MT5. Verbinde zuerst MT5 im Dashboard."
     :!all.length?"Expert Advisor auf Version 1.41 aktualisieren und in MT5 bei WebRequest zusätzlich https://trumpstruth.org erlauben."
-    :"Fett = marktrelevant (Zölle, Fed, Dollar, Krieg …). Text antippen für den ganzen Post, „Post ↗“ öffnet ihn auf Truth Social.";
+    :"Roter Punkt = marktrelevant (Zölle, Fed, Dollar, Krieg …). Text antippen für den ganzen Post, „Post ↗“ öffnet ihn auf Truth Social.";
 }
 $("#truthMore").onclick=()=>{truthAll=!truthAll;renderTruth()};
 
@@ -1327,7 +1697,7 @@ function renderHeadlines(){
   const f=$("#hlF");f.innerHTML="";[["Gold-relevant",false],["Alle",true]].forEach(([l,v])=>{const b=document.createElement("button");b.className="chip";b.textContent=l;b.setAttribute("aria-pressed",state.hlAll===v);b.onclick=()=>{state.hlAll=v;LS.set("hlAll",v);renderHeadlines()};f.appendChild(b)});
   const H=((state.mt5&&state.mt5.headlines)||[]).map(h=>({t:h.t,d:new Date(h.d)})).filter(h=>h.t);
   const list=H.filter(h=>state.hlAll||isGoldHl(h.t)).slice(0,30), n=Date.now();
-  $("#hlList").innerHTML=list.length?list.map(h=>`<div class="hl${isGoldHl(h.t)?" g":""}${n-h.d<15*6e4?" new":""}"><span class="ht">${isNaN(h.d)?"":tf(h.d)}</span><span class="hx">${esc(h.t)}</span></div>`).join("")
+  $("#hlList").innerHTML=list.length?list.map(h=>`<div class="hl${isGoldHl(h.t)?" g":""}${n-h.d<15*6e4?" new":""}"><span class="ht num">${isNaN(h.d)?"":tf(h.d)}</span><span class="dot"></span><span class="hx">${esc(h.t)}</span></div>`).join("")
     :`<p class="empty" style="padding:16px">${H.length?"Gerade keine Gold-relevanten Schlagzeilen. Tippe auf „Alle“.":"Noch keine Schlagzeilen."}</p>`;
   $("#hlNote").textContent=!state.mt5?"Die Schlagzeilen kommen über deinen Expert Advisor in MT5. Verbinde zuerst MT5 im Dashboard."
     :!H.length?"Expert Advisor auf Version 1.30 aktualisieren und in MT5 bei WebRequest zusätzlich https://www.financialjuice.com erlauben."
@@ -1483,7 +1853,7 @@ $("#mcPdf").onclick=async()=>{
 const EYE_ON=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>`;
 const EYE_OFF=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.6A9.9 9.9 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3 3.7M6.5 6.9C3.9 8.6 2.5 12 2.5 12S6 18.5 12 18.5c1.6 0 3-.4 4.2-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>`;
 function renderPriv(){const b=$("#privBtn");b.innerHTML=priv?EYE_OFF:EYE_ON;b.setAttribute("aria-pressed",priv);b.setAttribute("aria-label",priv?"Beträge anzeigen":"Beträge verstecken")}
-$("#privBtn").onclick=()=>{priv=!priv;LS.set("priv",priv);renderPriv();renderDash();renderPlan(true);
+$("#privBtn").onclick=()=>{priv=!priv;LS.set("priv",priv);renderPriv();renderDash();renderPlan(true);if(!$("#view-calc").hidden)renderSync();
   if(!$("#view-jour").hidden)renderJournal();if(!$("#view-ana").hidden)renderAna();if(!$("#view-calc").hidden)renderCalc()};
 renderPriv();
 
