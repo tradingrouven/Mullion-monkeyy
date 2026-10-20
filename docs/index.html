@@ -151,6 +151,8 @@ textarea{background:var(--surface-2);border:1px solid var(--line);color:var(--fg
 .jt{display:block;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);padding:11px 0;color:inherit;font:inherit;cursor:pointer}
 .jt:last-child{border-bottom:0}
 .jt .l1{display:flex;gap:8px;align-items:baseline;font-weight:600}
+.jt .tm{display:flex;gap:4px 12px;flex-wrap:wrap;margin-top:5px;font:600 12.5px var(--font-num)}
+.jt .tm i{font:500 10.5px var(--font-ui);font-style:normal;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-right:5px}
 .jt .l2{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:5px}
 .jt .l1 .sp{flex:1}
 .jt .d{font:600 12px var(--font-num);color:var(--muted)}
@@ -838,7 +840,7 @@ function openNote(id){
   noteId=id;const nt=(state.settings.notes||{})[id]||{};
   const t=((state.mt5&&state.mt5.trades)||[]).find(x=>x.id===id), p=((state.mt5&&state.mt5.positions)||[]).find(x=>"mt5-"+x.id===id), x=t||p;
   $("#noteTitle").textContent=p&&!t?"Notiz zur offenen Position":"Trade-Notiz";
-  $("#noteSub").innerHTML=x?`${esc(x.asset)} · ${x.side==="buy"?"Long":"Short"} ${(+x.volume).toFixed(2)} Lot · <span class="${cls(+x.pnl)}">${fmt(+x.pnl)}</span> · ${new Date(x.closeUtc||x.openUtc).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}`:"";
+  $("#noteSub").innerHTML=x?`${esc(x.asset)} · ${x.side==="buy"?"Long":"Short"} ${(+x.volume).toFixed(2)} Lot · <span class="${cls(+x.pnl)}">${fmt(+x.pnl)}</span> · ${x.openUtc?"Einstieg "+new Date(x.openUtc).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"}):""}${x.closeUtc?" · Ausstieg "+new Date(x.closeUtc).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"}):""}`:"";
   $("#noteSetup").value=nt.setup||"";$("#noteText").value=nt.text||"";
   if(!nt.setup&&!nt.text)$("#noteSetup").value=LS.get("lastStrat","");   /* new note: start with the last strategy used */
   const ch=$("#noteChips"),paint=()=>ch.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.textContent===$("#noteSetup").value));
@@ -858,6 +860,11 @@ $("#noteDel").onclick=()=>{saveNote(null);$("#noteDlg").close("cancel")};
 
 /* ---------- journal ---------- */
 let jStrat=LS.get("jStrat","Alle"),jNoted=false,jLimit=40;
+/* journal times always in Swiss time, whatever the phone is set to */
+const ZH="Europe/Zurich";
+const zt=d=>d.toLocaleTimeString("de-CH",{hour:"2-digit",minute:"2-digit",timeZone:ZH});
+const zd=d=>d.toLocaleDateString("de-CH",{weekday:"short",day:"2-digit",month:"2-digit",timeZone:ZH});
+const zdur=ms=>{const m=Math.round(ms/6e4);return m<60?m+" Min.":m<1440?Math.floor(m/60)+" h "+pad(m%60)+" Min.":Math.floor(m/1440)+" T "+Math.floor(m%1440/60)+" h"};
 function renderJournal(){
   const N=state.settings.notes||{};
   const T=((state.mt5&&state.mt5.trades)||[]).map(t=>({...t,nt:N[t.id]||{}})).sort((a,b)=>String(b.closeUtc).localeCompare(String(a.closeUtc)));
@@ -868,9 +875,10 @@ function renderJournal(){
   $("#jSum").innerHTML=[["Trades",L.length],["Treffer",L.length?Math.round(win/L.length*100)+" %":"–"],["PnL",`<span class="${cls(pnl)}">${fmt(pnl)}</span>`],["Ø R",rs.length?`<span class="${cls(rsum)}">${fmt(rsum/rs.length)}</span>`:"–"]].map(([a,b])=>`<div><span class="lbl">${a}</span><b>${b}</b></div>`).join("");
   $("#jList").innerHTML=!state.mt5?`<p class="empty">Verbinde zuerst MT5 im Dashboard, dann erscheinen hier deine Trades.</p>`
     :!L.length?`<p class="empty">Keine Trades für diesen Filter.</p>`
-    :L.slice(0,jLimit).map(t=>{const d=new Date(t.closeUtc),st=t.nt.setup;return `<button class="jt" type="button" data-note="${esc(t.id)}">
+    :L.slice(0,jLimit).map(t=>{const d=new Date(t.closeUtc),o=t.openUtc?new Date(t.openUtc):null,st=t.nt.setup;return `<button class="jt" type="button" data-note="${esc(t.id)}">
       <div class="l1"><span>${esc(t.asset)} · ${t.side==="buy"?"Long":"Short"} ${(+t.volume).toFixed(2)}</span><span class="sp"></span><span class="pn ${cls(+t.pnl)}">${fmt(+t.pnl)}</span></div>
-      <div class="l2"><span class="d">${d.toLocaleDateString("de-CH",{weekday:"short",day:"2-digit",month:"2-digit"})} ${tf(d)}</span><span class="st${st?"":" none"}">${st?esc(st):"Keine Strategie"}</span>${t.r!=null?`<span class="d">${fmt(+t.r)} R</span>`:""}</div>
+      <div class="tm"><span><i>Einstieg</i>${o?(zd(o)!==zd(d)?zd(o)+" ":"")+zt(o):"–"}</span><span><i>Ausstieg</i>${zt(d)}</span>${o?`<span><i>Dauer</i>${zdur(d-o)}</span>`:""}</div>
+      <div class="l2"><span class="d">${zd(d)}</span><span class="st${st?"":" none"}">${st?esc(st):"Keine Strategie"}</span>${t.r!=null?`<span class="d">${fmt(+t.r)} R</span>`:""}</div>
       <div class="tx${t.nt.text?"":" mut"}">${t.nt.text?esc(t.nt.text):"Noch keine Notiz. Tippen zum Schreiben."}</div></button>`}).join("");
   $("#jList").querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openNote(b.dataset.note));
   $("#jMore").hidden=L.length<=jLimit;
