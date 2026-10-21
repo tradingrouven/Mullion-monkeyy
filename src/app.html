@@ -398,7 +398,7 @@ button.hero{cursor:pointer}
 .qb.done{color:var(--win);border-color:rgba(63,191,140,.4)}
 .qb.on{border-color:rgba(235,176,58,.5)}
 /* risk */
-.rr{display:grid;grid-template-columns:100px minmax(0,1fr) 58px;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--line)}
+.rr{display:grid;grid-template-columns:100px minmax(0,1fr) auto;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--line)}
 .rr:first-child{border-top:0}
 .rr .rl{font-size:13.5px;color:#d9d2c2}
 .rr .rb{height:7px;border-radius:4px;background:rgba(255,255,255,.08);margin:0;overflow:hidden}
@@ -586,6 +586,7 @@ details.more[open] summary .chev{transform:rotate(-45deg)}
 }
 @media (prefers-reduced-motion:no-preference){.tab,.btn,.chip{transition:background .15s,border-color .15s,color .15s}}
 .news tr.archrow,.news tr.wkrow{display:block!important;border-bottom:0!important;padding:0!important}.news tr.archrow td,.news tr.wkrow td{display:block}.news .archrow td{padding:6px 0 10px!important}.news .archrow button{width:100%;text-align:left;background:var(--panel2,#1a1a1a);border:1px solid var(--line,#333);color:inherit;border-radius:10px;padding:10px 12px;font:inherit;font-size:13px;display:flex;justify-content:space-between;gap:8px}.news .archrow button span{color:var(--gold,#d4af37);white-space:nowrap}.news .wkrow td{padding:16px 0 6px!important;color:var(--gold,#d4af37);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:12px}
+.rr .rl i,.rr>b i{display:block;font:400 11px var(--font-num);color:var(--muted);font-style:normal;margin-top:2px}.rr>b{text-align:right;min-width:58px}
 </style>
 
 <header class="top"><div class="wrap">
@@ -979,6 +980,7 @@ function riskData(){
   const dayCash=C.filter(x=>ymd(x.c)===today).reduce((a,x)=>a+x.a,0), wkCash=C.filter(x=>ymd(x.c)>=ws).reduce((a,x)=>a+x.a,0);
   const pos=m.positions||[], sp=spec();
   const trades=T.filter(t=>ymd(t.o)===today).length+pos.filter(p=>ymd(new Date(p.openUtc))===today).length;
+  const wkTrades=T.filter(t=>ymd(t.c)>=ws).length+pos.filter(p=>ymd(new Date(p.openUtc))>=ws).length, dayTrades=T.filter(t=>ymd(t.c)===today).length+pos.length;
   /* the high: rebuilt from trades and deposits/withdrawals (EA 1.42+); older EAs send no deposits, then only the highest equity this app has seen counts */
   let peak=Math.max(bal,eq);
   /* counted from the start of the month or the last deposit, whichever is later */
@@ -986,15 +988,18 @@ function riskData(){
     [...T.map(t=>({c:t.c,v:t.pnl})),...C.map(x=>({c:x.c,v:x.a}))].filter(x=>x.c>from).sort((a,b2)=>b2.c-a.c).forEach(x=>{b-=x.v;peak=Math.max(peak,b)})}
   else{const k="bm-peak-"+m.account.login;peak=Math.max(peak,LS.get(k,0));LS.set(k,peak)}
   const noSl=pos.filter(p=>!(+p.sl)), openRisk=pos.reduce((a,p)=>{if(!(+p.sl))return a;const r=(p.side==="buy"?+p.open-+p.sl:+p.sl-+p.open)*+p.volume*sp.vpl;return a+Math.max(0,r)},0);
-  return {bal,eq,dayStart:bal-dayCl-dayCash,wkStart:bal-wkCl-wkCash,day:dayCl+floating,week:wkCl+floating,trades,peak,dd:Math.max(0,peak-eq),noSl,openRisk,cur:m.account.currency||"USD"};
+  return {bal,eq,dayStart:bal-dayCl-dayCash,wkStart:bal-wkCl-wkCash,day:dayCl+floating,week:wkCl+floating,trades,wkTrades,dayTrades,peak,dd:Math.max(0,peak-eq),noSl,openRisk,cur:m.account.currency||"USD"};
 }
 function renderRisk(){
   const d=riskData(),panel=$("#riskPanel");panel.hidden=!d;if(!d)return;
   const L=rk(),rows=[];let worst=0;
   const add=(label,used,limit,txt)=>{if(!(limit>0))return;const f=used/limit,lv=f>=1?2:f>=0.7?1:0;worst=Math.max(worst,lv);
     rows.push(`<div class="rr ${["","warn","stop"][lv]}"><span class="rl">${label}</span><div class="rb"><i style="width:${Math.min(100,Math.max(2,f*100))}%"></i></div><b class="num">${txt??Math.round(f*100)+" %"}</b></div>`)};
-  add("Heute",Math.max(0,-d.day),d.dayStart*L.day/100);
-  add("Diese Woche",Math.max(0,-d.week),d.wkStart*L.week/100);
+  /* day and week: the actual result in %, the bar shows how much of the loss limit is used */
+  const res=(v,start,lim)=>{const p=start?v/start*100:0;return `<span class="${cls(p)}">${fmtR(p)} %</span><i>Limit −${lim} %</i>`};
+  const tr=n=>`<i>${n} Trade${n===1?"":"s"}</i>`;
+  add("Heute"+tr(d.dayTrades),Math.max(0,-d.day),d.dayStart*L.day/100,res(d.day,d.dayStart,L.day));
+  add("Diese Woche"+tr(d.wkTrades),Math.max(0,-d.week),d.wkStart*L.week/100,res(d.week,d.wkStart,L.week));
   add("Trades heute",d.trades,L.trades,`${d.trades} / ${L.trades}`);
   add("Drawdown",d.dd,d.peak*L.dd/100);
   if(L.open>0)add("Offenes Risiko",d.noSl.length?d.bal:d.openRisk,d.bal*L.open/100,d.noSl.length?`${d.noSl.length}× kein SL`:undefined);
