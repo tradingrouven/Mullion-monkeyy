@@ -587,6 +587,7 @@ details.more[open] summary .chev{transform:rotate(-45deg)}
 @media (prefers-reduced-motion:no-preference){.tab,.btn,.chip{transition:background .15s,border-color .15s,color .15s}}
 .news tr.archrow,.news tr.wkrow{display:block!important;border-bottom:0!important;padding:0!important}.news tr.archrow td,.news tr.wkrow td{display:block}.news .archrow td{padding:6px 0 10px!important}.news .archrow button{width:100%;text-align:left;background:var(--panel2,#1a1a1a);border:1px solid var(--line,#333);color:inherit;border-radius:10px;padding:10px 12px;font:inherit;font-size:13px;display:flex;justify-content:space-between;gap:8px}.news .archrow button span{color:var(--gold,#d4af37);white-space:nowrap}.news .wkrow td{padding:16px 0 6px!important;color:var(--gold,#d4af37);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:12px}
 .rr .rl i,.rr>b i{display:block;font:400 11px var(--font-num);color:var(--muted);font-style:normal;margin-top:2px}.rr>b{text-align:right;min-width:58px}
+.jt .kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px;margin-top:7px;padding:7px 8px;border-radius:8px;background:var(--surface-2)}.jt .kv span{display:flex;flex-direction:column;min-width:0}.jt .kv i{font:500 9.5px var(--font-ui);font-style:normal;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}.jt .kv b{font:600 12.5px var(--font-num);white-space:nowrap}
 </style>
 
 <header class="top"><div class="wrap">
@@ -1577,6 +1578,15 @@ function renderJournal(){
     ["Gesamt-PnL",`<span class="${cls(pnl)}">${fmt(pnl)}</span>`,`${L.length} Trades`],
     ["Ø R",rs.length?`<span class="${cls(rsum)}">${fmtR(rsum/rs.length)}</span>`:"–",`${rs.length} mit SL`],
     ["Regelkonformität",ds.ks.length?Math.round(ds.pts/ds.ks.length*100)+" %":"–",ds.ks.length?`${ds.pts} von ${ds.ks.length} Tagen`:""]].map(([a,b,c])=>`<div><span>${a}</span><b class="num">${b}</b><i>${c}</i></div>`).join("");
+  /* balance right before a trade: today's balance minus everything booked after it opened */
+  const C=cashList(),TT=(state.mt5&&state.mt5.trades)||[];
+  const balAt=t=>{const o=new Date(t.openUtc||t.closeUtc);return bal-TT.filter(x=>new Date(x.closeUtc)>o).reduce((a,x)=>a+(+x.pnl||0),0)-C.filter(x=>x.c>o).reduce((a,x)=>a+x.a,0)};
+  const kv=t=>{const b0=balAt(t),risk=t.risk!=null?+t.risk:t.r?Math.abs(+t.pnl/+t.r):null,o=+t.open,sl=+t.sl,tp=+t.tp;
+    const plan=o&&sl&&tp&&o!==sl?Math.abs(tp-o)/Math.abs(o-sl):null;
+    const crv=v=>v==null?"–":v>=0?"1:"+v.toFixed(1):fmtR(v,1)+" R";
+    return [["CRV Plan",plan!=null?crv(plan):"–",""],["CRV echt",t.r!=null?crv(+t.r):"–",t.r!=null?cls(+t.r):""],
+      ["Risiko",risk&&b0>0?(risk/b0*100).toFixed(2)+" %":"–",""],["Ergebnis",b0>0?fmtR(+t.pnl/b0*100)+" %":"–",cls(+t.pnl)]]
+      .map(([a,v,c])=>`<span><i>${a}</i><b class="${c}">${v}</b></span>`).join("")};
   $("#jCount").textContent=L.length?`${Math.min(jLimit,L.length)} von ${L.length}`:"";
   $("#jList").innerHTML=!state.mt5?`<p class="empty">Verbinde zuerst MT5 unter Tools, dann erscheinen hier deine Trades.</p>`
     :!L.length?`<p class="empty">Keine Trades für diesen Filter.</p>`
@@ -1584,6 +1594,7 @@ function renderJournal(){
       <span class="jl"><b>${esc(t.asset)}</b><i>${zd(d)}</i><i class="num">${(+t.volume).toFixed(2)} Lot</i></span>${SIDE(t.side)}
       <span class="jm"><span class="tags"><span class="st${st?"":" none"}">${st?esc(st==="Ichimoku Cloud"?"Ichimoku":st):"Keine Strategie"}</span>${t.nt.emo?`<span class="st emo">${esc(t.nt.emo)}</span>`:""}${st==="Ichimoku Cloud"&&t.nt.ichi&&t.nt.ichi.length?`<span class="st emo">☁ ${t.nt.ichi.length}/5</span>`:""}</span>
         ${t.open!=null&&t.close!=null?`<span class="px num">${t.open} → ${t.close}</span>`:""}
+        <span class="kv num">${kv(t)}</span>
         <span class="tm num">${o?(zd(o)!==zd(d)?zd(o)+" ":"")+zt(o):"–"} → ${zt(d)}${o?` · ${zdur(d-o)}`:""}</span>
         <span class="tx${t.nt.text?"":" mut"}">${t.nt.text?esc(t.nt.text):"Noch keine Notiz. Tippen zum Schreiben."}</span></span>
       <span class="jr"><b class="num ${cls(+t.pnl)}">${fmt(+t.pnl)}</b>${t.r!=null?`<i class="num ${cls(+t.r)}">${fmtR(+t.r,1)} R</i>`:`<i class="mut">kein SL</i>`}</span>

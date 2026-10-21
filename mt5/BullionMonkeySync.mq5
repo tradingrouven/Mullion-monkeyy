@@ -10,7 +10,7 @@
 //| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.42"
+#property version   "1.43"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
@@ -366,7 +366,7 @@ string BuildPayload()
 
    long     pid[];      // position id
    string   sym[];
-   double   pnl[], volIn[], entry[], exitP[], sl[];
+   double   pnl[], volIn[], entry[], exitP[], sl[], tp[], slOut[], tpOut[];   // SL/TP at entry, and at close (if set later)
    datetime closeT[], openT[];
    int      side[];     // 0 buy, 1 sell
    bool     closed[];
@@ -395,9 +395,9 @@ string BuildPayload()
         {
          k = n++;
          ArrayResize(pid, n); ArrayResize(sym, n); ArrayResize(pnl, n); ArrayResize(volIn, n);
-         ArrayResize(entry, n); ArrayResize(exitP, n); ArrayResize(sl, n); ArrayResize(closeT, n); ArrayResize(openT, n); ArrayResize(side, n); ArrayResize(closed, n);
+         ArrayResize(entry, n); ArrayResize(exitP, n); ArrayResize(sl, n); ArrayResize(tp, n); ArrayResize(slOut, n); ArrayResize(tpOut, n); ArrayResize(closeT, n); ArrayResize(openT, n); ArrayResize(side, n); ArrayResize(closed, n);
          pid[k] = p; sym[k] = HistoryDealGetString(tk, DEAL_SYMBOL); pnl[k] = 0; volIn[k] = 0;
-         entry[k] = 0; exitP[k] = 0; sl[k] = 0; closeT[k] = 0; openT[k] = 0; side[k] = 0; closed[k] = false;
+         entry[k] = 0; exitP[k] = 0; sl[k] = 0; tp[k] = 0; slOut[k] = 0; tpOut[k] = 0; closeT[k] = 0; openT[k] = 0; side[k] = 0; closed[k] = false;
         }
       long ent = HistoryDealGetInteger(tk, DEAL_ENTRY);
       double comm = HistoryDealGetDouble(tk, DEAL_COMMISSION);
@@ -409,6 +409,7 @@ string BuildPayload()
            {
             entry[k] = HistoryDealGetDouble(tk, DEAL_PRICE);
             sl[k]    = HistoryDealGetDouble(tk, DEAL_SL);
+            tp[k]    = HistoryDealGetDouble(tk, DEAL_TP);
             side[k]  = (type == DEAL_TYPE_BUY) ? 0 : 1;
             openT[k] = (datetime)HistoryDealGetInteger(tk, DEAL_TIME);
            }
@@ -418,7 +419,7 @@ string BuildPayload()
         {
          pnl[k] += HistoryDealGetDouble(tk, DEAL_PROFIT) + HistoryDealGetDouble(tk, DEAL_SWAP);
          datetime t = (datetime)HistoryDealGetInteger(tk, DEAL_TIME);
-         if(t >= closeT[k]) { closeT[k] = t; exitP[k] = HistoryDealGetDouble(tk, DEAL_PRICE); }
+         if(t >= closeT[k]) { closeT[k] = t; exitP[k] = HistoryDealGetDouble(tk, DEAL_PRICE); slOut[k] = HistoryDealGetDouble(tk, DEAL_SL); tpOut[k] = HistoryDealGetDouble(tk, DEAL_TP); }
          closed[k] = true;
         }
      }
@@ -428,7 +429,11 @@ string BuildPayload()
    for(int k = 0; k < n; k++)
      {
       if(!closed[k]) continue;
-      string r = "null";
+      string r = "null", rk = "";
+      int dg = (int)SymbolInfoInteger(sym[k], SYMBOL_DIGITS);
+      // SL/TP set when the trade was opened; if added later, the level at close
+      if(sl[k] <= 0) sl[k] = slOut[k];
+      if(tp[k] <= 0) tp[k] = tpOut[k];
       if(sl[k] > 0 && entry[k] > 0 && volIn[k] > 0)
         {
          double ts = SymbolInfoDouble(sym[k], SYMBOL_TRADE_TICK_SIZE);
@@ -436,7 +441,7 @@ string BuildPayload()
          if(ts > 0 && tv > 0)
            {
             double risk = MathAbs(entry[k] - sl[k]) / ts * tv * volIn[k];
-            if(risk > 0) r = DoubleToString(pnl[k] / risk, 2);
+            if(risk > 0) { r = DoubleToString(pnl[k] / risk, 2); rk = ",\"risk\":" + DoubleToString(risk, 2); }
            }
         }
       if(trades != "") trades += ",";
@@ -448,8 +453,10 @@ string BuildPayload()
               + ",\"volume\":" + DoubleToString(volIn[k], 2)
               + (entry[k] > 0 ? ",\"open\":" + DoubleToString(entry[k], (int)SymbolInfoInteger(sym[k], SYMBOL_DIGITS)) : "")
               + (exitP[k] > 0 ? ",\"close\":" + DoubleToString(exitP[k], (int)SymbolInfoInteger(sym[k], SYMBOL_DIGITS)) : "")
+              + (sl[k] > 0 ? ",\"sl\":" + DoubleToString(sl[k], dg) : "")
+              + (tp[k] > 0 ? ",\"tp\":" + DoubleToString(tp[k], dg) : "")
               + ",\"pnl\":" + DoubleToString(pnl[k], 2)
-              + ",\"r\":" + r + "}";
+              + ",\"r\":" + r + rk + "}";
      }
 
    string cash = "";
