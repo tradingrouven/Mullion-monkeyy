@@ -395,6 +395,10 @@ button.hero{cursor:pointer}
 .htx span{font-size:13px;color:var(--soft)}
 .status.stop{border-color:rgba(229,97,92,.7);background:linear-gradient(120deg,rgba(229,97,92,.2),rgba(229,97,92,.05) 60%),#0d0807;box-shadow:0 0 26px rgba(229,97,92,.15)}
 .status.pause .htx b{color:var(--accent)}
+.status.ok{border-color:rgba(63,191,140,.65);background:linear-gradient(120deg,rgba(63,191,140,.2),rgba(63,191,140,.05) 60%),#07100c;box-shadow:0 0 26px rgba(63,191,140,.15)}
+.status.ok .htx b{color:var(--win)}
+.status.open{border-color:var(--line);background:linear-gradient(120deg,rgba(255,255,255,.05),rgba(255,255,255,.01)),#0d0c0a;box-shadow:none}
+.status.open .hico{border-color:#8f8775;color:#cfc7b4;box-shadow:none}
 /* number strip */
 .strip{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;padding:0 2px}
 .strip>div{display:flex;flex-direction:column;gap:3px;padding:2px 9px;border-left:1px solid var(--line);min-width:0}
@@ -786,7 +790,8 @@ details.more[open] summary .chev{transform:rotate(-45deg)}
     <div class="ph"><h2>Pre-Trade Check</h2><span class="sp"></span><span class="pill" id="ckProg"></span></div>
     <div class="pc"><span class="hico" id="pcIco"></span><div><b id="pcTitle"></b><span id="pcSub"></span></div></div>
     <div class="pcg" id="pcGrid"></div>
-    <div class="lbl" style="margin:16px 0 4px">Deine Regeln vor dem Trade</div>
+    <div class="lbl" style="margin:16px 0 8px">Checkliste für deine Strategie</div>
+    <div class="strat" id="ckStrat"></div>
     <div id="ckWarn"></div>
     <div id="ckList"></div>
     <form id="ckAdd" class="ckadd" hidden><input id="ckNew" placeholder="Neue Regel, z. B. „Kein Trade vor 9 Uhr“" maxlength="90"><button class="btn pri" type="submit">Hinzufügen</button></form>
@@ -928,7 +933,7 @@ const LAND={USD:"USA",EUR:"Eurozone",GBP:"Grossbritannien",JPY:"Japan",CHF:"Schw
 const flag=c=>FLAG[c]||"🏳️";
 const RISK_DE={High:"Hohes Risiko",Medium:"Mittleres Risiko",Low:"Tiefes Risiko",Holiday:"Feiertag"};
 const SV=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
-const ICO={ok:SV('<path d="M6 12.5l4 4 8-9"/>'),warn:SV('<path d="M12 7v6"/><path d="M12 17h.01"/>'),stop:SV('<path d="M7 7l10 10M17 7 7 17"/>'),pause:SV('<path d="M9.5 7v10M14.5 7v10"/>'),
+const ICO={list:SV('<path d="M9 6.5h10M9 12h10M9 17.5h10"/><path d="M4.5 6.5l1 1 1.8-2M4.5 12h2M4.5 17.5h2"/>'),ok:SV('<path d="M6 12.5l4 4 8-9"/>'),warn:SV('<path d="M12 7v6"/><path d="M12 17h.01"/>'),stop:SV('<path d="M7 7l10 10M17 7 7 17"/>'),pause:SV('<path d="M9.5 7v10M14.5 7v10"/>'),
   down:SV('<path d="M5 7l6 6 3-3 5 5"/><path d="M19 11v4h-4"/>'),up:SV('<path d="M5 17l6-6 3 3 5-5"/><path d="M19 13V9h-4"/>'),bars:SV('<path d="M6 19v-6M12 19V7M18 19v-9"/>')};
 const SIDE=s=>`<span class="bs ${s==="buy"?"buy":"sell"}">${s==="buy"?"BUY":"SELL"}</span>`;
 
@@ -1030,11 +1035,13 @@ function renderToday(){
   const up=state.mt5&&state.mt5.updatedAt?new Date(state.mt5.updatedAt):null,stale=!!up&&Date.now()-up>15*6e4;
   if(stale){lv=Math.max(lv,1);why.unshift(`Daten nicht aktuell: letzter MT5-Sync ${ymd(up)===ymd(n)?tf(up):up.toLocaleDateString("de-CH",{weekday:"short"})+" "+tf(up)}. Läuft MT5?`)}
   const st=$("#tdState");st.className="pill "+["ok","warn","stop"][lv];st.textContent=lv===1&&pz?"Pause":["Bereit","Vorsicht","Stopp für heute"][lv];
-  $("#tdHero").className="hero status "+(lv===2?"stop":pz?"pause":["ok","warn"][lv]);
-  $("#tdHero").hidden=lv===0;   /* the card only shows up when something needs attention */
-  $("#tdIco").innerHTML=lv===2?ICO.stop:pz?ICO.pause:lv===1?ICO.warn:ICO.ok;
-  $("#tdTitle").textContent=lv===2?"Stopp für heute":pz?`Pause bis ${tf(new Date(pz.end))}`:stale&&why.length===1?"Daten nicht aktuell":lv===1?"Vorsicht":"Handel erlaubt";
-  $("#tdSub").textContent=stale&&why.length===1&&!pz?why[0].replace("Daten nicht aktuell: l","L"):lv===2?why.join(" · ")+". Keine neuen Trades mehr.":pz?`Noch ${pauseLeft(pz)} · ${pz.n} Verluste heute, kein Revenge-Trade.`:lv===1?why.join(" · "):d?"Alle Systeme im grünen Bereich":"Verbinde MT5, dann prüfe ich deine Grenzen.";
+  /* green ("ready") only once the checklist of the chosen strategy is ticked off */
+  const cs=curStrat(),ci=ckItems(),cd=ckDone(),ck=ci.filter(t=>cd[t]).length,ckOk=ck>=ci.length&&ci.length>0;
+  const mode=lv===2?"stop":pz?"pause":lv===1?"warn":ckOk?"ok":"open";
+  $("#tdHero").className="hero status "+mode;
+  $("#tdIco").innerHTML=lv===2?ICO.stop:pz?ICO.pause:lv===1?ICO.warn:ckOk?ICO.ok:ICO.list;
+  $("#tdTitle").textContent=lv===2?"Stopp für heute":pz?`Pause bis ${tf(new Date(pz.end))}`:stale&&why.length===1?"Daten nicht aktuell":lv===1?"Vorsicht":ckOk?"Bereit zum Traden":"Checkliste offen";
+  $("#tdSub").textContent=stale&&why.length===1&&!pz?why[0].replace("Daten nicht aktuell: l","L"):lv===2?why.join(" · ")+". Keine neuen Trades mehr.":pz?`Noch ${pauseLeft(pz)} · ${pz.n} Verluste heute, kein Revenge-Trade.`:lv===1?why.join(" · "):ckOk?`Checkliste ${cs} erledigt, alle Grenzen OK.`:`${cs}: ${ck} von ${ci.length} abgehakt. Tippe hier zum Abhaken.`;
   /* number strip */
   const days=byDay(allTrades()),wsK=ymd(monday(n)),pc=(v,base)=>base>0?`<span class="${cls(v)}">${fmtR(v/base*100,2)} %</span>`:"";
   const dayP=d?d.day:((days[ymd(n)]||{}).pnl||0),wkP=d?d.week:Object.entries(days).filter(([k])=>k>=wsK).reduce((a,[,v])=>a+v.pnl,0);
@@ -1042,8 +1049,8 @@ function renderToday(){
   $("#kWeek").className="num "+cls(wkP);$("#kWeek").textContent=fmt(wkP);$("#kWeekS").innerHTML=d?pc(d.week,d.wkStart):`KW ${isoWeek(n)}`;
   if(d&&L.day>0){const lim=d.dayStart*L.day/100,left=Math.max(0,lim-Math.max(0,-d.day));$("#kFree").textContent=Math.round(left/lim*100)+" %";$("#kFree").className="num "+(left<=0?"neg":"");$("#kFreeS").textContent=plain(left)+" "+d.cur}
   else{$("#kFree").textContent="–";$("#kFree").className="num";$("#kFreeS").textContent=d?"Tageslimit aus":""}
-  const it=ckItems(),dn=ckDone(),k=it.filter(t=>dn[t]).length,cb=$("#tdCheck");
-  cb.innerHTML=k>=it.length?"✓ Checkliste erledigt":`☑︎ Checkliste <b>${k} / ${it.length}</b>`;cb.classList.toggle("done",k>=it.length);
+  const cb=$("#tdCheck");
+  cb.innerHTML=ckOk?`✓ ${cs==="Ichimoku Cloud"?"Ichimoku":cs} erledigt`:`☑︎ ${cs==="Ichimoku Cloud"?"Ichimoku":cs} <b>${ck} / ${ci.length}</b>`;cb.classList.toggle("done",ckOk);
   const ds=state.mt5?discipline():null,sb=$("#tdStreak");sb.hidden=!ds||!ds.ks.length;
   if(ds&&ds.ks.length){sb.classList.toggle("on",ds.cur>0);sb.innerHTML=`🔥 Disziplin <b>${ds.cur} Tag${ds.cur===1?"":"e"}</b>`}
   /* weekly review reminder: Friday evening and the weekend */
@@ -1615,8 +1622,13 @@ $("#jAdd").onclick=()=>{const id=$("#jAdd").dataset.id;if(id)openNote(id)};
 /* ---------- checklist ---------- */
 const CK_DEFAULT=["News gecheckt: keine rote USD-News in den nächsten 30 Min.","Trend und Struktur auf höherem Timeframe geprüft","Setup passt zu meiner Strategie","Stop-Loss gesetzt","Risiko max. 1 % (Lot-Rechner)","Chance/Risiko mindestens 1:2","Ruhig, kein Revenge-Trade"];
 let ckEdit=false;
-function ckItems(){return state.settings.checklist||CK_DEFAULT}
-function ckDone(){const d=LS.get("bm-check",{});return d.at&&Date.now()-d.at<6*3600e3?d.done||{}:{}}   /* ticks expire after 6 h */
+/* one checklist per strategy; Ichimoku adds its five cloud conditions */
+function curStrat(){const v=LS.get("ckStrat","")||LS.get("lastStrat","");return STRATS.includes(v)?v:STRATS[0]}
+function ckItems(st){st=st||curStrat();const own=(state.settings.checklists||{})[st];if(own)return own;
+  const base=state.settings.checklist||CK_DEFAULT;return st==="Ichimoku Cloud"?[...base,...ICHI.map(x=>x[1])]:base}
+const ckKey=()=>"bm-check-"+curStrat();
+function ckDone(){const d=LS.get(ckKey(),{});return d.at&&Date.now()-d.at<6*3600e3?d.done||{}:{}}   /* ticks expire after 6 h */
+function setItems(it){state.settings.checklists={...(state.settings.checklists||{}),[curStrat()]:it};persist()}
 /* automatic part of the pre-trade check */
 function preCheck(){
   const u=new Date(),wd=u.getUTCDay(),h=u.getUTCHours(),d=riskData(),L=rk(),pz=pauseInfo();
@@ -1631,6 +1643,7 @@ function renderCheck(){
   $("#pcIco").className="hico "+lvl;$("#pcIco").innerHTML=ok===4?ICO.ok:ok===3?ICO.warn:ICO.stop;
   $("#pcTitle").className=lvl;$("#pcTitle").textContent=ok===4?"Bereit":ok===3?"Fast bereit":"Nicht bereit";$("#pcSub").textContent=`${ok} von 4 Kriterien erfüllt`;
   $("#pcGrid").innerHTML=pc.map(([l,v])=>`<span class="${v?"y":"n"}"><i>${v?ICO.ok:ICO.stop}</i>${l}</span>`).join("");
+  const sw=$("#ckStrat");sw.innerHTML="";STRATS.forEach(v=>{const b=document.createElement("button");b.type="button";b.textContent=v;b.setAttribute("aria-pressed",curStrat()===v);b.onclick=()=>{LS.set("ckStrat",v);renderCheck();renderToday()};sw.appendChild(b)});
   const items=ckItems(),done=ckDone(),n=items.filter(t=>done[t]).length;
   const pr=$("#ckProg");pr.textContent=`${n} / ${items.length}`;pr.className="pill"+(n===items.length&&n?" done":"");
   const now=new Date(),soon=events().filter(x=>isGold(x)&&x.impact==="High"&&x.t>now&&x.t-now<45*6e4);
@@ -1642,13 +1655,13 @@ function renderCheck(){
 }
 $("#ckList").onclick=e=>{
   const rm=e.target.closest("[data-rm]");
-  if(rm){const it=ckItems().slice();it.splice(+rm.dataset.rm,1);state.settings.checklist=it;persist();renderCheck();return}
+  if(rm){const it=ckItems().slice();it.splice(+rm.dataset.rm,1);setItems(it);renderCheck();renderToday();return}
   const row=e.target.closest(".ck");if(!row||ckEdit)return;
-  const t=ckItems()[+row.dataset.i],d=ckDone();d[t]=!d[t];LS.set("bm-check",{at:Date.now(),done:d});renderCheck()};
+  const t=ckItems()[+row.dataset.i],d=ckDone();d[t]=!d[t];LS.set(ckKey(),{at:Date.now(),done:d});renderCheck();renderToday()};
 $("#ckList").onkeydown=e=>{if((e.key===" "||e.key==="Enter")&&e.target.classList.contains("ck")){e.preventDefault();e.target.click()}};
-$("#ckReset").onclick=()=>{LS.set("bm-check",{});renderCheck()};
+$("#ckReset").onclick=()=>{LS.set(ckKey(),{});renderCheck();renderToday()};
 $("#ckEdit").onclick=()=>{ckEdit=!ckEdit;renderCheck()};
-$("#ckAdd").onsubmit=e=>{e.preventDefault();const v=$("#ckNew").value.trim();if(!v)return;state.settings.checklist=[...ckItems(),v];$("#ckNew").value="";persist();renderCheck()};
+$("#ckAdd").onsubmit=e=>{e.preventDefault();const v=$("#ckNew").value.trim();if(!v)return;setItems([...ckItems(),v]);$("#ckNew").value="";renderCheck();renderToday()};
 
 /* ---------- risk limits ---------- */
 function renderRiskForm(){const L=rk();document.querySelectorAll("[data-rk]").forEach(i=>{if(document.activeElement!==i)i.value=L[i.dataset.rk]});
