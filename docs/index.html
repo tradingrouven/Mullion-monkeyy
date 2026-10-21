@@ -1625,7 +1625,9 @@ let ckEdit=false;
 /* one checklist per strategy; Ichimoku adds its five cloud conditions */
 function curStrat(){const v=LS.get("ckStrat","")||LS.get("lastStrat","");return STRATS.includes(v)?v:STRATS[0]}
 function ckItems(st){st=st||curStrat();const own=(state.settings.checklists||{})[st];if(own)return own;
-  const base=state.settings.checklist||CK_DEFAULT;return st==="Ichimoku Cloud"?[...base,...ICHI.map(x=>x[1])]:base}
+  const base=state.settings.checklist||CK_DEFAULT;return st==="Ichimoku Cloud"?[...base,...ICHI.map(x=>x[1])]:st==="Markterfahrung"?CK_MARKT:base}
+/* Rouven's range setup: 4h box, 1h zone, liquidity sweep, break & retest on M15, RSI, DXY */
+const CK_MARKT=["4h-Range als Box eingezeichnet","1h-Range-Zone eingezeichnet","Preis ist an der Range-Zone angekommen","Liquidität unter/über der Range abgegriffen (Sweep)","Break & Retest im kleinen Timeframe (M15)","RSI bestätigt die Richtung","DXY passt dazu (Gold Long = DXY schwach, Short = DXY stark)","News gecheckt: keine rote USD-News in den nächsten 30 Min.","Stop-Loss hinter dem Sweep-Docht gesetzt","Risiko max. 1 % (Lot-Rechner)","Ziel: Range-Mitte oder andere Range-Seite, mind. 1:2","Ruhig, kein FOMO oder Revenge-Trade"];
 const ckKey=()=>"bm-check-"+curStrat();
 function ckDone(){const d=LS.get(ckKey(),{});return d.at&&Date.now()-d.at<6*3600e3?d.done||{}:{}}   /* ticks expire after 6 h */
 function setItems(it){state.settings.checklists={...(state.settings.checklists||{}),[curStrat()]:it};persist()}
