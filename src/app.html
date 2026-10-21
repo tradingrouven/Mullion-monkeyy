@@ -585,6 +585,7 @@ details.more[open] summary .chev{transform:rotate(-45deg)}
   .nev b{font-size:15px}
 }
 @media (prefers-reduced-motion:no-preference){.tab,.btn,.chip{transition:background .15s,border-color .15s,color .15s}}
+.news tr.archrow,.news tr.wkrow{display:block!important;border-bottom:0!important;padding:0!important}.news tr.archrow td,.news tr.wkrow td{display:block}.news .archrow td{padding:6px 0 10px!important}.news .archrow button{width:100%;text-align:left;background:var(--panel2,#1a1a1a);border:1px solid var(--line,#333);color:inherit;border-radius:10px;padding:10px 12px;font:inherit;font-size:13px;display:flex;justify-content:space-between;gap:8px}.news .archrow button span{color:var(--gold,#d4af37);white-space:nowrap}.news .wkrow td{padding:16px 0 6px!important;color:var(--gold,#d4af37);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:12px}
 </style>
 
 <header class="top"><div class="wrap">
@@ -693,7 +694,7 @@ details.more[open] summary .chev{transform:rotate(-45deg)}
     <div class="tl" id="schedule"></div>
   </div>
   <div class="panel" id="goldPanel">
-    <div class="ph"><h2>Gold-News diese Woche</h2><span class="sp"></span><span class="note">🇺🇸 USD · Hoch &amp; Mittel</span></div>
+    <div class="ph"><h2>Gold-News kommend</h2><span class="sp"></span><span class="note">🇺🇸 USD · Hoch &amp; Mittel</span></div>
     <div class="gnews" id="goldNews"></div>
     <a class="btn calsub" id="calSub" href="#">🔔 Erinnerungen in den iPhone-Kalender</a>
   </div>
@@ -1303,14 +1304,20 @@ function renderNews(){
   const n=new Date(), tK=ymd(n);
   const ev=events().filter(e=>state.imp.includes(e.impact)&&(!state.cur.length||state.cur.includes(e.country))&&(!state.onlyToday||ymd(e.t)===tK));
   const nxt=ev.find(e=>e.t>n);
-  let h="",lastDay="",lastTime="";
+  /* finished days go into a collapsible archive row, next week gets its own header */
+  const old=ev.filter(e=>ymd(e.t)<tK),arch=LS.get("newsArch",false),wk=ymd(monday(n));
+  const oldDays=[...new Set(old.map(e=>e.t.toLocaleDateString("de-CH",{weekday:"short"})))];
+  let h=old.length?`<tr class="archrow"><td colspan="6"><button type="button" id="newsArch">🗂 Archiv: ${esc(oldDays.join(", "))} · ${old.length} Events <span>${arch?"ausblenden ▴":"anzeigen ▾"}</span></button></td></tr>`:"",lastDay="",lastTime="",nw=false;
   for(const e of ev){
     const dk=ymd(e.t);
+    if(dk<tK&&!arch)continue;
+    if(!nw&&ymd(monday(e.t))>wk){nw=true;h+=`<tr class="wkrow"><td colspan="6">Nächste Woche</td></tr>`}
     if(dk!==lastDay){lastDay=dk;lastTime="";h+=`<tr class="dayrow"><td colspan="6">${e.t.toLocaleDateString("de-CH",{weekday:"long",day:"numeric",month:"long"})}${dk===tK?" · Heute":""}</td></tr>`}
     const time=tf(e.t);const showT=time!==lastTime;lastTime=time;
     h+=`<tr class="${e.t<n?"past":""} ${e===nxt?"next":""}"><td class="num">${showT?time:""}</td><td class="cur"><span class="flg">${flag(e.country)}</span>${esc(e.country)}</td><td><span class="imp ${esc(e.impact)}" title="${IMP_DE[e.impact]||e.impact}"></span></td><td class="ev">${esc(e.title)}</td><td class="r num fc">${esc(e.forecast)}</td><td class="r num pv">${esc(e.previous)}</td></tr>`;
   }
   tb.innerHTML=h||`<tr><td colspan="6" class="empty">Keine Events für diese Filter.</td></tr>`;
+  const ab=$("#newsArch");if(ab)ab.onclick=()=>{LS.set("newsArch",!arch);renderNews()};
   const f=state.news.fetchedAt?new Date(state.news.fetchedAt):null;
   $("#newsMeta").textContent=`Quelle: Forex Factory${f?" · aktualisiert "+f.toLocaleDateString("de-CH",{day:"2-digit",month:"2-digit"})+" "+tf(f):""}`;
   renderHero();renderSchedule();renderSessions();
@@ -1321,7 +1328,7 @@ let heroEv=null;
 function renderHero(){
   const n=new Date(),ev=events();heroEv=ev.find(x=>x.country==="USD"&&x.impact==="High"&&x.t>n)||ev.find(x=>isGold(x)&&x.t>n)||null;
   const el=$("#nextUp");
-  if(!heroEv){el.innerHTML=`<div class="nh1"><span class="mut">Diese Woche keine wichtigen USD-News mehr.</span></div>`;return}
+  if(!heroEv){el.innerHTML=`<div class="nh1"><span class="mut">Keine wichtigen USD-News mehr geplant.</span></div>`;return}
   const e=heroEv,day=ymd(e.t)===ymd(n)?"":e.t.toLocaleDateString("de-CH",{weekday:"short"})+" ";
   el.innerHTML=`<div class="nh1"><span class="nt num">${day}${tf(e.t)}</span><div class="nev"><span class="flg big">${flag(e.country)}</span><span><b>${esc(e.title)}</b><i>${esc(LAND[e.country]||e.country)}${e.forecast?" · Prognose "+esc(e.forecast):""}${e.previous?" · Vorher "+esc(e.previous):""}</i></span></div></div>
     <div class="nh2"><div class="cd" id="heroCd"></div><span class="rbadge ${esc(e.impact)}">${RISK_DE[e.impact]||e.impact}</span></div>`;
@@ -1364,7 +1371,7 @@ function renderGoldNews(n){
   $("#todayPanel").hidden=!tl.length;$("#goldToday").innerHTML=goldRows(tl,n,false);
   if(!state.news){el.innerHTML=`<p class="empty">News werden geladen …</p>`;return}
   const list=events().filter(x=>isGold(x)&&(x.t>n||ymd(x.t)===today));
-  el.innerHTML=list.length?goldRows(list,n,true):`<p class="empty">Keine wichtigen USD-News mehr diese Woche.</p>`;
+  el.innerHTML=list.length?goldRows(list,n,true):`<p class="empty">Keine wichtigen USD-News mehr geplant.</p>`;
 }
 function renderNewsKpi(){renderGoldNews(new Date())}
 $("#onlyToday").onclick=e=>{state.onlyToday=!state.onlyToday;e.currentTarget.setAttribute("aria-pressed",state.onlyToday);renderNews()};

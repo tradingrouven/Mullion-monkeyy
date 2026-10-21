@@ -1,10 +1,10 @@
 name: News aktualisieren
-# Fetches this week's Forex Factory calendar and saves it as docs/news.json for the app,
+# Fetches this (and, when published, next) week's Forex Factory calendar and saves it as docs/news.json for the app,
 # plus docs/gold-news.ics, a calendar with reminders for the USD news that move gold.
 on:
   schedule:
-    - cron: '30 3 * * 0-5'
-    - cron: '30 15 * * 0-5'
+    - cron: '30 3 * * *'
+    - cron: '30 15 * * *'
   workflow_dispatch:
 permissions:
   contents: write
@@ -17,9 +17,12 @@ jobs:
         run: |
           curl -fsSL -A 'Mozilla/5.0 (BullionMonkey)' https://nfs.faireconomy.media/ff_calendar_thisweek.json -o /tmp/ff.json
           jq -e 'type=="array" and length>0' /tmp/ff.json > /dev/null
-          jq --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            '{source:"https://nfs.faireconomy.media/ff_calendar_thisweek.json",fetchedAt:$t,events:[.[]|{title,country,date,impact,forecast,previous}]}' \
-            /tmp/ff.json > docs/news.json
+          # next week, for planning on the weekend (Forex Factory only publishes it some days)
+          curl -fsSL -A 'Mozilla/5.0 (BullionMonkey)' https://nfs.faireconomy.media/ff_calendar_nextweek.json -o /tmp/ffn.json \
+            && jq -e 'type=="array"' /tmp/ffn.json > /dev/null || echo '[]' > /tmp/ffn.json
+          jq -s --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{source:"https://nfs.faireconomy.media/ff_calendar_thisweek.json",fetchedAt:$t,events:([.[0][],.[1][]]|unique_by(.title+.date+.country)|map({title,country,date,impact,forecast,previous}))}' \
+            /tmp/ff.json /tmp/ffn.json > docs/news.json
           python3 scripts/news_ics.py
       - name: Commit
         run: |
