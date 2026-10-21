@@ -588,6 +588,15 @@ details.more[open] summary .chev{transform:rotate(-45deg)}
 .news tr.archrow,.news tr.wkrow{display:block!important;border-bottom:0!important;padding:0!important}.news tr.archrow td,.news tr.wkrow td{display:block}.news .archrow td{padding:6px 0 10px!important}.news .archrow button{width:100%;text-align:left;background:var(--panel2,#1a1a1a);border:1px solid var(--line,#333);color:inherit;border-radius:10px;padding:10px 12px;font:inherit;font-size:13px;display:flex;justify-content:space-between;gap:8px}.news .archrow button span{color:var(--gold,#d4af37);white-space:nowrap}.news .wkrow td{padding:16px 0 6px!important;color:var(--gold,#d4af37);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:12px}
 .rr .rl i,.rr>b i{display:block;font:400 11px var(--font-num);color:var(--muted);font-style:normal;margin-top:2px}.rr>b{text-align:right;min-width:58px}
 .jt .kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 8px;margin-top:7px;padding:7px 8px;border-radius:8px;background:var(--surface-2)}.jt .kv span{display:flex;flex-direction:column;min-width:0}.jt .kv i{font:500 9.5px var(--font-ui);font-style:normal;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}.jt .kv b{font:600 12.5px var(--font-num);white-space:nowrap}
+button.dc{font:inherit;color:inherit;cursor:pointer}
+.dc .dt{font-size:9.5px;color:var(--muted);white-space:nowrap}
+.dtr{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);padding:11px 0;color:inherit;font:inherit;cursor:pointer}
+.dtr:last-child{border-bottom:0}
+.dtr .a{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.dtr .a i{flex-basis:100%;font-style:normal;font-size:12px;color:var(--muted)}
+.dtr .r{display:flex;flex-direction:column;align-items:flex-end}
+.dtr .r i{font-style:normal;font-size:12px}
+.jt.flash{background:color-mix(in srgb,var(--accent) 16%,transparent);transition:background .4s}
 </style>
 
 <header class="top"><div class="wrap">
@@ -872,6 +881,11 @@ details.more[open] summary .chev{transform:rotate(-45deg)}
     <li>Optional für Push-Nachrichten: MetaQuotes ID aus der MT5-App am Handy (Einstellungen → Nachrichten) in MT5 am Computer unter Extras → Optionen → Benachrichtigungen eintragen.</li>
   </ol>
   <p class="note">MT5 muss am Computer laufen, damit Trades, Positionen und Schlagzeilen aktuell bleiben. News-Kalender, Checkliste und Lot-Rechner gehen auch ohne.</p>
+</dialog>
+<dialog id="dayDlg" class="sheet">
+  <div class="ph"><h2 id="dayT"></h2><span class="sp"></span><button class="btn sm" type="button" id="dayX" aria-label="Schliessen">✕</button></div>
+  <p class="note" id="dayS" style="margin:-8px 0 8px"></p>
+  <div id="dayList"></div>
 </dialog>
 <dialog id="imgDlg" class="sheet imgv">
   <img id="imgBig" alt="Chart-Bild">
@@ -1208,10 +1222,12 @@ function renderDash(){
       +`<div class="wkd" style="--n:${show.filter(Boolean).length}">`;
     ds.forEach((x,i)=>{if(!show[i])return;const k=keys[i],v=vs[i];
       const c=v?(v.pnl>0?"win":v.pnl<0?"loss":"be"):"";
-      h+=`<div class="dc ${c}${x.getMonth()!==m?" out":""}${k===todayK?" today":""}"><span class="dw">${DOW[i]}</span><span class="dn">${x.getDate()}</span><span class="dp num ${v?cls(v.pnl):""}">${v?fmt(v.pnl,0):"·"}</span></div>`});
+      const tag=v?"button":"div";
+      h+=`<${tag} class="dc ${c}${x.getMonth()!==m?" out":""}${k===todayK?" today":""}"${v?` type="button" data-day="${k}"`:""}><span class="dw">${DOW[i]}</span><span class="dn">${x.getDate()}</span><span class="dp num ${v?cls(v.pnl):""}">${v?fmt(v.pnl,0):"·"}</span>${v?`<span class="dt">${v.n} Trade${v.n===1?"":"s"}</span>`:""}</${tag}>`});
     h+=`</div></div>`;
   }
   cal.innerHTML=h;
+  cal.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>openDay(b.dataset.day));
 
   /* balance (the rest of the number strip is in renderToday) */
   const allP=TT.reduce((a,t)=>a+(+t.pnl||0),0);
@@ -1501,6 +1517,28 @@ $("#imgIn").onchange=async e=>{const fs=[...e.target.files].slice(0,4-noteImgs.l
 let viewImg=null,viewDel=null;
 function openImg(id,onDel){viewImg=id;viewDel=onDel||null;$("#imgBig").src=imgCache[id]||"";imgSrc(id).then(v=>{if(viewImg===id&&v)$("#imgBig").src=v});$("#imgDel").hidden=!onDel;$("#imgDlg").showModal()}
 $("#imgX").onclick=()=>$("#imgDlg").close();
+/* week cards: tap a day to see its trades, tap a trade to jump to it in the journal */
+function openDay(k){
+  const L=filtered().filter(t=>t.date===k),M=Object.fromEntries(((state.mt5&&state.mt5.trades)||[]).map(t=>[t.id,t]));
+  const sum=L.reduce((a,t)=>a+(+t.pnl||0),0),n=L.reduce((a,t)=>a+(+t.count||1),0);
+  $("#dayT").textContent=new Date(k+"T12:00").toLocaleDateString("de-CH",{weekday:"long",day:"numeric",month:"long"});
+  $("#dayS").innerHTML=`${n} Trade${n===1?"":"s"} · <b class="num ${cls(sum)}">${fmt(sum)}</b>`;
+  L.sort((a,b)=>String((M[a.id]||{}).openUtc||"").localeCompare(String((M[b.id]||{}).openUtc||"")));
+  $("#dayList").innerHTML=L.map(t=>{const m=M[t.id],o=m&&m.openUtc?new Date(m.openUtc):null,c=m?new Date(m.closeUtc):null;
+    return `<button class="dtr" type="button"${m?` data-jt="${esc(t.id)}"`:" disabled"}>
+      <span class="a"><b>${esc(t.asset)}</b>${m?SIDE(m.side):""}<i>${m?(+m.volume).toFixed(2)+" Lot":esc(t.lot||"")}${o?" · "+zt(o)+" → "+zt(c):""}${t.strategy?" · "+esc(t.strategy==="Ichimoku Cloud"?"Ichimoku":t.strategy):""}</i></span>
+      <span class="r"><b class="num ${cls(+t.pnl)}">${fmt(+t.pnl)}</b>${t.r!=null?`<i class="num ${cls(+t.r)}">${fmtR(+t.r,1)} R</i>`:""}</span>${m?`<span class="go"></span>`:""}</button>`}).join("")||`<p class="empty">Keine Trades.</p>`;
+  $("#dayList").querySelectorAll("[data-jt]").forEach(b=>b.onclick=()=>{$("#dayDlg").close();jumpJournal(b.dataset.jt)});
+  $("#dayDlg").showModal();
+}
+$("#dayX").onclick=()=>$("#dayDlg").close();
+function jumpJournal(id){
+  const T=((state.mt5&&state.mt5.trades)||[]).slice().sort((a,b)=>String(b.closeUtc).localeCompare(String(a.closeUtc)));
+  jStrat="Alle";LS.set("jStrat","Alle");jNoted=false;jLimit=Math.max(10,T.findIndex(t=>t.id===id)+1);
+  show("jour");
+  const el=[...document.querySelectorAll("#jList .jt")].find(b=>b.dataset.note===id);
+  if(el){el.scrollIntoView({block:"center"});el.classList.add("flash");setTimeout(()=>el.classList.remove("flash"),2200)}
+}
 $("#imgDel").onclick=()=>{if(viewDel)viewDel(viewImg);$("#imgDlg").close()};
 
 /* ---------- online backup: own secret gist, written with the GitHub token on this phone ---------- */
