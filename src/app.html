@@ -597,6 +597,11 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
 .dtr .r{display:flex;flex-direction:column;align-items:flex-end}
 .dtr .r i{font-style:normal;font-size:12px}
 .jt.flash{background:color-mix(in srgb,var(--accent) 16%,transparent);transition:background .4s}
+.news td.ev{display:flex;align-items:flex-start;gap:6px}.news .evt{flex:1;min-width:0}.news .evb{display:flex;gap:2px;margin:-4px -4px -4px 0}
+.news .stb,.news .bell{background:transparent;border:0;color:var(--muted);font-size:18px;line-height:1;padding:4px;cursor:pointer}
+.news tr.star .stb{color:var(--accent)}
+.news tr.star td{background:color-mix(in srgb,var(--accent) 10%,transparent)}.news tr.star td:first-child{box-shadow:inset 3px 0 0 var(--accent)}.news tr.star td.ev{font-weight:700}
+.irow.star{box-shadow:inset 3px 0 0 var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
 </style>
 
 <header class="top"><div class="wrap">
@@ -1336,13 +1341,25 @@ function renderNews(){
     if(!nw&&ymd(monday(e.t))>wk){nw=true;h+=`<tr class="wkrow"><td colspan="6">Nächste Woche</td></tr>`}
     if(dk!==lastDay){lastDay=dk;lastTime="";h+=`<tr class="dayrow"><td colspan="6">${e.t.toLocaleDateString("de-CH",{weekday:"long",day:"numeric",month:"long"})}${dk===tK?" · Heute":""}</td></tr>`}
     const time=tf(e.t);const showT=time!==lastTime;lastTime=time;
-    h+=`<tr class="${e.t<n?"past":""} ${e===nxt?"next":""}"><td class="num">${showT?time:""}</td><td class="cur"><span class="flg">${flag(e.country)}</span>${esc(e.country)}</td><td><span class="imp ${esc(e.impact)}" title="${IMP_DE[e.impact]||e.impact}"></span></td><td class="ev">${esc(e.title)}</td><td class="r num fc">${esc(e.forecast)}</td><td class="r num pv">${esc(e.previous)}</td></tr>`;
+    const sk=starKey(e),on=!!stars()[sk];
+    h+=`<tr class="${e.t<n?"past":""} ${e===nxt?"next":""}${on?" star":""}"><td class="num">${showT?time:""}</td><td class="cur"><span class="flg">${flag(e.country)}</span>${esc(e.country)}</td><td><span class="imp ${esc(e.impact)}" title="${IMP_DE[e.impact]||e.impact}"></span></td><td class="ev"><span class="evt">${esc(e.title)}</span><span class="evb">${on&&e.t>n?`<button type="button" class="bell" data-bell="${esc(sk)}" aria-label="Erinnerung">🔔</button>`:""}<button type="button" class="stb" data-star="${esc(sk)}" aria-label="Markieren">${on?"★":"☆"}</button></span></td><td class="r num fc">${esc(e.forecast)}</td><td class="r num pv">${esc(e.previous)}</td></tr>`;
   }
   tb.innerHTML=h||`<tr><td colspan="6" class="empty">Keine Events für diese Filter.</td></tr>`;
+  tb.querySelectorAll("[data-star]").forEach(b=>b.onclick=()=>{const S={...stars()};if(S[b.dataset.star])delete S[b.dataset.star];else S[b.dataset.star]=1;state.settings.newsStars=S;persist();renderNews();renderNewsKpi();renderToday()});
+  tb.querySelectorAll("[data-bell]").forEach(b=>b.onclick=()=>{const e=events().find(x=>starKey(x)===b.dataset.bell);if(e)remindIcs(e)});
   const ab=$("#newsArch");if(ab)ab.onclick=()=>{LS.set("newsArch",!arch);renderNews()};
   const f=state.news.fetchedAt?new Date(state.news.fetchedAt):null;
   $("#newsMeta").textContent=`Quelle: Forex Factory${f?" · aktualisiert "+f.toLocaleDateString("de-CH",{day:"2-digit",month:"2-digit"})+" "+tf(f):""}`;
   renderHero();renderSchedule();renderSessions();
+}
+/* news the user starred: highlighted everywhere, and can be added to the iPhone calendar with an alarm */
+const starKey=e=>e.country+"|"+e.date+"|"+e.title, stars=()=>state.settings.newsStars||{}, isStar=e=>!!stars()[starKey(e)];
+function remindIcs(e){
+  const u=d=>d.toISOString().replace(/[-:]/g,"").replace(/\.\d+/,""),x=s=>String(s).replace(/[\\;,]/g,m=>"\\"+m);
+  const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Bullion Monkey//DE","BEGIN:VEVENT","UID:"+u(e.t)+"-"+x(e.title).replace(/\W/g,"")+"@bullion-monkey","DTSTAMP:"+u(new Date()),"DTSTART:"+u(e.t),"DURATION:PT15M",
+    "SUMMARY:"+x(flag(e.country)+" "+e.country+" "+e.title),"DESCRIPTION:"+x("Markierte News"+(e.forecast?" · Prognose "+e.forecast:"")+(e.previous?" · Vorher "+e.previous:"")),
+    "BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+x(e.title),"TRIGGER:-PT15M","END:VALARM","BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+x(e.title),"TRIGGER:PT0M","END:VALARM","END:VEVENT","END:VCALENDAR"].join("\r\n");
+  const a=document.createElement("a");a.href="data:text/calendar;charset=utf-8,"+encodeURIComponent(ics);a.download="news.ics";document.body.appendChild(a);a.click();a.remove();
 }
 const isGold=x=>(x.impact==="High"||x.impact==="Medium")&&x.country==="USD";   /* what moves XAUUSD */
 /* the big countdown card: next high-impact USD event, else the next gold event */
@@ -1382,17 +1399,17 @@ function goldRows(list,n,withDays){
   for(const e of list){const d=ymd(e.t);
     if(withDays&&d!==day){day=d;h+=`<div class="gday">${d===today?"Heute":e.t.toLocaleDateString("de-CH",{weekday:"long",day:"2-digit",month:"2-digit"})}</div>`}
     const past=e.t<=n;
-    h+=`<div class="irow${past?" past":""}${e===nx?" next":""}"><span class="it num">${!withDays&&d!==today?e.t.toLocaleDateString("de-CH",{weekday:"short"})+" ":""}${tf(e.t)}</span><span class="flg">${flag(e.country)}</span><span class="ix"><b>${esc(e.title)}</b><i>${past?"vorbei":countdown(e.t-n)}${e.forecast?" · Prog. "+esc(e.forecast):""}${e.previous?" · Vorh. "+esc(e.previous):""}</i></span><span class="rbadge ${esc(e.impact)}">${e.impact==="High"?"Hoch":"Mittel"}</span></div>`}
+    h+=`<div class="irow${past?" past":""}${e===nx?" next":""}${isStar(e)?" star":""}"><span class="it num">${!withDays&&d!==today?e.t.toLocaleDateString("de-CH",{weekday:"short"})+" ":""}${tf(e.t)}</span><span class="flg">${flag(e.country)}</span><span class="ix"><b>${esc(e.title)}</b><i>${past?"vorbei":countdown(e.t-n)}${e.forecast?" · Prog. "+esc(e.forecast):""}${e.previous?" · Vorh. "+esc(e.previous):""}</i></span><span class="rbadge ${esc(e.impact)}">${isStar(e)?"★ ":""}${IMP_DE[e.impact]||e.impact}</span></div>`}
   return h;
 }
 function renderGoldNews(n){
   const el=$("#goldNews"),today=ymd(n);
   /* dashboard: today's gold news, or the next one */
-  let tl=state.news?events().filter(x=>isGold(x)&&ymd(x.t)===today):[];
+  let tl=state.news?events().filter(x=>(isGold(x)||isStar(x))&&ymd(x.t)===today):[];
   if(!tl.length&&state.news){const nx=events().find(x=>isGold(x)&&x.t>n);if(nx)tl=[nx]}
   $("#todayPanel").hidden=!tl.length;$("#goldToday").innerHTML=goldRows(tl,n,false);
   if(!state.news){el.innerHTML=`<p class="empty">News werden geladen …</p>`;return}
-  const list=events().filter(x=>isGold(x)&&(x.t>n||ymd(x.t)===today));
+  const list=events().filter(x=>(isGold(x)||isStar(x))&&(x.t>n||ymd(x.t)===today));
   el.innerHTML=list.length?goldRows(list,n,true):`<p class="empty">Keine wichtigen USD-News mehr geplant.</p>`;
 }
 function renderNewsKpi(){renderGoldNews(new Date())}

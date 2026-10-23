@@ -10,7 +10,7 @@
 //| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.43"
+#property version   "1.44"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
@@ -19,6 +19,7 @@ input int    SyncSeconds = 15;   // check interval in seconds
 input bool   PushTrades  = true; // push message when a trade opens or closes
 input double DailyLossPct = 3.0; // push when today's loss reaches this % (0 = off)
 input int    MaxTradesDay = 3;   // push when more trades than this are opened today (0 = off)
+input int    NewsPushMinutes = 15; // push this many minutes before high-impact USD news (0 = off)
 input int    NoSlMinutes  = 2;   // push when a position has no stop-loss after this many minutes (0 = off)
 input int    FeedMinutes  = 2;   // read FinancialJuice headlines every n minutes (0 = off)
 input bool   PushHeadlines = true; // push gold-relevant headlines
@@ -70,6 +71,7 @@ void OnDeinit(const int reason) { EventKillTimer(); }
 void OnTimer()
   {
    CheckNoSl();
+   CheckCalendar();
    if(FeedMinutes > 0 && TimeLocal() - g_newsAt >= FeedMinutes * 60)
       FetchNews();
    if(TruthMinutes > 0 && TimeLocal() - g_truthAt >= TruthMinutes * 60)
@@ -317,6 +319,26 @@ void FetchTruth()
       for(int k = (int)MathMin(nf, 5) - 1; k >= 0; k--)
          if(HasWord(fresh[k], TruthWords)) Push("🇺🇸 Trump: " + StringSubstr(fresh[k], 0, 200));
    g_truthSeen = newest;
+  }
+
+ulong g_calSeen[];   // calendar values already announced
+void CheckCalendar()
+  {
+   if(NewsPushMinutes <= 0) return;
+   datetime now = TimeTradeServer();
+   MqlCalendarValue vals[];
+   if(CalendarValueHistory(vals, now, now + NewsPushMinutes * 60, NULL, "USD") <= 0) return;
+   for(int i = 0; i < ArraySize(vals); i++)
+     {
+      if(vals[i].time <= now) continue;
+      MqlCalendarEvent ev;
+      if(!CalendarEventById(vals[i].event_id, ev) || ev.importance != CALENDAR_IMPORTANCE_HIGH) continue;
+      bool seen = false;
+      for(int j = 0; j < ArraySize(g_calSeen); j++) if(g_calSeen[j] == vals[i].id) { seen = true; break; }
+      if(seen) continue;
+      int n = ArraySize(g_calSeen); ArrayResize(g_calSeen, n + 1); g_calSeen[n] = vals[i].id;
+      Push("Bullion Monkey: In " + IntegerToString((int)((vals[i].time - now + 59) / 60)) + " Min. USD-News: " + ev.name + " (hohes Risiko für Gold)");
+     }
   }
 
 void CheckNoSl()
