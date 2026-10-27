@@ -5,7 +5,7 @@
 //   POST /unsub           {key}
 //   POST /push/<key>      {title?, body, url?}   from the EA
 //   POST /test/<key>      test push from the app
-// Every minute: reminders before red USD news and before news the user starred.
+// Every minute: reminders before red USD news and before news the user starred, and session open/close.
 // The VAPID key pair is made on first use and kept in KV, so nothing needs to be configured.
 
 const APP = "https://tradingrouven.github.io/Mullion-monkeyy/";
@@ -41,7 +41,7 @@ export default {
     }
   },
 
-  async scheduled(ev, env, ctx) { ctx.waitUntil(newsReminders(env)); }
+  async scheduled(ev, env, ctx) { ctx.waitUntil(Promise.all([newsReminders(env), sessionPushes(env)])); }
 };
 
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", ...CORS } });
@@ -73,6 +73,39 @@ async function newsReminders(env) {
         title: (e.star ? "★ " : "🔴 ") + (e.country || "") + " " + e.title,
         body: `In ${m} Min.` + (e.star ? " · markierte News" : " · hohes Risiko für Gold") + (e.forecast ? ` · Prognose ${e.forecast}` : ""),
         url: APP + "#news", tag: "news"
+      });
+      if (st === 404 || st === 410) break;
+    }
+  }
+}
+
+/* ---------- trading sessions: Rouven's windows in Swiss time ---------- */
+const SESSIONS = [["London", 9 * 60, 12 * 60], ["New York", 14 * 60 + 30, 18 * 60 + 30]];
+const hm = m => String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+async function sessionPushes(env) {
+  const o = {};
+  for (const x of new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Zurich", hourCycle: "h23", weekday: "short", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date())) o[x.type] = x.value;
+  if (o.weekday === "Sat" || o.weekday === "Sun") return;
+  const min = +o.hour * 60 + +o.minute, due = [];
+  for (const [name, open, close] of SESSIONS)
+    for (const [what, at] of [["open", open], ["close", close]])
+      if (min - at >= 0 && min - at < 3) due.push({ name, what, open, close, id: name + ":" + what + ":" + o.year + o.month + o.day });   // 3 min window in case a timer run is skipped
+  if (!due.length) return;
+  const list = await env.SUBS.list({ prefix: "s:" });
+  for (const k of list.keys) {
+    const key = k.name.slice(2), rec = await env.SUBS.get(k.name, "json");
+    const want = rec && rec.prefs && rec.prefs.sess;
+    if (!Array.isArray(want)) continue;
+    for (const s of due) {
+      if (!want.includes(s.name)) continue;
+      const seen = "x:" + key + ":" + s.id;
+      if (await env.SUBS.get(seen)) continue;
+      await env.SUBS.put(seen, "1", { expirationTtl: 86400 * 2 });
+      const start = s.what === "open";
+      const st = await send(env, key, rec.sub, {
+        title: (start ? "🟢 " : "⚪️ ") + s.name + (start ? " Session startet" : " Session endet"),
+        body: start ? `Dein Handelsfenster bis ${hm(s.close)} Uhr ist offen.` : `Handelsfenster ${hm(s.open)}–${hm(s.close)} Uhr ist vorbei.`,
+        url: APP, tag: "sess"
       });
       if (st === 404 || st === 410) break;
     }

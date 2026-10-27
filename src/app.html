@@ -848,6 +848,8 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
     <div id="pushOpts" hidden>
       <div class="chips" id="pushPrefs"></div>
       <div class="ph" style="margin:10px 0"><span class="lbl">Vorlauf</span><span class="chips" id="pushMin"></span></div>
+      <p class="lbl" style="margin:4px 0 6px">Session Start &amp; Ende (Schweizer Zeit)</p>
+      <div class="chips" id="pushSess" style="margin-bottom:10px"></div>
       <p class="note">Für Trades, Limits und die Journal-Erinnerung: diesen Link in MT5 beim EA im Feld <b>PushLink</b> einfügen und unter Extras → Optionen → Expert Advisors bei WebRequest <b id="pushBase"></b> hinzufügen.</p>
       <div class="ph" style="margin:6px 0 12px;gap:8px"><input id="pushLink" readonly style="flex:1;min-width:0"><button class="btn sm" type="button" id="pushCopy">Kopieren</button></div>
       <div class="ph" style="gap:8px"><button class="btn sm" type="button" id="pushTest">Test-Push senden</button><span class="sp"></span><button class="btn sm" type="button" id="pushOff">Ausschalten</button></div>
@@ -2002,7 +2004,8 @@ $("#calSub").href="webcal://"+location.host+location.pathname.replace(/[^/]*$/,"
 /* ---------- boot ---------- */
 addEventListener("hashchange",showFirst);
 load();if(state.settings.mt5Gist)state.mt5=LS.get("bm-mt5",null);showFirst();renderMt5();renderDash();renderHeadlines();renderTruth();renderNews();renderNewsKpi();renderSessions();
-async function loadNews(){try{const r=await fetch("news.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;state.news=await r.json()}catch(e){if(!state.news)state.news={events:[]}}renderNewsFilters();renderNews();renderNewsKpi();renderToday()}
+async function loadNews(){try{const r=await fetch("news.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;state.news=await r.json()}catch(e){if(!state.news)state.news={events:[]}}renderNewsFilters();renderNews();renderNewsKpi();renderToday();if(!pushBoot&&state.news.events.length){pushBoot=1;pushSync()}}   /* once per start, so the server has the current settings */
+var pushBoot=0;
 loadNews();
 syncMt5();setInterval(()=>{if(!document.hidden)syncMt5(true)},60000);
 renderCloud();if(cloud.token)cloudPull().then(cloudPush).catch(cloudFail);
@@ -2011,11 +2014,12 @@ if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(
 /* push messages through our Cloudflare server (worker/); its address comes from push.json */
 var pushSrv=null;   /* var + function declarations: renderPush can run (Tools opened at start) before this code */
 function pushCfg(){return LS.get("bm-push",{})}
+var PUSH_SESS=[["London","09:00–12:00"],["New York","14:30–18:30"]];   /* same windows as SESSIONS in worker/index.js, Swiss time */
 function pushOk(){return "serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window}
 async function pushServer(){if(pushSrv)return pushSrv;try{const r=await fetch("push.json?t="+Date.now(),{cache:"no-store"});if(r.ok)pushSrv=(await r.json()).url}catch(e){}return pushSrv}
 function pushPrefs(){const c=pushCfg(),n=new Date();
   const st=events().filter(e=>isStar(e)&&e.t>n).map(e=>({id:starKey(e),t:e.t.toISOString(),title:e.title,country:e.country}));
-  return {news:c.news!==false,medium:!!c.medium,minutes:c.minutes||15,stars:c.stars===false?[]:st}}
+  return {news:c.news!==false,medium:!!c.medium,minutes:c.minutes||15,stars:c.stars===false?[]:st,sess:c.sess||PUSH_SESS.map(x=>x[0])}}
 async function pushSync(){const c=pushCfg();if(!c.on||!c.key)return;const url=await pushServer();if(!url)return;
   try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();if(!sub){LS.set("bm-push",{...c,on:false});renderPush();return}
     await fetch(url+"/sub",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:c.key,sub:sub.toJSON(),prefs:pushPrefs()})})}catch(e){}}
@@ -2027,6 +2031,7 @@ async function renderPush(){
   if(!c.on){st.className="pill";st.textContent="Aus";note.textContent="Bekomme Meldungen vor wichtigen News, bei geschlossenen Trades, Limits und als Journal-Erinnerung.";$("#pushOn").hidden=false;return}
   st.className="pill ok";st.textContent="Aktiv";note.textContent="Dieses Handy bekommt Push-Nachrichten.";$("#pushOpts").hidden=false;
   const P=$("#pushPrefs");P.innerHTML="";[["news","🔴 Rote USD-News",c.news!==false],["medium","🟠 Auch mittlere USD-News",!!c.medium],["stars","★ Markierte News",c.stars!==false]].forEach(([k,l,on])=>{const b=document.createElement("button");b.className="chip";b.type="button";b.textContent=l;b.setAttribute("aria-pressed",on);b.onclick=()=>{LS.set("bm-push",{...pushCfg(),[k]:!on});renderPush();pushSync()};P.appendChild(b)});
+  const S=$("#pushSess");S.innerHTML="";PUSH_SESS.forEach(([n,t])=>{const cur=pushPrefs().sess,on=cur.includes(n),b=document.createElement("button");b.className="chip";b.type="button";b.textContent=n+" "+t;b.setAttribute("aria-pressed",on);b.onclick=()=>{LS.set("bm-push",{...pushCfg(),sess:on?cur.filter(x=>x!==n):[...cur,n]});renderPush();pushSync()};S.appendChild(b)});
   const M=$("#pushMin");M.innerHTML="";[5,10,15,30,60].forEach(m=>{const b=document.createElement("button");b.className="chip";b.type="button";b.textContent=m+" Min.";b.setAttribute("aria-pressed",(c.minutes||15)===m);b.onclick=()=>{LS.set("bm-push",{...pushCfg(),minutes:m});renderPush();pushSync()};M.appendChild(b)});
   $("#pushLink").value=url+"/push/"+c.key;$("#pushBase").textContent=url;
 }
