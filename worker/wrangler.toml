@@ -6,7 +6,7 @@ workers_dev = true
 [triggers]
 crons = ["* * * * *"]
 
-# the KV id is filled in by .github/workflows/push-server.yml on deploy
+# the KV id is filled in by .github/workflows/push-server.yml when it deploys
 [[kv_namespaces]]
 binding = "SUBS"
 id = "KV_ID"
