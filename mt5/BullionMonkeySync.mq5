@@ -10,7 +10,7 @@
 //| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.48"
+#property version   "1.49"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
@@ -28,6 +28,7 @@ input bool   PushHeadlines = true; // push gold-relevant headlines
 input string HeadlineWords = "gold,xau,fed ,fomc,powell,cpi,pce,nfp,non-farm,payrolls,inflation,rate cut,rate hike,treasury,yields,dollar,dxy,tariff,geopolit"; // comma list for the push filter
 input int    TruthMinutes = 2;   // read Trump's Truth Social posts (trumpstruth.org) every n minutes (0 = off)
 input bool   PushTruth    = true; // push Trump posts that match the words below
+input bool   ChartShots   = true; // chart picture at entry and exit, shown in the app's journal
 input string TruthWords   = "gold,tariff,china,fed,powell,rate,interest,dollar,inflation,trade,deal,iran,russia,war,oil,sanction,economy,stock,market,bitcoin"; // comma list for the Trump push filter
 
 #define GIST_FILE "bullion-monkey.json"
@@ -35,6 +36,9 @@ input string TruthWords   = "gold,tariff,china,fed,powell,rate,interest,dollar,i
 #define API       "https://api.github.com/gists"
 #define FEED      "https://www.financialjuice.com/feed.ashx?xy=rss"
 #define TRUTH     "https://trumpstruth.org/feed"
+#define SHOT_DIR  "bm-shots"
+#define SHOT_ID   "bullion_monkey_shots_gist.txt"
+#define SHOT_DONE "bullion_monkey_shots.txt"
 
 string g_gist = "";
 string g_last = "";     // last uploaded trade/balance payload, to skip unchanged uploads
@@ -50,6 +54,8 @@ string g_truth = "";                      // JSON array body of the latest Trump
 datetime g_truthAt = 0;
 string g_truthSeen = "";                  // newest Trump post already handled, for the push
 bool   g_truthWarned = false;
+string g_shotGist = "";                   // second secret gist for the chart pictures, so the trade gist stays small
+string g_shots = "";                      // uploaded pictures, "|<position>-in|<position>-out|..."
 
 //+------------------------------------------------------------------+
 // only on a fresh start or new settings, not when the chart just changes timeframe
@@ -69,6 +75,8 @@ int OnInit()
    g_gist = GistId;
    if(g_gist == "")
       g_gist = ReadSavedId();
+   g_shotGist = ReadText(SHOT_ID);
+   g_shots = ReadText(SHOT_DONE);
    EventSetTimer(SyncSeconds < 10 ? 10 : SyncSeconds);
    if(FeedMinutes > 0) FetchNews();
    if(TruthMinutes > 0) FetchTruth();
@@ -89,6 +97,7 @@ void OnTimer()
       FetchNews();
    if(TruthMinutes > 0 && TimeLocal() - g_truthAt >= TruthMinutes * 60)
       FetchTruth();
+   UploadShot();
    Sync();
   }
 
@@ -97,6 +106,7 @@ void OnTradeTransaction(const MqlTradeTransaction &trans, const MqlTradeRequest 
    if(trans.type == TRADE_TRANSACTION_DEAL_ADD)
      {
       PushDeal(trans.deal);
+      TakeShot(trans.deal);
       g_dirty = true;
       Sync();
      }
@@ -580,7 +590,25 @@ string BuildPayload()
                + ",\"volStep\":" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP), 2)
                + ",\"volMax\":" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX), 2) + "}";
 
-   return acc + "," + spec + ",\"headlines\":[" + g_news + "],\"truths\":[" + g_truth + "],\"positions\":[" + pos + "],\"trades\":[" + trades + "],\"cash\":[" + cash + "]";
+   // chart pictures: {"mt5-<position>":"io"} (i = entry, o = exit)
+   string shots = "";
+   string parts[];
+   int np = StringSplit(g_shots, '|', parts);
+   for(int i = 0; i < np; i++)
+     {
+      int d = StringFind(parts[i], "-");
+      if(d <= 0) continue;
+      string id = StringSubstr(parts[i], 0, d), tg = StringSubstr(parts[i], d + 1, 1);
+      if(StringFind(shots, "\"mt5-" + id + "\"") >= 0) continue;
+      string has = tg;
+      string other = (tg == "i") ? "o" : "i";
+      if(StringFind(g_shots, "|" + id + "-" + (other == "i" ? "in" : "out") + "|") >= 0) has = "io";
+      if(shots != "") shots += ",";
+      shots += "\"mt5-" + id + "\":\"" + has + "\"";
+     }
+   string sh = (g_shotGist != "") ? ",\"shotGist\":\"" + g_shotGist + "\",\"shots\":{" + shots + "}" : "";
+
+   return acc + "," + spec + sh + ",\"headlines\":[" + g_news + "],\"truths\":[" + g_truth + "],\"positions\":[" + pos + "],\"trades\":[" + trades + "],\"cash\":[" + cash + "]";
   }
 
 //+------------------------------------------------------------------+
@@ -635,6 +663,97 @@ bool Upload(const string json)
      }
    Print("Bullion Monkey: synchronisiert (", g_gist, ")");
    return true;
+  }
+
+//+------------------------------------------------------------------+
+//| Chart pictures at entry and exit                                 |
+//+------------------------------------------------------------------+
+// picture of a chart with the trade's symbol (this chart if it fits), saved to MQL5/Files/bm-shots
+void TakeShot(const ulong deal)
+  {
+   if(!ChartShots || deal == 0 || !HistoryDealSelect(deal)) return;
+   long type = HistoryDealGetInteger(deal, DEAL_TYPE);
+   if(type != DEAL_TYPE_BUY && type != DEAL_TYPE_SELL) return;
+   long entry = HistoryDealGetInteger(deal, DEAL_ENTRY);
+   string sym = HistoryDealGetString(deal, DEAL_SYMBOL);
+   long chart = (ChartSymbol(0) == sym) ? ChartID() : 0;
+   for(long c = ChartFirst(); chart == 0 && c >= 0; c = ChartNext(c))
+      if(ChartSymbol(c) == sym) chart = c;
+   if(chart == 0) { Print("Bullion Monkey: kein Chart mit ", sym, " offen, kein Chart-Bild."); return; }
+   string file = SHOT_DIR + "\\" + IntegerToString(HistoryDealGetInteger(deal, DEAL_POSITION_ID)) + (entry == DEAL_ENTRY_IN ? "-in" : "-out") + ".png";
+   ChartRedraw(chart);
+   if(!ChartScreenShot(chart, file, 1200, 700, ALIGN_RIGHT))
+      Print("Bullion Monkey: Chart-Bild fehlgeschlagen ", GetLastError());
+  }
+
+// one waiting picture per timer run, as base64 text into the pictures gist; the app shows it in the journal
+void UploadShot()
+  {
+   string name;
+   long h = FileFindFirst(SHOT_DIR + "\\*.png", name);
+   if(h == INVALID_HANDLE) return;
+   FileFindClose(h);
+   string path = SHOT_DIR + "\\" + name;
+   int f = FileOpen(path, FILE_READ | FILE_BIN);
+   if(f == INVALID_HANDLE) return;
+   uchar png[], key[], b64[];
+   FileReadArray(f, png);
+   FileClose(f);
+   if(ArraySize(png) == 0 || CryptEncode(CRYPT_BASE64, png, key, b64) <= 0) { FileDelete(path); return; }
+   string tag = StringSubstr(name, 0, StringLen(name) - 4);   // "<position>-in"
+   string files = "\"files\":{\"" + tag + ".txt\":{\"content\":\"" + CharArrayToString(b64, 0, WHOLE_ARRAY, CP_ACP) + "\"}}";
+   string body = (g_shotGist == "") ? "{\"description\":\"Bullion Monkey Charts\",\"public\":false," + files + "}" : "{" + files + "}";
+   string resp;
+   int code = GitHub(g_shotGist == "" ? "POST" : "PATCH", g_shotGist == "" ? API : API + "/" + g_shotGist, body, resp);
+   if(code == 404 && g_shotGist != "") { g_shotGist = ""; g_shots = ""; return; }   // gist deleted: start a new one next time
+   if(code < 200 || code >= 300) { Print("Bullion Monkey: Chart-Bild nicht hochgeladen (", code, ")"); return; }
+   if(g_shotGist == "")
+     {
+      g_shotGist = JsonString(resp, "id");
+      WriteText(SHOT_ID, g_shotGist);
+     }
+   if(StringFind(g_shots, "|" + tag + "|") < 0)
+     {
+      g_shots = (g_shots == "" ? "|" : g_shots) + tag + "|";
+      if(StringLen(g_shots) > 8000) g_shots = "|" + StringSubstr(g_shots, StringFind(g_shots, "|", 2000) + 1);   // keep the newest
+      WriteText(SHOT_DONE, g_shots);
+     }
+   FileDelete(path);
+   g_dirty = true;
+   Print("Bullion Monkey: Chart-Bild hochgeladen (", tag, ")");
+  }
+
+int GitHub(const string method, const string url, const string body, string &resp)
+  {
+   string headers = "Authorization: Bearer " + GitHubToken + "\r\n"
+                  + "Accept: application/vnd.github+json\r\n"
+                  + "User-Agent: BullionMonkeySync\r\n"
+                  + "Content-Type: application/json\r\n";
+   char data[], result[];
+   string rh;
+   int len = StringToCharArray(body, data, 0, WHOLE_ARRAY, CP_UTF8);
+   ArrayResize(data, len - 1);
+   int code = WebRequest(method, url, headers, 30000, data, result, rh);
+   resp = CharArrayToString(result, 0, WHOLE_ARRAY, CP_UTF8);
+   return code;
+  }
+
+string ReadText(const string file)
+  {
+   int h = FileOpen(file, FILE_READ | FILE_TXT | FILE_ANSI);
+   if(h == INVALID_HANDLE) return "";
+   string v = FileReadString(h);
+   FileClose(h);
+   StringTrimLeft(v); StringTrimRight(v);
+   return v;
+  }
+
+void WriteText(const string file, const string v)
+  {
+   int h = FileOpen(file, FILE_WRITE | FILE_TXT | FILE_ANSI);
+   if(h == INVALID_HANDLE) return;
+   FileWriteString(h, v);
+   FileClose(h);
   }
 
 //+------------------------------------------------------------------+

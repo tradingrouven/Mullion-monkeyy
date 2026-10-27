@@ -1481,7 +1481,7 @@ async function syncMt5(force){
     mt5Etag=r.headers.get("ETag")||"";
     const g=await r.json(),f=g.files&&g.files[MT5_FILE];if(!f){$("#mt5Note").textContent="Im Gist fehlen die MT5-Daten.";return}
     const txt=f.truncated?await (await fetch(f.raw_url)).text():f.content;
-    state.mt5=JSON.parse(txt);LS.set("bm-mt5",state.mt5);renderMt5();renderDash();renderHeadlines();renderTruth();if(!$("#view-ana").hidden)renderAna();if(!$("#view-jour").hidden)renderJournal();if(!$("#view-calc").hidden)renderCalc();
+    state.mt5=JSON.parse(txt);state.mt5.owner=g.owner&&g.owner.login;LS.set("bm-mt5",state.mt5);renderMt5();renderDash();renderHeadlines();renderTruth();if(!$("#view-ana").hidden)renderAna();if(!$("#view-jour").hidden)renderJournal();if(!$("#view-calc").hidden)renderCalc();
   }catch(e){$("#mt5Note").textContent="Keine Verbindung. Angezeigt wird der letzte Stand."}
 }
 $("#mt5Form").onsubmit=e=>{e.preventDefault();const id=$("#mt5Id").value.trim().replace(/^.*gist\.github\.com\/[^/]+\//,"");if(!id)return;
@@ -1508,8 +1508,8 @@ function renderIchi(){
 }
 function renderEmo(){const el=$("#emoChips");el.innerHTML="";EMO.forEach(v=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=v;b.setAttribute("aria-pressed",noteEmo===v);b.onclick=()=>{noteEmo=noteEmo===v?"":v;renderEmo()};el.appendChild(b)})}
 function renderNoteImgs(){
-  const el=$("#noteImgs");el.innerHTML=noteImgs.map(id=>`<img data-img="${esc(id)}" alt="Chart-Bild">`).join("")+(noteImgs.length<4?`<label class="add" for="imgIn">＋ Bild</label>`:"");
-  fillImgs(el);el.querySelectorAll("img").forEach(im=>im.onclick=()=>openImg(im.dataset.img,id=>{noteImgs=noteImgs.filter(x=>x!==id);renderNoteImgs()}));
+  const el=$("#noteImgs"),ea=shotIds(noteId);el.innerHTML=[...ea,...noteImgs].map(id=>`<img data-img="${esc(id)}" alt="Chart-Bild">`).join("")+(noteImgs.length<4?`<label class="add" for="imgIn">＋ Bild</label>`:"");
+  fillImgs(el);el.querySelectorAll("img").forEach(im=>im.onclick=()=>ea.includes(im.dataset.img)?openImg(im.dataset.img):openImg(im.dataset.img,id=>{noteImgs=noteImgs.filter(x=>x!==id);renderNoteImgs()}));
 }
 function openNote(id){
   noteId=id;const nt=(state.settings.notes||{})[id]||{};
@@ -1552,11 +1552,17 @@ const imgCache={};
 async function imgSrc(id){
   if(imgCache[id])return imgCache[id];
   let v=await IDB.get(id).catch(()=>null);
-  if(!v&&cloud.imgGist&&cloud.user){   /* new phone: fetch it back from the online backup */
+  const m=state.mt5;
+  if(!v&&id.startsWith("ea:")&&m&&m.shotGist&&m.owner){   /* chart picture the EA took at entry or exit */
+    try{const r=await fetch(`https://gist.githubusercontent.com/${encodeURIComponent(m.owner)}/${encodeURIComponent(m.shotGist)}/raw/${encodeURIComponent(id.slice(3))}.txt`);
+      if(r.ok){const b=(await r.text()).trim();if(/^[A-Za-z0-9+/=\s]+$/.test(b)){v="data:image/png;base64,"+b.replace(/\s/g,"");IDB.set(id,v).catch(()=>{})}}}catch(e){}}
+  else if(!v&&cloud.imgGist&&cloud.user){   /* new phone: fetch it back from the online backup */
     try{const r=await fetch(`https://gist.githubusercontent.com/${encodeURIComponent(cloud.user)}/${encodeURIComponent(cloud.imgGist)}/raw/img-${encodeURIComponent(id)}.txt`);
       if(r.ok){v=await r.text();if(/^data:image\/(jpeg|png|webp);base64,/.test(v)){IDB.set(id,v).catch(()=>{});if(!cloud.up.includes(id)){cloud.up.push(id);saveCloud()}}else v=null}}catch(e){}}
   return imgCache[id]=v||"";
 }
+/* the EA's chart pictures of a trade: ids "ea:<position>-in" / "-out" */
+function shotIds(tid){const f=((state.mt5&&state.mt5.shots)||{})[tid]||"",p=String(tid).replace(/^mt5-/,"");return [...(f.includes("i")?["ea:"+p+"-in"]:[]),...(f.includes("o")?["ea:"+p+"-out"]:[])]}
 function fillImgs(root){root.querySelectorAll("img[data-img]").forEach(async im=>{const v=await imgSrc(im.dataset.img);if(v)im.src=v;else im.alt="Bild fehlt"})}
 function dropImg(id){delete imgCache[id];IDB.del(id).catch(()=>{});cloudDelImg(id)}
 $("#imgIn").onchange=async e=>{const fs=[...e.target.files].slice(0,4-noteImgs.length);e.target.value="";
@@ -1683,7 +1689,7 @@ function renderJournal(){
         <span class="tm num">${o?(zd(o)!==zd(d)?zd(o)+" ":"")+zt(o):"–"} → ${zt(d)}${o?` · ${zdur(d-o)}`:""}</span>
         <span class="tx${t.nt.text?"":" mut"}">${t.nt.text?esc(t.nt.text):"Noch keine Notiz. Tippen zum Schreiben."}</span></span>
       <span class="jr"><b class="num ${cls(+t.pnl)}">${fmt(+t.pnl)}</b>${t.r!=null?`<i class="num ${cls(+t.r)}">${fmtR(+t.r,1)} R</i>`:`<i class="mut">kein SL</i>`}</span>
-      ${t.nt.imgs&&t.nt.imgs.length?`<span class="thumbs">${t.nt.imgs.map(id=>`<img data-img="${esc(id)}" alt="Chart-Bild">`).join("")}</span>`:""}</button>`}).join("");
+      ${(()=>{const im=[...shotIds(t.id),...(t.nt.imgs||[])];return im.length?`<span class="thumbs">${im.map(id=>`<img data-img="${esc(id)}" alt="Chart-Bild">`).join("")}</span>`:""})()}</button>`}).join("");
   $("#jList").querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openNote(b.dataset.note));
   fillImgs($("#jList"));$("#jList").querySelectorAll("img[data-img]").forEach(im=>im.onclick=e=>{e.stopPropagation();openImg(im.dataset.img)});
   $("#jMore").hidden=L.length<=jLimit;
@@ -1823,6 +1829,26 @@ function renderHeadlines(){
 const PER={m:"Dieser Monat",q:"3 Monate",a:"Alles"};
 state.per=LS.get("aPer","a");
 function mt5Trades(){return ((state.mt5&&state.mt5.trades)||[]).map(t=>({...t,pnl:+t.pnl||0,o:new Date(t.openUtc||t.closeUtc),c:new Date(t.closeUtc)})).sort((a,b)=>a.c-b.c)}
+/* account curve: balance after every trade, rebuilt backwards from today's balance; deposits/withdrawals move the high too, so they don't count as drawdown */
+function eqPanel(T,from){
+  const a=state.mt5.account;if(!a||!T.length)return "";
+  const C=cashList().filter(x=>x.c>=from),ev=[...T.map(t=>({c:t.c,v:t.pnl})),...C.map(x=>({c:x.c,v:x.a,cash:1}))].sort((x,y)=>x.c-y.c);
+  let b=+a.balance-ev.reduce((s,x)=>s+x.v,0);const start=b;let peak=b,mdd=0,net=0,inv=0;const P=[{t:+from>0?+from:+ev[0].c-36e5,b,dd:0}];
+  for(const x of ev){b+=x.v;if(x.cash){peak+=x.v;if(x.v>0)inv+=x.v}else net+=x.v;peak=Math.max(peak,b);const dd=peak>0?(peak-b)/peak*100:0;mdd=Math.max(mdd,dd);P.push({t:+x.c,b,dd})}
+  const cur=P[P.length-1].dd,W=320,H=130,DH=34,t0=P[0].t,t1=Math.max(P[P.length-1].t,t0+1);
+  const lo=Math.min(...P.map(p=>p.b)),hi=Math.max(...P.map(p=>p.b)),sp=hi-lo||1,mx=Math.max(mdd,1);
+  const X=t=>((t-t0)/(t1-t0)*W).toFixed(1),Y=v=>(6+(hi-v)/sp*(H-12)).toFixed(1),D=v=>(v/mx*DH).toFixed(1);
+  const line=P.map((p,i)=>(i?"L":"M")+X(p.t)+","+Y(p.b)).join(""),area=line+`L${W},${H}L0,${H}Z`;
+  const dda=P.map((p,i)=>(i?"L":"M")+X(p.t)+","+D(p.dd)).join("")+`L${W},0L0,0Z`;
+  return `<div class="panel"><div class="ph"><h2>Kapitalkurve</h2><span class="sp"></span><span class="note">${T.length} Trades</span></div>
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:150px;display:block" aria-label="Kontostand"><defs><linearGradient id="eqG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ebb03a" stop-opacity=".35"/><stop offset="1" stop-color="#ebb03a" stop-opacity="0"/></linearGradient></defs>
+      <line x1="0" x2="${W}" y1="${Y(start)}" y2="${Y(start)}" stroke="var(--line)" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
+      <path d="${area}" fill="url(#eqG)"/><path d="${line}" fill="none" stroke="#ebb03a" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>
+    <div class="ph" style="margin:2px 0 4px"><span class="lbl">Drawdown</span><span class="sp"></span><span class="note num">Hoch ${plain(hi)} · Tief ${plain(lo)}</span></div>
+    <svg viewBox="0 0 ${W} ${DH}" preserveAspectRatio="none" style="width:100%;height:40px;display:block" aria-label="Drawdown"><path d="${dda}" fill="var(--loss-bg)" stroke="var(--loss)" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>
+    <div class="atiles" style="margin-top:12px">${[["Start",plain(start)],["Jetzt",plain(+a.balance)],["Ergebnis",`<span class="${cls(net)}">${fmtR(start+inv>0?net/(start+inv)*100:0)} %</span>`],["Max. Drawdown",`<span class="${mdd>0?"neg":""}">${mdd>0?"−":""}${mdd.toFixed(1)} %</span>`]].map(([x,y])=>`<div class="at"><span>${x}</span><b>${y}</b></div>`).join("")}</div>
+    <p class="note" style="margin-top:8px">${cur>0.05?`Aktuell ${cur.toFixed(1)} % unter deinem Höchststand.`:"Du bist auf deinem Höchststand ✓"} Ein- und Auszahlungen zählen nicht als Gewinn oder Verlust.</p></div>`;
+}
 function renderAna(){
   renderReview();renderMonthCal();renderDisc();
   const pe=$("#aPer");pe.innerHTML="";Object.entries(PER).forEach(([k,v])=>{const b=document.createElement("button");b.className="chip";b.textContent=v;b.setAttribute("aria-pressed",state.per===k);b.onclick=()=>{state.per=k;LS.set("aPer",k);renderAna()};pe.appendChild(b)});
@@ -1860,7 +1886,7 @@ function renderAna(){
     ${bars([5,4,3,2,1].map(n=>({k:n+" von 5 erfüllt",list:IT.filter(t=>ic(t)===n)})).filter(r=>r.list.length))}
     <div class="lbl" style="margin:12px 0 2px">Wenn die Bedingung erfüllt war</div>
     ${bars(ICHI.map(([k,,l])=>({k:l,list:IT.filter(t=>NT[t.id].ichi.includes(k))})).filter(r=>r.list.length))}</div>`:"";
-  body.innerHTML=`<div class="panel"><div class="atiles">${tiles.map(([a,b])=>`<div class="at"><span>${a}</span><b>${b}</b></div>`).join("")}</div><p class="note" style="margin-top:10px">Beträge in ${cur}.</p></div>${setupPanel}${ichiPanel}${emoPanel}
+  body.innerHTML=eqPanel(T,from)+`<div class="panel"><div class="atiles">${tiles.map(([a,b])=>`<div class="at"><span>${a}</span><b>${b}</b></div>`).join("")}</div><p class="note" style="margin-top:10px">Beträge in ${cur}.</p></div>${setupPanel}${ichiPanel}${emoPanel}
   <div class="grid two">
     <div class="panel"><div class="ph"><h2>Long vs. Short</h2></div>${bars(group(t=>t.side==="buy"?"Long":"Short",["Long","Short"]))}</div>
     <div class="panel"><div class="ph"><h2>Sessions</h2><span class="sp"></span><span class="note">Asien ${lh(21)}–${lh(7)} · London ${lh(7)}–${lh(12)} · NY ${lh(12)}–${lh(21)} Uhr</span></div>${bars(group(sess,["Asien","London","New York"]),k=>sessLbl[k])}</div>
