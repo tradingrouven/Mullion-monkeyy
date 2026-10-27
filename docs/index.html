@@ -32,6 +32,7 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+body.kb .tabs{display:none!important}
 html{touch-action:manipulation;-webkit-text-size-adjust:100%}
 body{background:var(--bg);color:var(--fg);font-family:var(--font-ui);font-size:14px;line-height:1.45}
 .num{font-family:var(--font-num);font-variant-numeric:tabular-nums}
@@ -2295,6 +2296,12 @@ loadNews();
 syncMt5();setInterval(()=>{if(!document.hidden)syncMt5(true)},60000);
 renderCloud();if(cloud.token)cloudPull().then(cloudPush).catch(cloudFail);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){loadNews();syncMt5();renderDash();if(cloud.token&&Date.now()-clPulled>5*6e4)cloudPull().catch(cloudFail)}});
+/* iOS: while the keyboard is open the fixed tab bar can get stuck in the middle of the page, so hide it while typing and
+   nudge the page once the keyboard is gone, which puts it back at the bottom */
+const isField=el=>el&&el.matches&&el.matches("input:not([type=checkbox]):not([type=radio]):not([type=file]),textarea,select");
+document.addEventListener("focusin",e=>{if(isField(e.target))document.body.classList.add("kb")});
+document.addEventListener("focusout",()=>setTimeout(()=>{if(!isField(document.activeElement)){document.body.classList.remove("kb");window.scrollTo(window.scrollX,window.scrollY+1);window.scrollTo(window.scrollX,window.scrollY-1)}},120));
+if(window.visualViewport)visualViewport.addEventListener("resize",()=>{if(!isField(document.activeElement))document.body.classList.remove("kb")});
 /* no zooming: iOS ignores user-scalable=no, so pinching is stopped here (double-tap zoom is off via touch-action) */
 ["gesturestart","gesturechange"].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
 document.addEventListener("touchmove",e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
