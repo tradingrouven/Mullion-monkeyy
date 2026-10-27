@@ -755,19 +755,6 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
     <div class="gnews" id="goldNews"></div>
     <a class="btn calsub" id="calSub" href="#">🔔 Erinnerungen in den iPhone-Kalender</a>
   </div>
-  <div class="panel" id="mktPanel">
-    <div class="ph"><h2>Kurse</h2><span class="sp"></span><span class="note" id="mktNote"></span></div>
-    <div class="atiles" id="mktTiles"></div>
-    <div id="sentBox"></div>
-  </div>
-
-  <div class="panel" id="alarmPanel">
-    <div class="ph"><h2>Preis-Alarme</h2><span class="sp"></span><span class="note num" id="alGold"></span></div>
-    <form class="alf" id="alForm"><input id="alP" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Preis" aria-label="Alarm-Preis"><input id="alN" maxlength="60" placeholder="Notiz (optional)" aria-label="Notiz zum Alarm"><button class="btn pri sm" type="submit">＋ Alarm</button></form>
-    <div id="alList"></div>
-    <p class="note" id="alNote" style="margin-top:8px"></p>
-  </div>
-
   <div class="panel">
     <div class="ph"><h2>Sessions</h2><span class="sp"></span><span class="live" id="sessLive"></span></div>
     <div class="sess" id="sess"></div>
@@ -798,6 +785,18 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
     <div id="truthList"></div>
     <button class="btn sm" id="truthMore" type="button" style="margin-top:8px" hidden>Mehr anzeigen</button>
     <p class="note" id="truthNote" style="margin-top:8px"></p>
+  </div>
+  <div class="panel" id="mktPanel">
+    <div class="ph"><h2>Kurse</h2><span class="sp"></span><span class="note" id="mktNote"></span></div>
+    <div class="atiles" id="mktTiles"></div>
+    <div id="sentBox"></div>
+  </div>
+
+  <div class="panel" id="alarmPanel">
+    <div class="ph"><h2>Preis-Alarme</h2><span class="sp"></span><span class="note num" id="alGold"></span></div>
+    <form class="alf" id="alForm"><input id="alP" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Preis" aria-label="Alarm-Preis"><input id="alN" maxlength="60" placeholder="Notiz (optional)" aria-label="Notiz zum Alarm"><button class="btn pri sm" type="submit">＋ Alarm</button></form>
+    <div id="alList"></div>
+    <p class="note" id="alNote" style="margin-top:8px"></p>
   </div>
 </section>
 <!-- JOURNAL -->
