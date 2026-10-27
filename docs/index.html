@@ -2056,7 +2056,7 @@ $("#pushOn").onclick=async()=>{
     LS.set("bm-push",{...c,key,on:true});await pushSync();renderPush();
   }catch(e){note.textContent="Push konnte nicht eingeschaltet werden: "+(e&&e.message||e)}
 };
-$("#pushOff").onclick=async()=>{const c=pushCfg(),url=await pushServer();try{const sub=await (await navigator.serviceWorker.ready).pushManager.getSubscription();if(sub)await sub.unsubscribe();if(url)await fetch(url+"/unsub",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:c.key})})}catch(e){}LS.set("bm-push",{...c,on:false});renderPush()};
+$("#pushOff").onclick=async()=>{const c=pushCfg(),url=await pushServer();try{const sub=await (await navigator.serviceWorker.ready).pushManager.getSubscription();if(sub)await sub.unsubscribe();if(url)await fetch(url+"/unsub",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:c.key})})}catch(e){}LS.set("bm-push",{...c,on:false,key:""});renderPush()};   /* switching on again makes a new link */
 $("#pushTest").onclick=async()=>{const c=pushCfg(),url=await pushServer();const r=await fetch(url+"/test/"+c.key,{method:"POST"}).catch(()=>null);$("#pushNote").textContent=r&&r.ok?"Test-Push gesendet. Er sollte gleich erscheinen.":"Test-Push fehlgeschlagen. Schalte Push aus und wieder ein."};
 $("#pushCopy").onclick=()=>{navigator.clipboard.writeText($("#pushLink").value).then(()=>{$("#pushCopy").textContent="Kopiert ✓"},()=>{$("#pushLink").select()})};
 })();
