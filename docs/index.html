@@ -617,6 +617,7 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
 .news tr.star td{background:color-mix(in srgb,var(--accent) 10%,transparent)}.news tr.star td:first-child{box-shadow:inset 3px 0 0 var(--accent)}.news tr.star td.ev{font-weight:700}
 .irow.star{box-shadow:inset 3px 0 0 var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
 .dc .dr{font-size:11px;font-weight:600;white-space:nowrap}
+.wks .wr{margin-left:auto;font-size:14px;font-weight:600}
 </style>
 </head><body>
 
@@ -1239,7 +1240,7 @@ function renderDash(){
     const isCur=keys[0]===curWk, wc=wd?(wp>0?"win":wp<0?"loss":""):"";
     h+=`<div class="wkc ${wc}${isCur?" now":""}"><div class="wkh"><b>KW ${isoWeek(d)}</b><span class="mut wdr">${dm(keys[0])}–${dm(keys[6])}</span>${isCur?`<span class="tag">Diese Woche</span>`:""}<span class="sp"></span>`
       +(wd?`<span class="wp num ${cls(wp)}">${fmt(wp)}</span>`:`<span class="mut wnone">Keine Trades</span>`)+`</div>`
-      +(wd?`<div class="wks"><span class="num ${cls(wr)}">${fmtR(wr)} R</span><span>${ww}/${wd} Gewinntag${wd>1?"e":""}</span><span>${((n)=>n+" Trade"+(n===1?"":"s"))(vs.reduce((a,v)=>a+(v?v.n:0),0))}</span></div>`:"")
+      +(wd?`<div class="wks"><span>${ww}/${wd} Gewinntag${wd>1?"e":""}</span><span>${((n)=>n+" Trade"+(n===1?"":"s"))(vs.reduce((a,v)=>a+(v?v.n:0),0))}</span><span class="wr num ${cls(wr)}">${fmtR(wr)} R</span></div>`:"")
       +`<div class="wkd" style="--n:${show.filter(Boolean).length}">`;
     ds.forEach((x,i)=>{if(!show[i])return;const k=keys[i],v=vs[i];
       const c=v?(v.pnl>0?"win":v.pnl<0?"loss":"be"):"";
