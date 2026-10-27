@@ -732,10 +732,6 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
     <div class="ph"><h2>Letzte Trades</h2><span class="sp"></span><button class="go" type="button" data-go="jour" aria-label="Alle Trades im Journal"></button></div>
     <div id="tradeRows"></div>
   </div>
-  <div class="panel">
-    <div class="ph"><h2>Ergebnis im Monat</h2><span class="sp"></span><span class="lbl" id="curLbl">USD</span></div>
-    <div id="chart"></div>
-  </div>
 </section>
 
 <!-- NEWS -->
@@ -1364,12 +1360,11 @@ function renderDash(){
     ["Gesamt R",`<span class="${cls(mr)}">${fmtR(mr)} R</span>`],["Ø R pro Trade",tr?`<span class="${cls(mr/tr)}">${fmtR(mr/tr)} R</span>`:"–"],
   ];
   $("#stats").innerHTML=rows.map(([a,b])=>`<div class="row"><span class="mut">${a}</span><b class="num">${b}</b></div>`).join("");
-  $("#curLbl").textContent=cur;
   drawChart(monthDays);
 
   /* last trades */
   const tb=$("#tradeRows");
-  const MT=mt5Trades().slice(-6).reverse(),N=state.settings.notes||{},tdK=ymd(new Date());
+  const MT=mt5Trades().slice(-3).reverse(),N=state.settings.notes||{},tdK=ymd(new Date());
   const own=state.mt5?[]:TT.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
   tb.innerHTML=MT.length?MT.map(t=>{const nt=N[t.id]||{};return `<button type="button" class="trow" data-note="${esc(t.id)}"><b class="ta">${esc(t.asset)}</b>${SIDE(t.side)}<span class="tl num">${(+t.volume).toFixed(2)} Lot</span>`
       +`<span class="tp num">${t.open!=null&&t.close!=null?`${t.open} → ${t.close}`:`${zt(t.o)} → ${zt(t.c)}`}</span><b class="tv num ${cls(t.pnl)}">${fmt(t.pnl)}</b><span class="tt num">${ymd(t.c)===tdK?zt(t.c):dd(ymd(t.c))}</span>`
@@ -1381,7 +1376,7 @@ function renderDash(){
 }
 
 function drawChart(monthDays){
-  const el=$("#chart");
+  const el=$("#chart");if(!el)return;
   if(!monthDays.length){el.innerHTML=`<div class="empty">Keine Trades in diesem Monat.</div>`;return}
   let c=0;const pts=[{k:"Start",v:0},...monthDays.map(([k,v])=>({k,v:(c+=v.pnl)}))];
   const W=600,H=230,L=52,R=14,T=14,B=26;
