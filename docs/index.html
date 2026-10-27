@@ -544,6 +544,10 @@ button.hero{cursor:pointer}
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}.g3 span{display:block;color:var(--muted);font-size:12px}.g3 b{font:600 15px var(--font-num)}
 .grule{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}.grule .ck{font-style:normal;line-height:1;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;flex:none;background:var(--surface-2);color:var(--muted)}.grule .ck.ok{background:var(--win);color:#08130e}.grule .ck.no{background:var(--loss);color:#1a0706}.grule span{flex:1}.grule b{font:600 14px var(--font-num)}
 .goalf{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.goalf label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}.goalf .full{grid-column:1/-1}
+.setl h3{margin:14px 4px 8px;font:700 15px var(--font-ui)}.setl .grp{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.setr{display:flex;align-items:center;gap:14px;width:100%;padding:13px 14px;background:none;border:0;border-top:1px solid var(--line);color:var(--fg);text-align:left;font:inherit;cursor:pointer}.setr:first-child{border-top:0}
+.setr svg{width:24px;height:24px;flex:none;color:#d9d2c2}.setr span{flex:1;min-width:0;display:flex;flex-direction:column}.setr b{font:600 15px var(--font-ui)}.setr i{font-style:normal;color:var(--muted);font-size:13px}.setr i.on{color:var(--win)}
+.setback{justify-self:start}
 .aud{display:flex;flex-direction:column;gap:8px;margin-top:6px}
 .aud .ar{display:flex;align-items:center;gap:8px}.aud audio{flex:1;min-width:0;height:36px}
 .btn.rec{border-color:var(--loss);color:var(--loss)}
@@ -877,7 +881,9 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
     <p class="note" id="cSpec"></p>
   </div>
 
-  <div class="panel goldb" id="rkPanel">
+  <div class="setl" id="setList"></div>
+  <button class="btn setback" id="setBack" type="button" hidden>← Einstellungen</button>
+  <div class="panel goldb setp" id="rkPanel">
     <div class="ph"><h2>Risiko-Grenzen</h2><span class="sp"></span><button class="btn sm" id="rkDef" type="button">Standard</button></div>
     <div class="rkt" id="rkTiles"></div>
     <details class="more" id="rkMore"><summary>Grenzen ändern <i class="chev"></i></summary>
@@ -894,7 +900,7 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
     </details>
   </div>
 
-  <div class="panel" id="pushPanel">
+  <div class="panel setp" id="pushPanel">
     <div class="ph"><h2>Push-Nachrichten</h2><span class="sp"></span><span class="pill" id="pushState"></span></div>
     <p class="note" id="pushNote" style="margin:-6px 0 10px"></p>
     <button class="btn pri" type="button" id="pushOn" hidden>🔔 Push aktivieren</button>
@@ -908,7 +914,7 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
       <div class="ph" style="gap:8px"><button class="btn sm" type="button" id="pushTest">Test-Push senden</button><span class="sp"></span><button class="btn sm" type="button" id="pushOff">Ausschalten</button></div>
     </div>
   </div>
-  <div class="panel goldb" id="syncPanel">
+  <div class="panel goldb setp" id="syncPanel">
     <div class="ph"><h2>Daten &amp; Sync</h2></div>
     <div class="srows" id="syncRows"></div>
     <details class="more" id="mt5Det"><summary>MT5-Verbindung <span class="pill" id="mt5State">Nicht verbunden</span><i class="chev"></i></summary>
@@ -934,11 +940,11 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
     <p class="note" id="saveState"></p>
   </div>
 
-  <div class="panel goldb">
+  <div class="panel goldb setp" id="stratPanel">
     <div class="ph"><h2>Strategien</h2></div>
     <div class="st2" id="stratTiles"></div>
   </div>
-  <button class="btn share" id="shareApp" type="button">🐒 Bullion Monkey mit Freunden teilen</button>
+  <button class="btn share setp" id="shareApp" type="button">🐒 Bullion Monkey mit Freunden teilen</button>
 </section>
 </main>
 <dialog id="guideDlg" class="sheet guide">
@@ -1026,10 +1032,29 @@ const SIDE=s=>`<span class="bs ${s==="buy"?"buy":"sell"}">${s==="buy"?"BUY":"SEL
 /* ---------- tabs ---------- */
 const VIEWS=["dash","news","jour","ana","calc"];
 const TITLES={dash:"Dashboard",news:"Markt",jour:"Journal",ana:"Analyse",calc:"Tools"};
-function show(v){if(!VIEWS.includes(v))v="dash";window.scrollTo(0,0);$("#pageTitle").textContent=TITLES[v];document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.view===v));VIEWS.forEach(x=>$("#view-"+x).hidden=x!==v);LS.set("view",v);if(v==="ana")renderAna();if(v==="jour")renderJournal();if(v==="calc"){renderCheck();renderRiskForm();renderCalc();renderSync();renderPush()}if(v==="news")heroClock()}
+function show(v){if(!VIEWS.includes(v))v="dash";window.scrollTo(0,0);$("#pageTitle").textContent=TITLES[v];document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.view===v));VIEWS.forEach(x=>$("#view-"+x).hidden=x!==v);LS.set("view",v);if(v==="ana")renderAna();if(v==="jour")renderJournal();if(v==="calc"){openSet("");renderSetList();renderCheck();renderRiskForm();renderCalc();renderSync();renderPush()}if(v==="news")heroClock()}
+/* ---------- Tools: settings as a list; a row opens its section on its own ---------- */
+var setOpen="";
+function openSet(id){setOpen=id;document.querySelectorAll("#view-calc > *").forEach(el=>{el.hidden=id?!(el.id===id||el.id==="setBack"):(el.classList.contains("setp")||el.id==="setBack")});window.scrollTo(0,0)}
+function renderSetList(){
+  const ic=d=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const m=state.mt5,acc=m&&m.account,pc=pushCfg(),L=rk(),on=t=>`<i class="on">● ${t}</i>`;
+  const G=[["Konto",[
+      ["syncPanel","mt5Det",ic('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>'),"MT5-Verbindung",state.settings.mt5Gist?on("Verbunden"+(acc&&acc.login?" · Konto "+acc.login:"")):"<i>Nicht verbunden</i>"],
+      ["syncPanel","cloudPanel",ic('<path d="M7 18a4 4 0 0 1-.6-8A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9z"/>'),"Online-Sicherung",cloud.token&&cloud.gist?on("Aktiv"):"<i>Aus</i>"],
+      ["pushPanel","",ic('<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>'),"Benachrichtigungen",pc.on?on("Aktiv · News, Alarme, Sessions"):"<i>Aus</i>"]]],
+    ["Trading",[
+      ["rkPanel","",ic('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>'),"Risiko-Grenzen",`<i>Tag −${L.day} % · Woche −${L.week} % · ${L.trades} Trades</i>`],
+      ["stratPanel","",ic('<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/>'),"Strategien",`<i>${STRATS.join(", ")}</i>`]]],
+    ["App",[["share","",ic('<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/>'),"Mit Freunden teilen","<i>Bullion Monkey weitergeben</i>"]]]];
+  $("#setList").innerHTML=`<h3 style="margin-top:4px">Einstellungen</h3>`+G.map(([h,rows],gi)=>`${gi?`<h3>${h}</h3>`:""}<div class="grp">${rows.map(([p,d,i,t,sub])=>`<button class="setr" type="button" data-set="${p}" data-det="${d}">${i}<span><b>${t}</b>${sub}</span><i class="chev"></i></button>`).join("")}</div>`).join("");
+  $("#setList").querySelectorAll("[data-set]").forEach(b=>b.onclick=()=>{if(b.dataset.set==="share"){$("#shareApp").click();return}
+    openSet(b.dataset.set);const d=b.dataset.det&&$("#"+b.dataset.det);if(d)d.open=true});
+}
+$("#setBack").onclick=()=>{openSet("");renderSetList()};
 /* chevron links: data-go="view" or "view:panelId" */
 document.addEventListener("click",e=>{const g=e.target.closest("[data-go]");if(!g)return;const [v,id]=g.dataset.go.split(":");show(v);
-  if(id)setTimeout(()=>{const el=$("#"+id);if(el){if(el.querySelector("details"))el.querySelector("details").open=true;el.scrollIntoView({behavior:"smooth"})}},60)});
+  if(id)setTimeout(()=>{const el=$("#"+id);if(el){const sp=el.closest(".setp");if(sp)openSet(sp.id);if(el.querySelector("details"))el.querySelector("details").open=true;el.scrollIntoView({behavior:"smooth"})}},60)});
 document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>show(t.dataset.view));
 const showFirst=()=>show({"#news":"news","#dashboard":"dash","#journal":"jour","#analyse":"ana","#rechner":"calc","#tools":"calc"}[location.hash]||LS.get("view","dash"));
 
@@ -1829,7 +1854,7 @@ function renderCloud(){
 $("#clForm").onsubmit=e=>{e.preventDefault();const t=$("#clTok").value.trim();if(t.length<20)return;$("#clTok").value="";cloudOn(t)};
 $("#clNow").onclick=()=>{clErr="Sichere …";renderCloud();cloudPull().then(cloudPush).catch(cloudFail)};
 $("#clOff").onclick=()=>{Object.assign(cloud,{token:"",gist:"",imgGist:"",at:0});saveCloud();clErr="";renderCloud()};
-$("#jCloud").onclick=()=>{show("calc");setTimeout(()=>{$("#cloudPanel").open=true;$("#cloudPanel").scrollIntoView({behavior:"smooth"})},50)};
+$("#jCloud").onclick=()=>{show("calc");setTimeout(()=>{openSet("syncPanel");$("#cloudPanel").open=true;$("#cloudPanel").scrollIntoView({behavior:"smooth"})},50)};
 
 /* ---------- journal ---------- */
 let jStrat=LS.get("jStrat","Alle"),jNoted=false,jLimit=10;
