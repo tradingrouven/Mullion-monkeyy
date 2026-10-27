@@ -1,0 +1,58 @@
+name: Push-Server
+# Deploys worker/ (the push server) to Cloudflare. Needs the repository secret CLOUDFLARE_API_TOKEN
+# (Cloudflare → My Profile → API Tokens → template "Edit Cloudflare Workers").
+# Writes the server address to docs/push.json, where the app finds it.
+on:
+  push:
+    branches: [main]
+    paths: ['worker/**', '.github/workflows/push-server.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: push-server
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check token
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then echo "::warning::Secret CLOUDFLARE_API_TOKEN fehlt noch, nichts zu tun."; echo "SKIP=1" >> $GITHUB_ENV; fi
+      - uses: actions/setup-node@v4
+        if: env.SKIP != '1'
+        with: { node-version: 22 }
+      - name: Account and workers.dev subdomain
+        if: env.SKIP != '1'
+        run: |
+          H="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          ACC=$(curl -fsS -H "$H" https://api.cloudflare.com/client/v4/accounts | jq -r '.result[0].id')
+          echo "CLOUDFLARE_ACCOUNT_ID=$ACC" >> $GITHUB_ENV
+          SUB=$(curl -sS -H "$H" https://api.cloudflare.com/client/v4/accounts/$ACC/workers/subdomain | jq -r '.result.subdomain // empty')
+          if [ -z "$SUB" ]; then
+            SUB="bullion-$(echo $ACC | cut -c1-8)"
+            curl -fsS -X PUT -H "$H" -H 'Content-Type: application/json' --data "{\"subdomain\":\"$SUB\"}" https://api.cloudflare.com/client/v4/accounts/$ACC/workers/subdomain > /dev/null
+          fi
+          echo "SUB=$SUB" >> $GITHUB_ENV
+      - name: KV namespace
+        if: env.SKIP != '1'
+        run: |
+          H="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          API=https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/storage/kv/namespaces
+          ID=$(curl -fsS -H "$H" "$API?per_page=100" | jq -r '.result[] | select(.title=="bullion-monkey-push") | .id')
+          [ -n "$ID" ] || ID=$(curl -fsS -X POST -H "$H" -H 'Content-Type: application/json' --data '{"title":"bullion-monkey-push"}' $API | jq -r '.result.id')
+          sed -i "s/KV_ID/$ID/" worker/wrangler.toml
+      - name: Deploy
+        if: env.SKIP != '1'
+        working-directory: worker
+        run: npx --yes wrangler@4 deploy
+      - name: Save address for the app
+        if: env.SKIP != '1'
+        run: |
+          git checkout -- worker/wrangler.toml
+          echo "{\"url\":\"https://bullion-monkey-push.$SUB.workers.dev\"}" > docs/push.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898+github-actions[bot]@users.noreply.github.com'
+          git add docs/push.json
+          git diff --cached --quiet || (git commit -m 'Push-Server-Adresse' && git pull --rebase -q origin main && git push)

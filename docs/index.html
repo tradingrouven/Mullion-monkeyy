@@ -856,6 +856,18 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
     </details>
   </div>
 
+  <div class="panel" id="pushPanel">
+    <div class="ph"><h2>Push-Nachrichten</h2><span class="sp"></span><span class="pill" id="pushState"></span></div>
+    <p class="note" id="pushNote" style="margin:-6px 0 10px"></p>
+    <button class="btn pri" type="button" id="pushOn" hidden>🔔 Push aktivieren</button>
+    <div id="pushOpts" hidden>
+      <div class="chips" id="pushPrefs"></div>
+      <div class="ph" style="margin:10px 0"><span class="lbl">Vorlauf</span><span class="chips" id="pushMin"></span></div>
+      <p class="note">Für Trades, Limits und die Journal-Erinnerung: diesen Link in MT5 beim EA im Feld <b>PushLink</b> einfügen und unter Extras → Optionen → Expert Advisors bei WebRequest <b id="pushBase"></b> hinzufügen.</p>
+      <div class="ph" style="margin:6px 0 12px;gap:8px"><input id="pushLink" readonly style="flex:1;min-width:0"><button class="btn sm" type="button" id="pushCopy">Kopieren</button></div>
+      <div class="ph" style="gap:8px"><button class="btn sm" type="button" id="pushTest">Test-Push senden</button><span class="sp"></span><button class="btn sm" type="button" id="pushOff">Ausschalten</button></div>
+    </div>
+  </div>
   <div class="panel goldb" id="syncPanel">
     <div class="ph"><h2>Daten &amp; Sync</h2></div>
     <div class="srows" id="syncRows"></div>
@@ -964,7 +976,7 @@ const SIDE=s=>`<span class="bs ${s==="buy"?"buy":"sell"}">${s==="buy"?"BUY":"SEL
 /* ---------- tabs ---------- */
 const VIEWS=["dash","news","jour","ana","calc"];
 const TITLES={dash:"Dashboard",news:"News",jour:"Journal",ana:"Analyse",calc:"Tools"};
-function show(v){if(!VIEWS.includes(v))v="dash";window.scrollTo(0,0);$("#pageTitle").textContent=TITLES[v];document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.view===v));VIEWS.forEach(x=>$("#view-"+x).hidden=x!==v);LS.set("view",v);if(v==="ana")renderAna();if(v==="jour")renderJournal();if(v==="calc"){renderCheck();renderRiskForm();renderCalc();renderSync()}if(v==="news")heroClock()}
+function show(v){if(!VIEWS.includes(v))v="dash";window.scrollTo(0,0);$("#pageTitle").textContent=TITLES[v];document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.view===v));VIEWS.forEach(x=>$("#view-"+x).hidden=x!==v);LS.set("view",v);if(v==="ana")renderAna();if(v==="jour")renderJournal();if(v==="calc"){renderCheck();renderRiskForm();renderCalc();renderSync();renderPush()}if(v==="news")heroClock()}
 /* chevron links: data-go="view" or "view:panelId" */
 document.addEventListener("click",e=>{const g=e.target.closest("[data-go]");if(!g)return;const [v,id]=g.dataset.go.split(":");show(v);
   if(id)setTimeout(()=>{const el=$("#"+id);if(el){if(el.querySelector("details"))el.querySelector("details").open=true;el.scrollIntoView({behavior:"smooth"})}},60)});
@@ -1362,7 +1374,7 @@ function renderNews(){
     h+=`<tr class="${e.t<n?"past":""} ${e===nxt?"next":""}${on?" star":""}"><td class="num">${showT?time:""}</td><td class="cur"><span class="flg">${flag(e.country)}</span>${esc(e.country)}</td><td><span class="imp ${esc(e.impact)}" title="${IMP_DE[e.impact]||e.impact}"></span></td><td class="ev"><span class="evt">${esc(e.title)}</span><span class="evb">${on&&e.t>n?`<button type="button" class="bell" data-bell="${esc(sk)}" aria-label="Erinnerung">🔔</button>`:""}<button type="button" class="stb" data-star="${esc(sk)}" aria-label="Markieren">${on?"★":"☆"}</button></span></td><td class="r num fc">${esc(e.forecast)}</td><td class="r num pv">${esc(e.previous)}</td></tr>`;
   }
   tb.innerHTML=h||`<tr><td colspan="6" class="empty">Keine Events für diese Filter.</td></tr>`;
-  tb.querySelectorAll("[data-star]").forEach(b=>b.onclick=()=>{const S={...stars()};if(S[b.dataset.star])delete S[b.dataset.star];else S[b.dataset.star]=1;state.settings.newsStars=S;persist();renderNews();renderNewsKpi();renderToday()});
+  tb.querySelectorAll("[data-star]").forEach(b=>b.onclick=()=>{const S={...stars()};if(S[b.dataset.star])delete S[b.dataset.star];else S[b.dataset.star]=1;state.settings.newsStars=S;persist();renderNews();renderNewsKpi();renderToday();pushSync()});
   tb.querySelectorAll("[data-bell]").forEach(b=>b.onclick=()=>{const e=events().find(x=>starKey(x)===b.dataset.bell);if(e)remindIcs(e)});
   const ab=$("#newsArch");if(ab)ab.onclick=()=>{LS.set("newsArch",!arch);renderNews()};
   const f=state.news.fetchedAt?new Date(state.news.fetchedAt):null;
@@ -2003,6 +2015,7 @@ $("#cClear").onclick=()=>{["#cEntry","#cSl","#cTp","#cDist"].forEach(id=>$(id).v
 
 $("#calSub").href="webcal://"+location.host+location.pathname.replace(/[^/]*$/,"")+"gold-news.ics";
 /* ---------- boot ---------- */
+addEventListener("hashchange",showFirst);
 load();if(state.settings.mt5Gist)state.mt5=LS.get("bm-mt5",null);showFirst();renderMt5();renderDash();renderHeadlines();renderTruth();renderNews();renderNewsKpi();renderSessions();
 async function loadNews(){try{const r=await fetch("news.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;state.news=await r.json()}catch(e){if(!state.news)state.news={events:[]}}renderNewsFilters();renderNews();renderNewsKpi();renderToday()}
 loadNews();
@@ -2010,6 +2023,42 @@ syncMt5();setInterval(()=>{if(!document.hidden)syncMt5(true)},60000);
 renderCloud();if(cloud.token)cloudPull().then(cloudPush).catch(cloudFail);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){loadNews();syncMt5();renderDash();if(cloud.token&&Date.now()-clPulled>5*6e4)cloudPull().catch(cloudFail)}});
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+/* push messages through our Cloudflare server (worker/); its address comes from push.json */
+var pushSrv=null;   /* var + function declarations: renderPush can run (Tools opened at start) before this code */
+function pushCfg(){return LS.get("bm-push",{})}
+function pushOk(){return "serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window}
+async function pushServer(){if(pushSrv)return pushSrv;try{const r=await fetch("push.json?t="+Date.now(),{cache:"no-store"});if(r.ok)pushSrv=(await r.json()).url}catch(e){}return pushSrv}
+function pushPrefs(){const c=pushCfg(),n=new Date();
+  const st=events().filter(e=>isStar(e)&&e.t>n).map(e=>({id:starKey(e),t:e.t.toISOString(),title:e.title,country:e.country}));
+  return {news:c.news!==false,medium:!!c.medium,minutes:c.minutes||15,stars:c.stars===false?[]:st}}
+async function pushSync(){const c=pushCfg();if(!c.on||!c.key)return;const url=await pushServer();if(!url)return;
+  try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();if(!sub){LS.set("bm-push",{...c,on:false});renderPush();return}
+    await fetch(url+"/sub",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:c.key,sub:sub.toJSON(),prefs:pushPrefs()})})}catch(e){}}
+async function renderPush(){
+  const c=pushCfg(),st=$("#pushState"),note=$("#pushNote");const url=await pushServer();
+  $("#pushOn").hidden=true;$("#pushOpts").hidden=true;
+  if(!pushOk()){st.className="pill warn";st.textContent="Nicht möglich";note.textContent="Push geht auf dem iPhone nur, wenn die App vom Home-Bildschirm geöffnet wird (Teilen → Zum Home-Bildschirm), ab iOS 16.4.";return}
+  if(!url){st.className="pill warn";st.textContent="Server fehlt";note.textContent="Der Push-Server ist noch nicht eingerichtet.";return}
+  if(!c.on){st.className="pill";st.textContent="Aus";note.textContent="Bekomme Meldungen vor wichtigen News, bei geschlossenen Trades, Limits und als Journal-Erinnerung.";$("#pushOn").hidden=false;return}
+  st.className="pill ok";st.textContent="Aktiv";note.textContent="Dieses Handy bekommt Push-Nachrichten.";$("#pushOpts").hidden=false;
+  const P=$("#pushPrefs");P.innerHTML="";[["news","🔴 Rote USD-News",c.news!==false],["medium","🟠 Auch mittlere USD-News",!!c.medium],["stars","★ Markierte News",c.stars!==false]].forEach(([k,l,on])=>{const b=document.createElement("button");b.className="chip";b.type="button";b.textContent=l;b.setAttribute("aria-pressed",on);b.onclick=()=>{LS.set("bm-push",{...pushCfg(),[k]:!on});renderPush();pushSync()};P.appendChild(b)});
+  const M=$("#pushMin");M.innerHTML="";[5,10,15,30,60].forEach(m=>{const b=document.createElement("button");b.className="chip";b.type="button";b.textContent=m+" Min.";b.setAttribute("aria-pressed",(c.minutes||15)===m);b.onclick=()=>{LS.set("bm-push",{...pushCfg(),minutes:m});renderPush();pushSync()};M.appendChild(b)});
+  $("#pushLink").value=url+"/push/"+c.key;$("#pushBase").textContent=url;
+}
+$("#pushOn").onclick=async()=>{
+  const note=$("#pushNote");
+  try{const url=await pushServer();
+    if(await Notification.requestPermission()!=="granted"){note.textContent="Mitteilungen sind nicht erlaubt. iPhone-Einstellungen → Mitteilungen → Bullion Monkey → Erlauben.";return}
+    const reg=await navigator.serviceWorker.ready,{publicKey}=await (await fetch(url+"/key")).json();
+    const raw=atob(publicKey.replace(/-/g,"+").replace(/_/g,"/")+"===".slice((publicKey.length+3)%4));
+    const sub=(await reg.pushManager.getSubscription())||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:Uint8Array.from(raw,ch=>ch.charCodeAt(0))});
+    const c=pushCfg(),key=c.key||[...crypto.getRandomValues(new Uint8Array(18))].map(x=>"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"[x&63]).join("");
+    LS.set("bm-push",{...c,key,on:true});await pushSync();renderPush();
+  }catch(e){note.textContent="Push konnte nicht eingeschaltet werden: "+(e&&e.message||e)}
+};
+$("#pushOff").onclick=async()=>{const c=pushCfg(),url=await pushServer();try{const sub=await (await navigator.serviceWorker.ready).pushManager.getSubscription();if(sub)await sub.unsubscribe();if(url)await fetch(url+"/unsub",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:c.key})})}catch(e){}LS.set("bm-push",{...c,on:false});renderPush()};
+$("#pushTest").onclick=async()=>{const c=pushCfg(),url=await pushServer();const r=await fetch(url+"/test/"+c.key,{method:"POST"}).catch(()=>null);$("#pushNote").textContent=r&&r.ok?"Test-Push gesendet. Er sollte gleich erscheinen.":"Test-Push fehlgeschlagen. Schalte Push aus und wieder ein."};
+$("#pushCopy").onclick=()=>{navigator.clipboard.writeText($("#pushLink").value).then(()=>{$("#pushCopy").textContent="Kopiert ✓"},()=>{$("#pushLink").select()})};
 })();
 </script>
 </body></html>

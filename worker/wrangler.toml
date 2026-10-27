@@ -1,0 +1,12 @@
+name = "bullion-monkey-push"
+main = "index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[triggers]
+crons = ["* * * * *"]
+
+# the KV id is filled in by .github/workflows/push-server.yml on deploy
+[[kv_namespaces]]
+binding = "SUBS"
+id = "KV_ID"

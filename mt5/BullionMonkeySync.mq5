@@ -10,12 +10,13 @@
 //| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.45"
+#property version   "1.46"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
 input int    DaysBack    = 365;  // how many days of history to send
 input int    SyncSeconds = 15;   // check interval in seconds
+input string PushLink    = "";   // push link from the app (Tools → Push-Nachrichten); also add its address under WebRequest
 input bool   PushTrades  = true; // push message when a trade opens or closes
 input double DailyLossPct = 3.0; // push when today's loss reaches this % (0 = off)
 input int    MaxTradesDay = 3;   // push when more trades than this are opened today (0 = off)
@@ -94,11 +95,25 @@ void OnTradeTransaction(const MqlTradeTransaction &trans, const MqlTradeRequest 
 //+------------------------------------------------------------------+
 //| Push messages to the MT5 app on the phone                        |
 //+------------------------------------------------------------------+
-void Push(const string msg)
+void Push(const string msg, const bool journal = false)
   {
+   if(PushLink != "") PushApp(msg, journal);
    if(!TerminalInfoInteger(TERMINAL_NOTIFICATIONS_ENABLED)) return;
    if(!SendNotification(StringSubstr(msg, 0, 255)))
       Print("Bullion Monkey: Push fehlgeschlagen ", GetLastError());
+  }
+
+// push to the Bullion Monkey app through its server; a tap opens the app (the journal when journal is true)
+void PushApp(string msg, const bool journal)
+  {
+   StringReplace(msg, "Bullion Monkey: ", "");
+   string body = "{\"body\":\"" + Esc(msg) + "\"" + (journal ? ",\"journal\":true" : "") + "}";
+   char data[], res[]; string rh;
+   StringToCharArray(body, data, 0, WHOLE_ARRAY, CP_UTF8);
+   ArrayResize(data, ArraySize(data) - 1);   // no trailing 0
+   int code = WebRequest("POST", PushLink, "Content-Type: application/json\r\n", 5000, data, res, rh);
+   if(code != 200)
+      Print("Bullion Monkey: App-Push fehlgeschlagen (", code, " / ", GetLastError(), "). Ist die Push-Server-Adresse unter WebRequest erlaubt?");
   }
 
 void PushDeal(const ulong deal)
@@ -138,7 +153,7 @@ void PushDeal(const ulong deal)
          double p = HistoryDealGetDouble(deal, DEAL_PROFIT) + HistoryDealGetDouble(deal, DEAL_SWAP)
                   + HistoryDealGetDouble(deal, DEAL_COMMISSION) + HistoryDealGetDouble(deal, DEAL_FEE);
          Push(StringFormat("Bullion Monkey: %s geschlossen %s%.2f %s · heute %s%.2f %s. Schreib kurz ins Journal: Setup, Gefühl, Lektion.",
-              sym, p >= 0 ? "+" : "", p, cur, dayPnl >= 0 ? "+" : "", dayPnl, cur));
+              sym, p >= 0 ? "+" : "", p, cur, dayPnl >= 0 ? "+" : "", dayPnl, cur), true);
         }
      }
 
@@ -326,7 +341,7 @@ void FetchTruth()
 ulong g_calSeen[];   // calendar values already announced
 void CheckCalendar()
   {
-   if(NewsPushMinutes <= 0) return;
+   if(NewsPushMinutes <= 0 || PushLink != "") return;   // with PushLink the push server sends the news reminders
    datetime now = TimeTradeServer();
    MqlCalendarValue vals[];
    if(CalendarValueHistory(vals, now, now + NewsPushMinutes * 60, NULL, "USD") <= 0) return;
@@ -367,7 +382,7 @@ void CheckJournal()
      }
    if(n > 0)
       Push(StringFormat("Bullion Monkey: Heute %d Trade%s, %s%.2f %s. Zeit fürs Journal: Notizen und Screenshots in der App ergänzen.",
-           n, n == 1 ? "" : "s", pnl >= 0 ? "+" : "", pnl, AccountInfoString(ACCOUNT_CURRENCY)));
+           n, n == 1 ? "" : "s", pnl >= 0 ? "+" : "", pnl, AccountInfoString(ACCOUNT_CURRENCY)), true);
   }
 
 void CheckNoSl()
