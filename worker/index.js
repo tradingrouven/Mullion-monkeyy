@@ -127,8 +127,9 @@ const hm = m => String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 6
 async function sessionPushes(env) {
   const o = {};
   for (const x of new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Zurich", hourCycle: "h23", weekday: "short", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date())) o[x.type] = x.value;
-  if (o.weekday === "Sat" || o.weekday === "Sun") return;
   const min = +o.hour * 60 + +o.minute, due = [];
+  if (o.weekday === "Sun" && min >= 1080 && min < 1083) return weeklyReview(env, o);   // Sunday 18:00
+  if (o.weekday === "Sat" || o.weekday === "Sun") return;
   for (const [name, open, close] of SESSIONS)
     for (const [what, at] of [["open", open], ["close", close]])
       if (min - at >= 0 && min - at < 3) due.push({ name, what, open, close, id: name + ":" + what + ":" + o.year + o.month + o.day });   // 3 min window in case a timer run is skipped
@@ -151,6 +152,22 @@ async function sessionPushes(env) {
       });
       if (st === 404 || st === 410) break;
     }
+  }
+}
+
+async function weeklyReview(env, o) {
+  const list = await env.SUBS.list({ prefix: "s:" });
+  for (const k of list.keys) {
+    const key = k.name.slice(2), rec = await env.SUBS.get(k.name, "json");
+    if (!rec || !rec.sub || (rec.prefs && rec.prefs.review === false)) continue;
+    const seen = "x:" + key + ":review:" + o.year + o.month + o.day;
+    if (await env.SUBS.get(seen)) continue;
+    await env.SUBS.put(seen, "1", { expirationTtl: 86400 * 2 });
+    await send(env, key, rec.sub, {
+      title: "📋 Dein Wochenrückblick ist bereit",
+      body: "Wie lief die Woche? Drei kurze Fragen, dann bist du bereit für Montag.",
+      url: APP + "#analyse", tag: "review"
+    });
   }
 }
 

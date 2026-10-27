@@ -10,7 +10,7 @@
 //| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.51"
+#property version   "1.52"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
@@ -30,6 +30,8 @@ input int    TruthMinutes = 2;   // read Trump's Truth Social posts (trumpstruth
 input bool   PushTruth    = true; // push Trump posts that match the words below
 input double BreakEvenR   = 1.0;  // push when a position is this many R in profit and the SL is not at entry yet (0 = off)
 input bool   PriceAlarms  = true; // price alarms set in the app (needs PushLink)
+input int    CoolLosses   = 2;    // cooldown push after this many losing trades today (0 = off)
+input int    CoolMinutes  = 30;   // length of the cooldown in minutes
 input bool   ChartShots   = true; // chart picture at entry and exit, shown in the app's journal
 input string TruthWords   = "gold,tariff,china,fed,powell,rate,interest,dollar,inflation,trade,deal,iran,russia,war,oil,sanction,economy,stock,market,bitcoin"; // comma list for the Trump push filter
 
@@ -160,7 +162,7 @@ void PushDeal(const ulong deal)
    // today's result and trade count, in broker time
    MqlDateTime t; TimeToStruct(TimeTradeServer(), t); t.hour = 0; t.min = 0; t.sec = 0;
    datetime day = StructToTime(t);
-   double dayPnl = 0; int dayTrades = 0;
+   double dayPnl = 0; int dayTrades = 0, dayLosses = 0;
    if(HistorySelect(day, TimeTradeServer() + 60))
       for(int i = 0; i < HistoryDealsTotal(); i++)
         {
@@ -169,7 +171,10 @@ void PushDeal(const ulong deal)
          if(ty != DEAL_TYPE_BUY && ty != DEAL_TYPE_SELL) continue;
          dayPnl += HistoryDealGetDouble(tk, DEAL_PROFIT) + HistoryDealGetDouble(tk, DEAL_SWAP)
                  + HistoryDealGetDouble(tk, DEAL_COMMISSION) + HistoryDealGetDouble(tk, DEAL_FEE);
-         if(HistoryDealGetInteger(tk, DEAL_ENTRY) == DEAL_ENTRY_IN) dayTrades++;
+         long en = HistoryDealGetInteger(tk, DEAL_ENTRY);
+         if(en == DEAL_ENTRY_IN) dayTrades++;
+         else if(HistoryDealGetDouble(tk, DEAL_PROFIT) + HistoryDealGetDouble(tk, DEAL_SWAP)
+                 + HistoryDealGetDouble(tk, DEAL_COMMISSION) + HistoryDealGetDouble(tk, DEAL_FEE) < 0) dayLosses++;
         }
    HistoryDealSelect(deal);
 
@@ -194,6 +199,14 @@ void PushDeal(const ulong deal)
       g_lossDay = day;
       Push(StringFormat("Bullion Monkey: STOPP. Tagesverlust %.2f %s (%.1f %%) hat dein Limit von %.1f %% erreicht.",
            dayPnl, cur, dayPnl / startBal * 100, DailyLossPct));
+     }
+   if(CoolLosses > 0 && entry != DEAL_ENTRY_IN && dayLosses == CoolLosses)
+     {
+      double p = HistoryDealGetDouble(deal, DEAL_PROFIT) + HistoryDealGetDouble(deal, DEAL_SWAP)
+               + HistoryDealGetDouble(deal, DEAL_COMMISSION) + HistoryDealGetDouble(deal, DEAL_FEE);
+      if(p < 0)
+         Push(StringFormat("Bullion Monkey: ⏸ Abkühl-Pause. %d Verluste heute, kein neuer Trade bis %s. Steh kurz auf.",
+              dayLosses, TimeToString(TimeLocal() + CoolMinutes * 60, TIME_MINUTES)));
      }
    if(MaxTradesDay > 0 && entry == DEAL_ENTRY_IN && dayTrades > MaxTradesDay && g_tradesDay != day)
      {

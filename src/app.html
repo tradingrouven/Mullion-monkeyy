@@ -107,6 +107,19 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .ckwarn{border:1px solid color-mix(in srgb,var(--loss) 50%,transparent);background:var(--loss-bg);border-radius:9px;padding:8px 10px;font-size:13px;margin-bottom:8px}
 .ckok{border:1px solid color-mix(in srgb,var(--win) 50%,transparent);background:var(--win-bg);color:var(--win);border-radius:9px;padding:8px 10px;font-size:13px;margin-top:10px;text-align:center;font-weight:600}
 /* notes */
+.rvq{display:grid;gap:10px;margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.rvq label{display:grid;gap:4px}
+.rvq textarea{width:100%;box-sizing:border-box;resize:vertical}
+.pbr{margin:0;padding-left:20px;font-size:13.5px;line-height:1.5;color:var(--fg)}
+.pbr li{margin:3px 0}
+#pbDesc{width:100%;box-sizing:border-box}
+.fsov{position:fixed;inset:0;z-index:200;background:rgba(8,8,7,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:32px 24px calc(32px + env(safe-area-inset-bottom));text-align:center;color:var(--fg)}
+.fsov[hidden]{display:none}
+.fsov.lock{background:var(--bg);z-index:300}
+.fsov h2{margin:0;font-size:22px}
+.fsov p{margin:0;color:var(--muted);font-size:15px;line-height:1.45;max-width:340px}
+.fsov .big{font-size:56px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent);letter-spacing:1px}
+.fsov .btn{min-width:240px;justify-content:center}
 .sheet{border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--fg);padding:16px;width:min(520px,calc(100vw - 24px));max-height:calc(100vh - 40px)}
 .sheet::backdrop{background:rgba(0,0,0,.6)}
 .fl{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted)}
@@ -536,6 +549,8 @@ button.hero{cursor:pointer}
 .setr{display:flex;align-items:center;gap:14px;width:100%;padding:13px 14px;background:none;border:0;border-top:1px solid var(--line);color:var(--fg);text-align:left;font:inherit;cursor:pointer}.setr:first-child{border-top:0}
 .setr svg{width:24px;height:24px;flex:none;color:#d9d2c2}.setr span{flex:1;min-width:0;display:flex;flex-direction:column}.setr b{font:600 15px var(--font-ui)}.setr i{font-style:normal;color:var(--muted);font-size:13px}.setr i.on{color:var(--win)}
 .setback{justify-self:start}
+.st.err{border-color:color-mix(in srgb,var(--loss) 55%,transparent);color:var(--loss)}
+.wif{display:flex;flex-direction:column}.wif div{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:baseline;padding:9px 0;border-top:1px solid var(--line)}.wif div:first-child{border-top:0}.wif span{font-size:14px}.wif em{font-style:normal;color:var(--muted);font-size:12px;display:block}.wif b{font:600 14px var(--font-num);text-align:right}.wif i{font-style:normal;font:600 12px var(--font-num);min-width:64px;text-align:right}
 .aud{display:flex;flex-direction:column;gap:8px;margin-top:6px}
 .aud .ar{display:flex;align-items:center;gap:8px}.aud audio{flex:1;min-width:0;height:36px}
 .btn.rec{border-color:var(--loss);color:var(--loss)}
@@ -892,6 +907,7 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
       <div class="ph" style="margin:10px 0"><span class="lbl">Vorlauf</span><span class="chips" id="pushMin"></span></div>
       <p class="lbl" style="margin:4px 0 6px">Session Start &amp; Ende (Schweizer Zeit)</p>
       <div class="chips" id="pushSess" style="margin-bottom:10px"></div>
+      <div class="chips" style="margin-bottom:10px"><button class="chip" type="button" id="pushRev">📋 Wochenrückblick So 18:00</button></div>
       <p class="note">Für Trades, Limits und die Journal-Erinnerung: diesen Link in MT5 beim EA im Feld <b>PushLink</b> einfügen und unter Extras → Optionen → Expert Advisors bei WebRequest <b id="pushBase"></b> hinzufügen.</p>
       <div class="ph" style="margin:6px 0 12px;gap:8px"><input id="pushLink" readonly style="flex:1;min-width:0"><button class="btn sm" type="button" id="pushCopy">Kopieren</button></div>
       <div class="ph" style="gap:8px"><button class="btn sm" type="button" id="pushTest">Test-Push senden</button><span class="sp"></span><button class="btn sm" type="button" id="pushOff">Ausschalten</button></div>
@@ -927,9 +943,37 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
     <div class="ph"><h2>Strategien</h2></div>
     <div class="st2" id="stratTiles"></div>
   </div>
+  <div class="panel setp" id="lockPanel">
+    <div class="ph"><h2>App-Sperre</h2></div>
+    <p class="note" id="lockState"></p>
+    <div id="lockSetup">
+      <p class="lbl" style="margin-top:10px">PIN (4 Ziffern, falls Face ID nicht geht)</p>
+      <input id="lockPin1" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••" aria-label="Neue PIN">
+      <input id="lockPin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="PIN wiederholen" aria-label="PIN wiederholen" style="margin-top:8px">
+      <button class="btn pri" type="button" id="lockOn" style="width:100%;margin-top:10px">Sperre mit Face ID einschalten</button>
+    </div>
+    <button class="btn" type="button" id="lockOff" style="width:100%;margin-top:10px" hidden>Sperre ausschalten</button>
+    <p class="note" id="lockMsg" style="margin-top:8px"></p>
+  </div>
   <button class="btn share setp" id="shareApp" type="button">🐒 Bullion Monkey mit Freunden teilen</button>
 </section>
 </main>
+<div class="fsov lock" id="lockOv" hidden>
+  <img src="icon-192.png" alt="" width="72" height="72" style="border-radius:18px">
+  <h2>Bullion Monkey ist gesperrt</h2>
+  <button class="btn pri" type="button" id="lockFace">Mit Face ID entsperren</button>
+  <p>oder PIN eingeben</p>
+  <input id="lockPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••" aria-label="PIN" style="width:160px;text-align:center;font-size:24px;letter-spacing:8px">
+  <p id="lockErr" class="neg"></p>
+</div>
+<div class="fsov" id="coolOv" hidden role="alertdialog" aria-labelledby="coolT">
+  <div style="font-size:44px">⏸</div>
+  <h2 id="coolT">Abkühl-Pause</h2>
+  <p id="coolS"></p>
+  <div class="big" id="coolC">30:00</div>
+  <p>Kein neuer Trade, bis die Zeit abgelaufen ist. Steh auf, trink etwas, schau dir deine Verlust-Trades später in Ruhe an.</p>
+  <button class="btn pri" type="button" id="coolOk">Okay, ich mache Pause</button>
+</div>
 <dialog id="guideDlg" class="sheet guide">
   <div class="ph"><h2>MT5 verbinden</h2><span class="sp"></span><button class="btn sm" type="button" id="guideX" aria-label="Schliessen">✕</button></div>
   <p class="note" style="margin-top:-6px">Einmalig, am Computer mit MT5 (Mac oder Windows). Dauert etwa 10 Minuten. Deine Daten landen in deinem eigenen, geheimen GitHub-Gist und nur dein Handy liest sie.</p>
@@ -944,6 +988,11 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
     <li>Optional für Push-Nachrichten: MetaQuotes ID aus der MT5-App am Handy (Einstellungen → Nachrichten) in MT5 am Computer unter Extras → Optionen → Benachrichtigungen eintragen.</li>
   </ol>
   <p class="note">MT5 muss am Computer laufen, damit Trades, Positionen und Schlagzeilen aktuell bleiben. News-Kalender, Checkliste und Lot-Rechner gehen auch ohne.</p>
+</dialog>
+<dialog id="pbDlg" class="sheet">
+  <div class="ph"><button class="btn sm" type="button" id="pbX" aria-label="Zurück">←</button><h2 style="margin-left:8px" id="pbT"></h2></div>
+  <div id="pbBody"></div>
+  <input type="file" id="pbImgIn" accept="image/*" multiple hidden>
 </dialog>
 <dialog id="dayDlg" class="sheet">
   <div class="ph"><h2 id="dayT"></h2><span class="sp"></span><button class="btn sm" type="button" id="dayX" aria-label="Schliessen">✕</button></div>
@@ -972,6 +1021,8 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
     <div class="chips" id="emoChips" style="margin:6px 0 14px"></div>
     <div class="lbl">Setup-Bewertung</div>
     <div class="chips" id="gradeChips" style="margin:6px 0 14px"></div>
+    <div class="lbl">Fehler</div>
+    <div class="chips" id="errChips" style="margin:6px 0 14px"></div>
     <label class="fl">Notiz<textarea id="noteText" rows="4" placeholder="Warum rein, was lief gut, was nicht?"></textarea></label>
     <div class="lbl" style="margin-top:12px">Chart-Bilder</div>
     <div class="thumbs" id="noteImgs"></div>
@@ -1029,7 +1080,7 @@ function renderSetList(){
     ["Trading",[
       ["rkPanel","",ic('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>'),"Risiko-Grenzen",`<i>Tag −${L.day} % · Woche −${L.week} % · ${L.trades} Trades</i>`],
       ["stratPanel","",ic('<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/>'),"Strategien",`<i>${STRATS.join(", ")}</i>`]]],
-    ["App",[["share","",ic('<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/>'),"Mit Freunden teilen","<i>Bullion Monkey weitergeben</i>"]]]];
+    ["App",[["lockPanel","",ic('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'),"App-Sperre",`<i>${lockCfg()?(lockCfg().id?"Face ID":"PIN")+" aktiv":"Aus"}</i>`],["share","",ic('<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/>'),"Mit Freunden teilen","<i>Bullion Monkey weitergeben</i>"]]]];
   $("#setList").innerHTML=`<h3 style="margin-top:4px">Einstellungen</h3>`+G.map(([h,rows],gi)=>`${gi?`<h3>${h}</h3>`:""}<div class="grp">${rows.map(([p,d,i,t,sub])=>`<button class="setr" type="button" data-set="${p}" data-det="${d}">${i}<span><b>${t}</b>${sub}</span><i class="chev"></i></button>`).join("")}</div>`).join("");
   $("#setList").querySelectorAll("[data-set]").forEach(b=>b.onclick=()=>{if(b.dataset.set==="share"){$("#shareApp").click();return}
     openSet(b.dataset.set);const d=b.dataset.det&&$("#"+b.dataset.det);if(d)d.open=true});
@@ -1166,6 +1217,46 @@ function pauseInfo(){
   if(ls.length<L.loss)return null;
   const end=+ls[ls.length-1].c+L.pause*6e4;return end>Date.now()?{end,n:ls.length}:null;
 }
+/* app lock: Face ID (WebAuthn on this phone) with a PIN as fallback; it only hides the app, the data stay on the phone */
+function lockCfg(){return LS.get("bm-lock",null)}
+var lockHidden=0;
+const b64=a=>btoa(String.fromCharCode(...new Uint8Array(a))),unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function pinHash(p){return b64(await crypto.subtle.digest("SHA-256",new TextEncoder().encode("bm-lock:"+p)))}
+function lockApp(){const c=lockCfg();if(!c)return;$("#lockFace").hidden=!c.id;$("#lockPin").value="";$("#lockErr").textContent="";$("#lockOv").hidden=false;document.activeElement&&document.activeElement.blur&&document.activeElement.blur()}
+function unlockApp(){$("#lockOv").hidden=true;$("#lockPin").value=""}
+async function faceUnlock(){const c=lockCfg();if(!c||!c.id)return;
+  try{await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:"public-key",id:unb64(c.id)}],userVerification:"required",timeout:60000}});unlockApp()}
+  catch(e){$("#lockErr").textContent="Face ID hat nicht geklappt. Gib deine PIN ein."}}
+$("#lockFace").onclick=faceUnlock;
+$("#lockPin").oninput=async e=>{const v=e.target.value.replace(/\D/g,"");e.target.value=v;if(v.length<4)return;
+  if(await pinHash(v)===(lockCfg()||{}).pin)unlockApp();else{$("#lockErr").textContent="Falsche PIN.";e.target.value=""}};
+document.addEventListener("visibilitychange",()=>{if(document.hidden)lockHidden=Date.now();else if(lockCfg()&&lockHidden&&Date.now()-lockHidden>60000&&$("#lockOv").hidden)lockApp()});
+function renderLock(){const c=lockCfg();
+  $("#lockState").innerHTML=c?`Die App ist gesperrt, wenn du sie öffnest oder länger als 1 Minute weg warst. Entsperren mit ${c.id?"<b>Face ID</b> oder PIN":"<b>PIN</b>"}.`:"Schützt deine Zahlen, wenn jemand dein Handy in der Hand hat. Entsperren mit Face ID, die PIN ist der Notfall-Schlüssel.";
+  $("#lockSetup").hidden=!!c;$("#lockOff").hidden=!c}
+$("#lockOn").onclick=async()=>{const a=$("#lockPin1").value,b=$("#lockPin2").value,msg=$("#lockMsg");
+  if(!/^\d{4}$/.test(a)){msg.textContent="Bitte eine PIN mit 4 Ziffern eingeben.";return}
+  if(a!==b){msg.textContent="Die beiden PINs sind nicht gleich.";return}
+  const cfg={pin:await pinHash(a)};
+  try{if(window.PublicKeyCredential&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()){
+    const cr=await navigator.credentials.create({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:"Bullion Monkey"},user:{id:crypto.getRandomValues(new Uint8Array(16)),name:"Bullion Monkey",displayName:"Bullion Monkey"},
+      pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required",residentKey:"discouraged"},timeout:60000,attestation:"none"}});
+    cfg.id=b64(cr.rawId)}}catch(e){}
+  LS.set("bm-lock",cfg);$("#lockPin1").value=$("#lockPin2").value="";
+  msg.textContent=cfg.id?"Sperre ist an. Ab jetzt mit Face ID entsperren.":"Sperre ist an, aber Face ID ging hier nicht. Du entsperrst mit der PIN.";renderLock()};
+$("#lockOff").onclick=()=>{if(!confirm("App-Sperre wirklich ausschalten?"))return;localStorage.removeItem("bm-lock");$("#lockMsg").textContent="Sperre ist aus.";renderLock()};
+renderLock();lockApp();
+/* cooldown overlay: full screen once per pause, countdown keeps running on Home */
+var coolTick=0;
+function checkCool(){
+  const pz=pauseInfo(),ov=$("#coolOv");
+  if(!pz){ov.hidden=true;clearInterval(coolTick);coolTick=0;return}
+  if(LS.get("bm-cool",0)===pz.end)return;
+  $("#coolS").textContent=`Du hattest heute ${pz.n} Verlust-Trades. Jetzt ist der Moment, in dem Revenge-Trading passiert.`;
+  const up=()=>{const s=Math.max(0,Math.round((pz.end-Date.now())/1e3));$("#coolC").textContent=String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");if(!s){ov.hidden=true;clearInterval(coolTick);coolTick=0}};
+  up();ov.hidden=false;clearInterval(coolTick);coolTick=setInterval(up,1000);
+  $("#coolOk").onclick=()=>{LS.set("bm-cool",pz.end);ov.hidden=true;clearInterval(coolTick);coolTick=0};
+}
 const pauseLeft=pz=>Math.max(1,Math.ceil((pz.end-Date.now())/6e4))+" Min.";
 
 /* ---------- discipline: a trading day earns a point when no rule was broken ---------- */
@@ -1240,6 +1331,8 @@ $("#reviewBanner").onclick=()=>{LS.set("revSeen",ymd(monday(new Date())));revWee
 
 /* ---------- weekly review ---------- */
 let revWeek=0;   /* 0 = this week, -1 = last week … */
+var rvT=0;
+const REVQ=[["good","Was lief gut?","z.B. Plan eingehalten, geduldig auf das Setup gewartet"],["fix","Was verbessere ich?","z.B. nach einem Verlust nicht sofort wieder rein"],["focus","Fokus nächste Woche","z.B. nur Setup A, max. 2 Trades pro Tag"]];
 function renderReview(){
   const ws=monday(new Date());ws.setDate(ws.getDate()+7*revWeek);const we=new Date(ws);we.setDate(we.getDate()+7);
   const dm=d=>d.toLocaleDateString("de-CH",{day:"2-digit",month:"2-digit"});
@@ -1248,6 +1341,7 @@ function renderReview(){
   if(!state.mt5){el.innerHTML=`<p class="note">Verbinde zuerst MT5 im Dashboard.</p>`;return}
   const N=state.settings.notes||{},all=mt5Trades(),T=all.filter(t=>t.c>=ws&&t.c<we).map(t=>({...t,nt:N[t.id]||{}}));
   if(!T.length){el.innerHTML=`<p class="note">Keine abgeschlossenen Trades in dieser Woche.</p>`;return}
+  const wk=ymd(ws),rv=(state.settings.reviews||{})[wk]||{};
   const net=T.reduce((a,t)=>a+t.pnl,0),win=T.filter(t=>t.pnl>0).length,rs=T.filter(t=>t.r!=null),cur=(state.mt5.account&&state.mt5.account.currency)||"USD";
   const days={};T.forEach(t=>{const k=ymd(t.c);(days[k]=days[k]||[]).push(t)});
   const dn=k=>new Date(k+"T12:00").toLocaleDateString("de-CH",{weekday:"short",day:"2-digit",month:"2-digit"});
@@ -1266,14 +1360,16 @@ function renderReview(){
     <li><span class="k">Tagesplan</span><span>an ${planned} von ${Object.keys(days).length} Handelstag${Object.keys(days).length>1?"en":""} gemacht</span></li>
     <li><span class="k">Regeln</span><span>${breaks.length?breaks.map(b=>`<span class="rvbad">✗ ${b}</span>`).join("<br>"):`<span class="rvok">✓ Keine Regelverstösse, stark! 👏</span>`}</span></li>
     ${open?`<li><span class="k">Offen</span><span>${open} Trade${open>1?"s":""} ohne Notiz oder Strategie. <a href="#" id="revJ" style="color:var(--accent)">Im Journal nachtragen →</a></span></li>`:""}
-  </ul><p class="note" style="margin-top:8px">Beträge in ${cur}. Grenzen aus Tools → Risiko-Grenzen.</p>`;
+  </ul><p class="note" style="margin-top:8px">Beträge in ${cur}. Grenzen aus Tools → Risiko-Grenzen.</p>
+  <div class="rvq">${REVQ.map(([k,q,ph])=>`<label><span class="lbl">${q}</span><textarea rows="2" data-rq="${k}" maxlength="500" placeholder="${ph}">${esc(rv[k]||"")}</textarea></label>`).join("")}<p class="note" id="rvSaved">${rv.at?"Gespeichert.":"Wird automatisch gespeichert."}</p></div>`;
+  el.querySelectorAll("[data-rq]").forEach(a=>a.oninput=()=>{const R=state.settings.reviews=state.settings.reviews||{},o=R[wk]||{};R[wk]={...o,[a.dataset.rq]:a.value,at:Date.now()};clearTimeout(rvT);rvT=setTimeout(()=>{persist();$("#rvSaved").textContent="Gespeichert."},600)});
   const rj=$("#revJ");if(rj)rj.onclick=e=>{e.preventDefault();show("jour")};
 }
 $("#revPrev").onclick=()=>{revWeek--;renderReview()};
 $("#revNext").onclick=()=>{if(revWeek<0){revWeek++;renderReview()}};
 
 function renderDash(){
-  renderToday();
+  renderToday();checkCool();
   renderMarket();renderAlarms();
   renderPlan();
   renderRisk();
@@ -1552,11 +1648,12 @@ $("#shareApp").onclick=async()=>{const url=location.origin+location.pathname;
   try{await navigator.clipboard.writeText(url);$("#shareApp").textContent="Link kopiert ✓"}catch(e){prompt("Link zum Teilen:",url)}};
 
 /* ---------- trade notes ---------- */
-let noteId=null,noteEmo="",noteIchi=[],noteImgs=[],addedImgs=[],noteGrade="",noteAud=[],addedAud=[],rec=null;
+let noteId=null,noteEmo="",noteIchi=[],noteImgs=[],addedImgs=[],noteGrade="",noteErr=[],noteAud=[],addedAud=[],rec=null;
 const STRATS=["Ichimoku Cloud","Markterfahrung"];
 const EMO=["Ruhig","Fokussiert","FOMO","Revenge","Müde","Gestresst"];
 const ICHI=[["kumo","Preis klar über/unter der Wolke","Über/unter Wolke"],["tk","Tenkan/Kijun-Kreuz in Trade-Richtung","TK-Kreuz"],["chikou","Chikou Span frei","Chikou frei"],["future","Wolke voraus in Trade-Richtung","Wolke voraus"],["kijun","Stop hinter Kijun oder Wolke","Stop hinter Kijun"]];
-const hasNote=n=>!!(n&&(n.setup||n.text||n.emo||n.grade||(n.ichi&&n.ichi.length)||(n.imgs&&n.imgs.length)||(n.aud&&n.aud.length)));
+const ERRS=["Zu früh rein","FOMO-Einstieg","SL verschoben","Ohne SL","Zu grosses Risiko","Gegen den Plan","Zu früh raus","Revenge","News ignoriert","Overtrading"];
+const hasNote=n=>!!(n&&(n.setup||n.text||n.emo||n.grade||(n.err&&n.err.length)||(n.ichi&&n.ichi.length)||(n.imgs&&n.imgs.length)||(n.aud&&n.aud.length)));
 const GRADES=[["A","A · Top-Setup"],["B","B · Okay"],["C","C · Schwach"]];
 function renderIchi(){
   $("#ichiBox").hidden=$("#noteSetup").value!=="Ichimoku Cloud";
@@ -1601,6 +1698,7 @@ function renderAlarms(){
 $("#alForm").onsubmit=e=>{e.preventDefault();const p=parseFloat($("#alP").value.replace(",","."));if(!(p>0))return;
   state.settings.alarms=[...(state.settings.alarms||[]),{id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),p,sym:"XAUUSD",note:$("#alN").value.trim()}];
   $("#alP").value="";$("#alN").value="";persist();renderAlarms();pushSync()};
+function renderErr(){const el=$("#errChips");el.innerHTML="";ERRS.forEach(v=>{const on=noteErr.includes(v),b=document.createElement("button");b.type="button";b.className="chip";b.textContent=v;b.setAttribute("aria-pressed",on);b.onclick=()=>{noteErr=on?noteErr.filter(x=>x!==v):[...noteErr,v];renderErr()};el.appendChild(b)})}
 function renderGrade(){const el=$("#gradeChips");el.innerHTML="";GRADES.forEach(([v,l])=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=l;b.setAttribute("aria-pressed",noteGrade===v);b.onclick=()=>{noteGrade=noteGrade===v?"":v;renderGrade()};el.appendChild(b)})}
 /* voice notes: recorded with the microphone, kept in IndexedDB on this phone (not in the online backup) */
 async function renderAud(){
@@ -1636,10 +1734,10 @@ function openNote(id){
   $("#noteSub").innerHTML=x?`${esc(x.asset)} · ${x.side==="buy"?"Long":"Short"} ${(+x.volume).toFixed(2)} Lot · <span class="${cls(+x.pnl)}">${fmt(+x.pnl)}</span> · ${x.openUtc?"Einstieg "+new Date(x.openUtc).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"}):""}${x.closeUtc?" · Ausstieg "+new Date(x.closeUtc).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"}):""}`:"";
   $("#noteSetup").value=nt.setup||"";$("#noteText").value=nt.text||"";
   if(!hasNote(nt))$("#noteSetup").value=LS.get("lastStrat","");   /* new note: start with the last strategy used */
-  noteEmo=nt.emo||"";noteIchi=(nt.ichi||[]).slice();noteImgs=(nt.imgs||[]).slice();addedImgs=[];noteGrade=nt.grade||"";noteAud=(nt.aud||[]).slice();addedAud=[];
+  noteEmo=nt.emo||"";noteIchi=(nt.ichi||[]).slice();noteImgs=(nt.imgs||[]).slice();addedImgs=[];noteGrade=nt.grade||"";noteErr=(nt.err||[]).slice();noteAud=(nt.aud||[]).slice();addedAud=[];
   const ch=$("#noteChips"),paint=()=>{ch.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.textContent===$("#noteSetup").value));renderIchi()};
   ch.innerHTML="";STRATS.forEach(v=>{const b=document.createElement("button");b.type="button";b.textContent=v;b.onclick=()=>{$("#noteSetup").value=$("#noteSetup").value===v?"":v;paint()};ch.appendChild(b)});paint();
-  renderEmo();renderGrade();renderNoteImgs();renderAud();
+  renderEmo();renderGrade();renderErr();renderNoteImgs();renderAud();
   $("#noteDel").hidden=!hasNote(nt);
   $("#noteDlg").showModal();
 }
@@ -1653,7 +1751,7 @@ function saveNote(val){
 }
 $("#noteDlg").addEventListener("close",()=>{
   if($("#noteDlg").returnValue==="save"){const setup=$("#noteSetup").value.trim();
-    saveNote({setup,text:$("#noteText").value.trim(),emo:noteEmo,grade:noteGrade,ichi:setup==="Ichimoku Cloud"?noteIchi:[],imgs:noteImgs,aud:noteAud})}
+    saveNote({setup,text:$("#noteText").value.trim(),emo:noteEmo,grade:noteGrade,err:noteErr,ichi:setup==="Ichimoku Cloud"?noteIchi:[],imgs:noteImgs,aud:noteAud})}
   else{addedImgs.forEach(dropImg);addedAud.forEach(id=>IDB.del(id).catch(()=>{}))}   /* cancelled: forget pictures and recordings added just now */
   addedImgs=[];addedAud=[];if(rec)rec.stop();
 });
@@ -1690,6 +1788,17 @@ async function tradeBars(id){
   let v=await IDB.get(k).catch(()=>null);
   if(!v)try{const r=await fetch(`https://gist.githubusercontent.com/${encodeURIComponent(m.owner)}/${encodeURIComponent(m.shotGist)}/raw/${encodeURIComponent(pid)}-bars.json`);if(r.ok){v=await r.json();if(v&&v.bars)IDB.set(k,v).catch(()=>{});else v=null}}catch(e){v=null}
   return v;
+}
+/* how far a trade went against and for you, in R (needs the candles from EA 1.51) */
+function excursion(t,d){
+  if(!d||!d.bars||!d.bars.length||!t.openUtc||!(+t.open>0))return null;
+  const os=Date.parse(t.openUtc)/1e3,cs=Date.parse(t.closeUtc)/1e3,tf=(d.tf||5)*60,buy=t.side==="buy",op=+t.open;
+  const B=d.bars.filter(b=>b[0]+tf>os&&b[0]<=cs);if(!B.length)return null;
+  const risk=+t.sl>0?Math.abs(op-+t.sl):t.r&&+t.close>0?Math.abs(+t.close-op)/Math.abs(+t.r):0;
+  let mae=0,mfe=0,first="";
+  for(const b of B){const adv=buy?op-b[3]:b[2]-op,fav=buy?b[2]-op:op-b[3];mae=Math.max(mae,adv);mfe=Math.max(mfe,fav);
+    if(!first&&risk>0){if(adv>=risk&&fav>=risk)first="?";else if(fav>=risk)first="fav";else if(adv>=risk)first="adv"}}
+  return {mae,mfe,risk,maeR:risk?mae/risk:null,mfeR:risk?mfe/risk:null,plus1:first==="fav"}
 }
 /* candles with entry, SL, TP and exit as lines */
 function candleSvg(t,d,H){
@@ -1730,7 +1839,11 @@ async function renderTrade(){
     const rows=[["Einstieg",px(t.open)],["Stop Loss",px(t.sl)],["Take Profit",px(t.tp)],["Ausstieg",px(t.close)],
       ["Risiko",risk?`${fmt(-risk).replace("−","")}${b0>0?" ("+(risk/b0*100).toFixed(2)+" %)":""}`:"–"],
       ["Ergebnis",`<span class="${cls(+t.pnl)}">${fmt(+t.pnl)}${b0>0?" ("+fmtR(+t.pnl/b0*100)+" %)":""}</span>`]];
-    body.innerHTML=`<div data-chart></div><div class="kvl" style="margin-top:10px">${rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("")}</div>`;chartBox(200)}
+    body.innerHTML=`<div data-chart></div><div class="kvl" style="margin-top:10px">${rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("")}</div><div data-exc></div>`;chartBox(200);
+    tradeBars(id).then(d=>{const x=excursion(t,d),el=body.querySelector("[data-exc]");if(!x||!el||tdId!==id)return;
+      const pr=v=>v.toLocaleString("de-CH",{maximumFractionDigits:2});
+      el.innerHTML=`<p class="lbl" style="margin:14px 0 6px">Wie weit lief der Trade?</p><div class="kvl"><div><span>Gegen dich</span><b class="neg">${x.maeR!=null?"−"+x.maeR.toFixed(1)+" R · ":""}${pr(x.mae)}</b></div><div><span>Für dich</span><b class="pos">${x.mfeR!=null?"+"+x.mfeR.toFixed(1)+" R · ":""}${pr(x.mfe)}</b></div></div>
+      ${+t.pnl<0&&x.plus1?`<p class="note" style="margin-top:8px">Dieser Verlust-Trade war vorher schon <b class="pos">+1 R</b> im Plus. Break-even hätte ihn gerettet.</p>`:+t.pnl>0&&x.mfeR!=null&&t.r!=null&&x.mfeR>=+t.r+1?`<p class="note" style="margin-top:8px">Der Preis lief bis <b class="pos">+${x.mfeR.toFixed(1)} R</b>, du hast bei ${fmtR(+t.r,1)} R geschlossen.</p>`:""}`})}
   else if(tdTab==="ch"){body.innerHTML=`<div data-chart></div>`;chartBox(320)}
   else if(tdTab==="no"){
     const ic=nt.setup==="Ichimoku Cloud"&&nt.ichi?nt.ichi.length:null;
@@ -1800,7 +1913,7 @@ async function cloudPull(){
   if(!cloud.token||!cloud.gist)return;clPulled=Date.now();
   const g=await gh("/gists/"+cloud.gist),f=g.files&&g.files["backup.json"];if(!f)return;
   let d;try{d=JSON.parse(f.truncated?await (await fetch(f.raw_url)).text():f.content)}catch(e){return}
-  const rs=d.settings||{},ls=state.settings,MERGE=["notes","plans"];let changed=false;
+  const rs=d.settings||{},ls=state.settings,MERGE=["notes","plans","reviews","playbook"];let changed=false;
   for(const k of Object.keys(rs))if(!MERGE.includes(k)&&ls[k]==null){ls[k]=rs[k];changed=true}   /* fills a new phone, never overwrites */
   for(const k of MERGE){const R=rs[k]||{},L=ls[k]=ls[k]||{};for(const id in R)if(!L[id]||(R[id].at||0)>(L[id].at||0)){L[id]=R[id];changed=true}}   /* per note and per day plan, the newer one wins */
   if(!state.trades.length&&Array.isArray(d.trades)&&d.trades.length){state.trades=d.trades;changed=true}
@@ -1809,7 +1922,7 @@ async function cloudPull(){
 async function cloudPush(){
   if(!cloud.token||!cloud.gist)return;
   await gh("/gists/"+cloud.gist,{method:"PATCH",body:JSON.stringify({files:{"backup.json":{content:backupData()}}})});
-  const ids=new Set(Object.values(state.settings.notes||{}).flatMap(n=>n.imgs||[]));
+  const ids=new Set([...Object.values(state.settings.notes||{}),...Object.values(state.settings.playbook||{})].flatMap(n=>n.imgs||[]));
   for(const id of ids){if(cloud.up.includes(id))continue;const d=await IDB.get(id).catch(()=>null);if(!d)continue;
     await gh("/gists/"+cloud.imgGist,{method:"PATCH",body:JSON.stringify({files:{["img-"+id+".txt"]:{content:d}}})});cloud.up.push(id);saveCloud()}
   cloud.at=Date.now();clErr="";saveCloud();renderCloud();
@@ -1871,7 +1984,7 @@ function renderJournal(){
     :!L.length?`<p class="empty">Keine Trades für diesen Filter.</p>`
     :L.slice(0,jLimit).map(t=>{const d=new Date(t.closeUtc),o=t.openUtc?new Date(t.openUtc):null,st=t.nt.setup;return `<button class="jt" type="button" data-note="${esc(t.id)}">
       <span class="jl"><b>${esc(t.asset)}</b><i>${zd(d)}</i><i class="num">${(+t.volume).toFixed(2)} Lot</i></span>${SIDE(t.side)}
-      <span class="jm"><span class="tags"><span class="st${st?"":" none"}">${st?esc(st==="Ichimoku Cloud"?"Ichimoku":st):"Keine Strategie"}</span>${t.nt.grade?`<span class="st emo">Setup ${esc(t.nt.grade)}</span>`:""}${t.nt.emo?`<span class="st emo">${esc(t.nt.emo)}</span>`:""}${t.nt.aud&&t.nt.aud.length?`<span class="st emo">🎙</span>`:""}${st==="Ichimoku Cloud"&&t.nt.ichi&&t.nt.ichi.length?`<span class="st emo">☁ ${t.nt.ichi.length}/5</span>`:""}</span>
+      <span class="jm"><span class="tags"><span class="st${st?"":" none"}">${st?esc(st==="Ichimoku Cloud"?"Ichimoku":st):"Keine Strategie"}</span>${t.nt.grade?`<span class="st emo">Setup ${esc(t.nt.grade)}</span>`:""}${t.nt.emo?`<span class="st emo">${esc(t.nt.emo)}</span>`:""}${t.nt.aud&&t.nt.aud.length?`<span class="st emo">🎙</span>`:""}${t.nt.err&&t.nt.err.length?`<span class="st err">⚠ ${t.nt.err.length===1?esc(t.nt.err[0]):t.nt.err.length+" Fehler"}</span>`:""}${st==="Ichimoku Cloud"&&t.nt.ichi&&t.nt.ichi.length?`<span class="st emo">☁ ${t.nt.ichi.length}/5</span>`:""}</span>
         ${t.open!=null&&t.close!=null?`<span class="px num">${t.open} → ${t.close}</span>`:""}
         <span class="kv num">${kv(t)}</span>
         <span class="tm num">${o?(zd(o)!==zd(d)?zd(o)+" ":"")+zt(o):"–"} → ${zt(d)}${o?` · ${zdur(d-o)}`:""}</span>
@@ -1976,8 +2089,39 @@ function renderSync(){
   $("#stratTiles").innerHTML=[["Ichimoku Cloud","Trend · Wolke · Signale",SV('<path d="M7 4v3M7 16v4M17 6v3M17 15v5"/><rect x="5" y="7" width="4" height="9" rx="1"/><rect x="15" y="9" width="4" height="6" rx="1"/>')],["Markterfahrung","Wissen · Disziplin · Routine",SV('<path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c1.5 1.5 3.5 2.2 5.5 2.2s4-.7 5.5-2.2V11"/>')]]
     .map(([k,sub,ic])=>{const l=mt5Trades().filter(t=>((state.settings.notes||{})[t.id]||{}).setup===k),p=l.reduce((a,t)=>a+t.pnl,0);
       return `<button type="button" class="stb" data-strat="${k}"><i>${ic}</i><span><b>${k}</b><em>${l.length?`${l.length} Trades · <span class="${cls(p)}">${fmt(p)}</span>`:sub}</em></span><i class="chev"></i></button>`}).join("");
-  document.querySelectorAll("[data-strat]").forEach(b=>b.onclick=()=>{jStrat=b.dataset.strat;LS.set("jStrat",jStrat);jLimit=10;show("jour")});
+  document.querySelectorAll("[data-strat]").forEach(b=>b.onclick=()=>openPb(b.dataset.strat));
 }
+/* playbook: one page per strategy with its rules, example pictures and the real numbers */
+var pbStrat="",pbT2=0;
+function pbData(){return (state.settings.playbook||{})[pbStrat]||{}}
+function pbSave(v){const P=state.settings.playbook=state.settings.playbook||{};P[pbStrat]={...pbData(),...v,at:Date.now()};persist()}
+function openPb(k){pbStrat=k;renderPb();$("#pbDlg").showModal()}
+function renderPb(){
+  const k=pbStrat,pb=pbData(),N=state.settings.notes||{},T=mt5Trades().filter(t=>(N[t.id]||{}).setup===k).map(t=>({...t,nt:N[t.id]}));
+  const net=T.reduce((a,t)=>a+t.pnl,0),rs=T.filter(t=>t.r!=null),imgs=pb.imgs||[];
+  const st=l=>{const p=l.reduce((a,t)=>a+t.pnl,0),r=l.filter(t=>t.r!=null);return `${l.length} Trade${l.length>1?"s":""} · ${Math.round(l.filter(t=>t.pnl>0).length/l.length*100)} % · ${r.length?fmtR(r.reduce((a,t)=>a+ +t.r,0)/r.length)+" Ø · ":""}<b class="${cls(p)}">${fmt(p)}</b>`};
+  const gr=GRADES.map(([g])=>[g,T.filter(t=>t.nt.grade===g)]).filter(x=>x[1].length);
+  $("#pbT").textContent=k;
+  $("#pbBody").innerHTML=`<p class="lbl">Wann nehme ich dieses Setup?</p><textarea id="pbDesc" rows="3" maxlength="800" placeholder="z.B. Nur in der London- oder NY-Session, nur mit dem Trend auf H4, nie vor roten News.">${esc(pb.desc||"")}</textarea>
+  <p class="lbl" style="margin-top:14px">Deine echten Zahlen</p>
+  ${T.length?`<div class="rvt">${[["Trades",T.length],["Treffer",Math.round(T.filter(t=>t.pnl>0).length/T.length*100)+" %"],["Ø R",rs.length?`<span class="${cls(rs.reduce((a,t)=>a+ +t.r,0))}">${fmtR(rs.reduce((a,t)=>a+ +t.r,0)/rs.length)}</span>`:"–"],["Netto",`<span class="${cls(net)}">${fmt(net)}</span>`]].map(([a,b])=>`<div><span class="lbl">${a}</span><b>${b}</b></div>`).join("")}</div>
+  ${gr.length?`<ul class="rvl">${gr.map(([g,l])=>`<li><span class="k">Setup ${g}</span><span>${st(l)}</span></li>`).join("")}</ul>`:""}`:`<p class="note">Noch keine Trades mit dieser Strategie. Wähle sie im Journal bei einem Trade aus.</p>`}
+  <p class="lbl" style="margin-top:14px">Beispiel-Bilder</p>
+  <div class="thumbs" id="pbImgs">${imgs.map(id=>`<img data-img="${esc(id)}" alt="Beispiel-Chart">`).join("")}${imgs.length<3?`<label class="add" for="pbImgIn">＋ Bild</label>`:""}</div>
+  <p class="note" style="margin-top:4px">Lege hier deine Lehrbuch-Beispiele ab, so sieht ein perfekter Trade aus.</p>
+  <p class="lbl" style="margin-top:14px">Regeln (aus dem Pre-Trade Check)</p>
+  <ol class="pbr">${ckItems(k).map(r=>`<li>${esc(r)}</li>`).join("")}</ol>
+  <div class="ph" style="gap:8px;margin-top:12px"><button class="btn sm" type="button" id="pbJ">Trades im Journal</button><button class="btn sm" type="button" id="pbCk">Regeln bearbeiten</button></div>`;
+  fillImgs($("#pbImgs"));
+  $("#pbImgs").querySelectorAll("img").forEach(im=>im.onclick=()=>openImg(im.dataset.img,id=>{pbSave({imgs:(pbData().imgs||[]).filter(x=>x!==id)});dropImg(id);renderPb()}));
+  $("#pbDesc").oninput=e=>{clearTimeout(pbT2);const v=e.target.value;pbT2=setTimeout(()=>pbSave({desc:v}),500)};
+  $("#pbJ").onclick=()=>{$("#pbDlg").close();jStrat=k;LS.set("jStrat",jStrat);jLimit=10;show("jour")};
+  $("#pbCk").onclick=()=>{$("#pbDlg").close();openSet("ckPanel")};
+}
+$("#pbX").onclick=()=>$("#pbDlg").close();
+$("#pbImgIn").onchange=async e=>{const have=(pbData().imgs||[]).slice(),fs=[...e.target.files].slice(0,3-have.length);e.target.value="";
+  for(const f of fs){try{const d=await shrink(f),id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);await IDB.set(id,d);imgCache[id]=d;have.push(id)}catch(_){}}
+  pbSave({imgs:have});renderPb()};
 $("#rkDef").onclick=()=>{delete state.settings.risk;persist();renderRiskForm();renderRisk()};
 
 /* ---------- Trump posts (trumpstruth.org via the EA) ---------- */
@@ -2103,6 +2247,23 @@ function renderAna(){
   const basis=hasOpen?"nach Eröffnungszeit, in deiner Ortszeit":"nach Schliesszeit (neuer Expert Advisor liefert die Eröffnungszeit)";
   const NT=state.settings.notes||{};
   const setupPanel=`<div class="panel"><div class="ph"><h2>Nach Strategie</h2></div>${T.some(t=>(NT[t.id]||{}).setup)?bars(group(t=>(NT[t.id]||{}).setup||"Ohne Strategie")):`<p class="note">Ordne deine Trades im Journal einer Strategie zu (Ichimoku Cloud oder Markterfahrung), dann siehst du hier, welche besser läuft.</p>`}</div>`;
+  /* mistakes: what the trades with each mistake brought in total */
+  const errRows=ERRS.map(k=>{const l=T.filter(t=>((NT[t.id]||{}).err||[]).includes(k));return {k,l,p:l.reduce((a,t)=>a+t.pnl,0)}}).filter(r=>r.l.length).sort((a,b)=>a.p-b.p);
+  const errCost=errRows.reduce((a,r)=>a+Math.min(0,r.p),0);
+  const errPanel=`<div class="panel"><div class="ph"><h2>Fehler &amp; was sie kosten</h2></div>${errRows.length?`<div class="wif">${errRows.map(r=>`<div><span>${esc(r.k)}<em>${r.l.length} Trade${r.l.length>1?"s":""}</em></span><b class="${cls(r.p)}">${fmt(r.p)}</b><i class="${cls(r.p)}">Ø ${fmt(r.p/r.l.length)}</i></div>`).join("")}</div><p class="note" style="margin-top:8px">${errCost<0?`Deine Fehler haben dich in diesem Zeitraum <b class="neg">${fmt(errCost)}</b> gekostet.`:"Trades mit Fehlern waren bisher nicht im Minus."}</p>`:`<p class="note">Markiere im Journal bei einem Trade unter «Fehler», was schiefging (z.B. FOMO-Einstieg, SL verschoben). Dann siehst du hier, was dich jeder Fehler kostet.</p>`}</div>`;
+  /* what if: the same period with one rule applied */
+  const ZH_HM=t=>{const p=new Intl.DateTimeFormat("de-CH",{timeZone:ZH,hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(t);return +p.find(x=>x.type==="hour").value*60+ +p.find(x=>x.type==="minute").value};
+  const byDayO=l=>{const g={};l.forEach(t=>{const k=ymd(t.o);(g[k]=g[k]||[]).push(t)});Object.values(g).forEach(x=>x.sort((a,b)=>a.o-b.o));return g};
+  const maxPerDay=n=>Object.values(byDayO(T)).flatMap(l=>l.slice(0,n));
+  const stopAfter=n=>Object.values(byDayO(T)).flatMap(l=>{const out=[];let ls=0;for(const t of l){if(ls>=n)break;out.push(t);if(t.pnl<0)ls++}return out});
+  const nt=t=>NT[t.id]||{};
+  const SC=[["Nur Ichimoku Cloud",l=>l.filter(t=>nt(t).setup==="Ichimoku Cloud")],["Nur Markterfahrung",l=>l.filter(t=>nt(t).setup==="Markterfahrung")],
+    ["Nur Setup A",l=>l.filter(t=>nt(t).grade==="A")],["Ohne Setup C",l=>l.filter(t=>nt(t).grade!=="C")],
+    ["Ohne Trades mit Fehlern",l=>l.filter(t=>!(nt(t).err||[]).length)],["Ohne FOMO und Revenge",l=>l.filter(t=>!["FOMO","Revenge"].includes(nt(t).emo)&&!(nt(t).err||[]).some(e=>e==="Revenge"||e==="FOMO-Einstieg"))],
+    ["Max. 2 Trades pro Tag",()=>maxPerDay(2)],["Stopp nach 2 Verlusten am Tag",()=>stopAfter(2)],
+    ["Nur London 09–12 Uhr",l=>l.filter(t=>{const m=ZH_HM(t.o);return m>=540&&m<720})],["Nur New York 14:30–18:30",l=>l.filter(t=>{const m=ZH_HM(t.o);return m>=870&&m<1110})]];
+  const wifRows=SC.map(([k,f])=>{const l=f(T),p=l.reduce((a,t)=>a+t.pnl,0),w=l.length?Math.round(l.filter(t=>t.pnl>0).length/l.length*100):0;return {k,l,p,w,d:p-net}}).filter(r=>r.l.length&&r.l.length!==T.length).sort((a,b)=>b.d-a.d);
+  const wifPanel=`<div class="panel"><div class="ph"><h2>Was wäre, wenn …</h2><span class="sp"></span><span class="note">echt: <b class="${cls(net)}">${fmt(net)}</b></span></div>${wifRows.length?`<div class="wif">${wifRows.map(r=>`<div><span>${r.k}<em>${r.l.length} Trades · ${r.w} % Treffer</em></span><b class="${cls(r.p)}">${fmt(r.p)}</b><i class="${cls(r.d)}">${r.d>=0?"+":"−"}${plain(Math.abs(r.d))}</i></div>`).join("")}</div><p class="note" style="margin-top:8px">Rechts: wie viel besser oder schlechter als dein echtes Ergebnis.</p>`:`<p class="note">Noch zu wenige Trades mit Strategie oder Notizen für einen Vergleich.</p>`}</div>`;
   const gradePanel=T.some(t=>(NT[t.id]||{}).grade)?`<div class="panel"><div class="ph"><h2>Nach Setup-Bewertung</h2></div>${bars(group(t=>(NT[t.id]||{}).grade||"–",["A","B","C","–"]),k=>k==="–"?"Ohne":"Setup "+k)}</div>`:"";
   const emoPanel=T.some(t=>(NT[t.id]||{}).emo)?`<div class="panel"><div class="ph"><h2>Nach Gefühl</h2></div>${bars(group(t=>(NT[t.id]||{}).emo||"Ohne Angabe",[...EMO,"Ohne Angabe"]))}</div>`:"";
   const IT=T.filter(t=>(NT[t.id]||{}).setup==="Ichimoku Cloud"&&((NT[t.id]||{}).ichi||[]).length), ic=t=>(NT[t.id].ichi||[]).length;
@@ -2110,7 +2271,7 @@ function renderAna(){
     ${bars([5,4,3,2,1].map(n=>({k:n+" von 5 erfüllt",list:IT.filter(t=>ic(t)===n)})).filter(r=>r.list.length))}
     <div class="lbl" style="margin:12px 0 2px">Wenn die Bedingung erfüllt war</div>
     ${bars(ICHI.map(([k,,l])=>({k:l,list:IT.filter(t=>NT[t.id].ichi.includes(k))})).filter(r=>r.list.length))}</div>`:"";
-  body.innerHTML=eqPanel(T,from)+`<div class="panel"><div class="atiles">${tiles.map(([a,b])=>`<div class="at"><span>${a}</span><b>${b}</b></div>`).join("")}</div><p class="note" style="margin-top:10px">Beträge in ${cur}.</p></div>${setupPanel}${gradePanel}${ichiPanel}${emoPanel}
+  body.innerHTML=eqPanel(T,from)+`<div class="panel"><div class="atiles">${tiles.map(([a,b])=>`<div class="at"><span>${a}</span><b>${b}</b></div>`).join("")}</div><p class="note" style="margin-top:10px">Beträge in ${cur}.</p></div>${wifPanel}${errPanel}<div id="excPanel"></div>${setupPanel}${gradePanel}${ichiPanel}${emoPanel}
   <div class="grid two">
     <div class="panel"><div class="ph"><h2>Long vs. Short</h2></div>${bars(group(t=>t.side==="buy"?"Long":"Short",["Long","Short"]))}</div>
     <div class="panel"><div class="ph"><h2>Sessions</h2><span class="sp"></span><span class="note">Asien ${lh(21)}–${lh(7)} · London ${lh(7)}–${lh(12)} · NY ${lh(12)}–${lh(21)} Uhr</span></div>${bars(group(sess,["Asien","London","New York"]),k=>sessLbl[k])}</div>
@@ -2119,6 +2280,27 @@ function renderAna(){
     <div class="panel"><div class="ph"><h2>Wochentage</h2></div>${bars(group(t=>t.o.getDay(),[1,2,3,4,5,6,0].map(String)),k=>DOWL[k])}</div>
     <div class="panel"><div class="ph"><h2>Uhrzeit</h2><span class="sp"></span><span class="note">${basis}</span></div>${bars(group(t=>pad(t.o.getHours())),k=>k+":00")}</div>
   </div>`;
+  fillExc(T);
+}
+/* MAE/MFE over the period: did the stop and the target fit? */
+var excRun=0;
+async function fillExc(T){
+  const run=++excRun,L=T.filter(t=>String(((state.mt5||{}).shots||{})[t.id]||"").includes("b")).slice(-60);
+  const X=[];for(const t of L){const x=excursion(t,await tradeBars(t.id));if(run!==excRun)return;if(x&&x.maeR!=null)X.push({t,x})}
+  const el=$("#excPanel");if(!el)return;
+  if(X.length<3){el.innerHTML=`<div class="panel"><div class="ph"><h2>Wie weit liefen deine Trades?</h2></div><p class="note">Braucht mindestens 3 Trades mit Kerzen (EA ab Version 1.51). Danach siehst du hier, ob dein Stop-Loss und dein Ziel passen.</p></div>`;return}
+  const avg=a=>a.reduce((s,v)=>s+v,0)/a.length,W=X.filter(o=>o.t.pnl>0),Lo=X.filter(o=>o.t.pnl<0);
+  const wMae=W.length?avg(W.map(o=>o.x.maeR)):null,saved=Lo.filter(o=>o.x.plus1).length,left=W.filter(o=>o.t.r!=null&&o.x.mfeR>=+o.t.r+1).length;
+  const rows=[["Ø gegen dich",`<b class="neg">−${avg(X.map(o=>o.x.maeR)).toFixed(2)} R</b>`],["Ø für dich",`<b class="pos">+${avg(X.map(o=>o.x.mfeR)).toFixed(2)} R</b>`]]
+    .concat(wMae!=null?[["Gewinner liefen Ø gegen dich",`<b>−${wMae.toFixed(2)} R</b>`]]:[])
+    .concat(Lo.length?[["Verlierer, die vorher +1 R waren",`<b>${saved} von ${Lo.length}</b>`]]:[])
+    .concat(W.length?[["Gewinner, die noch 1 R weiterliefen",`<b>${left} von ${W.length}</b>`]]:[]);
+  const tip=[];
+  if(wMae!=null&&wMae<.5&&W.length>=3)tip.push("Deine Gewinner kommen kaum in die Nähe vom SL. Ein etwas engerer Stop wäre möglich (mehr R pro Trade).");
+  if(wMae!=null&&wMae>.85&&W.length>=3)tip.push("Deine Gewinner kommen oft fast bis zum SL. Dein Stop ist eher knapp, nicht enger machen.");
+  if(Lo.length&&saved/Lo.length>=.3)tip.push("Viele Verlust-Trades waren schon +1 R im Plus. Break-even bei +1 R würde dir Geld sparen.");
+  if(W.length&&left/W.length>=.4)tip.push("Viele Gewinner liefen nach deinem Ausstieg noch weiter. Ein Teil laufen lassen oder ein weiteres Ziel lohnt sich.");
+  el.innerHTML=`<div class="panel"><div class="ph"><h2>Wie weit liefen deine Trades?</h2><span class="sp"></span><span class="note">${X.length} Trades</span></div><div class="kvl">${rows.map(([a,b])=>`<div><span>${a}</span>${b}</div>`).join("")}</div>${tip.length?`<p class="note" style="margin-top:10px">${tip.join("<br>")}</p>`:""}</div>`;
 }
 
 /* ---------- month calendar: every day as a green or red square ---------- */
@@ -2294,7 +2476,7 @@ function pushOk(){return "serviceWorker" in navigator&&"PushManager" in window&&
 async function pushServer(){if(pushSrv)return pushSrv;try{const r=await fetch("push.json?t="+Date.now(),{cache:"no-store"});if(r.ok)pushSrv=(await r.json()).url}catch(e){}return pushSrv}
 function pushPrefs(){const c=pushCfg(),n=new Date();
   const st=events().filter(e=>isStar(e)&&e.t>n).map(e=>({id:starKey(e),t:e.t.toISOString(),title:e.title,country:e.country}));
-  return {alarms:(state.settings.alarms||[]).map(a=>({id:a.id,p:a.p,sym:a.sym||"XAUUSD",note:a.note||""})),news:c.news!==false,medium:!!c.medium,minutes:c.minutes||15,stars:c.stars===false?[]:st,sess:c.sess||PUSH_SESS.map(x=>x[0])}}
+  return {alarms:(state.settings.alarms||[]).map(a=>({id:a.id,p:a.p,sym:a.sym||"XAUUSD",note:a.note||""})),news:c.news!==false,medium:!!c.medium,minutes:c.minutes||15,stars:c.stars===false?[]:st,sess:c.sess||PUSH_SESS.map(x=>x[0]),review:c.review!==false}}
 async function pushSync(){const c=pushCfg();if(!c.on||!c.key)return;const url=await pushServer();if(!url)return;
   try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();if(!sub){LS.set("bm-push",{...c,on:false});renderPush();return}
     await fetch(url+"/sub",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:c.key,sub:sub.toJSON(),prefs:pushPrefs()})})}catch(e){}}
@@ -2306,6 +2488,7 @@ async function renderPush(){
   if(!c.on){st.className="pill";st.textContent="Aus";note.textContent="Bekomme Meldungen vor wichtigen News, bei geschlossenen Trades, Limits und als Journal-Erinnerung.";$("#pushOn").hidden=false;return}
   st.className="pill ok";st.textContent="Aktiv";note.textContent="Dieses Handy bekommt Push-Nachrichten.";$("#pushOpts").hidden=false;
   const P=$("#pushPrefs");P.innerHTML="";[["news","🔴 Rote USD-News",c.news!==false],["medium","🟠 Auch mittlere USD-News",!!c.medium],["stars","★ Markierte News",c.stars!==false]].forEach(([k,l,on])=>{const b=document.createElement("button");b.className="chip";b.type="button";b.textContent=l;b.setAttribute("aria-pressed",on);b.onclick=()=>{LS.set("bm-push",{...pushCfg(),[k]:!on});renderPush();pushSync()};P.appendChild(b)});
+  const RB=$("#pushRev");RB.setAttribute("aria-pressed",pushPrefs().review);RB.onclick=()=>{LS.set("bm-push",{...pushCfg(),review:!pushPrefs().review});renderPush();pushSync()};
   const S=$("#pushSess");S.innerHTML="";PUSH_SESS.forEach(([n,t])=>{const cur=pushPrefs().sess,on=cur.includes(n),b=document.createElement("button");b.className="chip";b.type="button";b.textContent=n+" "+t;b.setAttribute("aria-pressed",on);b.onclick=()=>{LS.set("bm-push",{...pushCfg(),sess:on?cur.filter(x=>x!==n):[...cur,n]});renderPush();pushSync()};S.appendChild(b)});
   const M=$("#pushMin");M.innerHTML="";[5,10,15,30,60].forEach(m=>{const b=document.createElement("button");b.className="chip";b.type="button";b.textContent=m+" Min.";b.setAttribute("aria-pressed",(c.minutes||15)===m);b.onclick=()=>{LS.set("bm-push",{...pushCfg(),minutes:m});renderPush();pushSync()};M.appendChild(b)});
   $("#pushLink").value=url+"/push/"+c.key;$("#pushBase").textContent=url;
