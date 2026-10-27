@@ -24,9 +24,12 @@ jobs:
             '{source:"https://nfs.faireconomy.media/ff_calendar_thisweek.json",fetchedAt:$t,events:([.[0][],.[1][]]|unique_by(.title+.date+.country)|map({title,country,date,impact,forecast,previous}))}' \
             /tmp/ff.json /tmp/ffn.json > docs/news.json
           python3 scripts/news_ics.py
+      - name: US yields
+        continue-on-error: true
+        run: python3 scripts/yields.py
       - name: Commit
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898+github-actions[bot]@users.noreply.github.com'
-          git add docs/news.json docs/gold-news.ics
+          git add docs/news.json docs/gold-news.ics; if [ -f docs/macro.json ]; then git add docs/macro.json; fi
           git diff --cached --quiet || (git commit -m 'News aktualisiert' && git push)

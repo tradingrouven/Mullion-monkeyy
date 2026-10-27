@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      MFX_EMAIL: ${{ secrets.MYFXBOOK_EMAIL }}
+      MFX_PASSWORD: ${{ secrets.MYFXBOOK_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - name: Check token
@@ -61,6 +63,12 @@ jobs:
         if: env.SKIP != '1'
         working-directory: worker
         run: npx --yes wrangler@4 deploy
+      - name: Myfxbook login for the gold sentiment (optional secrets MYFXBOOK_EMAIL, MYFXBOOK_PASSWORD)
+        if: env.SKIP != '1' && env.MFX_EMAIL != ''
+        working-directory: worker
+        run: |
+          printf '%s' "$MFX_EMAIL" | npx --yes wrangler@4 secret put MYFXBOOK_EMAIL
+          printf '%s' "$MFX_PASSWORD" | npx --yes wrangler@4 secret put MYFXBOOK_PASSWORD
       - name: Save address for the app
         if: env.SKIP != '1'
         run: |

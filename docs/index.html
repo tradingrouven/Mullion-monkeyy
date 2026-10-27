@@ -528,6 +528,13 @@ button.hero{cursor:pointer}
 .jm .tm{display:block;margin:0;font:500 12px var(--font-ui);color:var(--muted)}
 .jm .tx{margin:0;font-size:12.5px;color:var(--soft);white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .jm .tx.mut{color:var(--muted)}
+.alf{display:grid;grid-template-columns:1fr 1.2fr auto;gap:8px;margin-bottom:8px}.alf input{min-width:0}
+.alr{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}.alr b{font:600 15px var(--font-num)}.alr i{font-style:normal;color:var(--muted);font-size:12.5px;flex:1;min-width:0}.alr.hit{opacity:.55}
+.sent{margin-top:12px}.sent .sb{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:6px 0}.sent .sb i{background:var(--win)}.sent .sb u{background:var(--loss);flex:1}
+.sent .sl{display:flex;justify-content:space-between;font:600 13px var(--font-num)}
+.aud{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.aud .ar{display:flex;align-items:center;gap:8px}.aud audio{flex:1;min-width:0;height:36px}
+.btn.rec{border-color:var(--loss);color:var(--loss)}
 .jr{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .jr b{font:700 15px var(--font-ui);white-space:nowrap}
 .jr i{font-style:normal;font-size:12.5px;font-weight:600;white-space:nowrap}
@@ -671,6 +678,19 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
     <div class="ph"><h2>Offene Positionen</h2><span class="sp"></span><b class="num" id="posTot"></b></div>
     <div id="posList"></div>
     <p class="note" id="posNote"></p>
+  </div>
+
+  <div class="panel" id="mktPanel">
+    <div class="ph"><h2>Markt</h2><span class="sp"></span><span class="note" id="mktNote"></span></div>
+    <div class="atiles" id="mktTiles"></div>
+    <div id="sentBox"></div>
+  </div>
+
+  <div class="panel" id="alarmPanel">
+    <div class="ph"><h2>Preis-Alarme</h2><span class="sp"></span><span class="note num" id="alGold"></span></div>
+    <form class="alf" id="alForm"><input id="alP" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Preis" aria-label="Alarm-Preis"><input id="alN" maxlength="60" placeholder="Notiz (optional)" aria-label="Notiz zum Alarm"><button class="btn pri sm" type="submit">＋ Alarm</button></form>
+    <div id="alList"></div>
+    <p class="note" id="alNote" style="margin-top:8px"></p>
   </div>
 
   <div class="panel" id="todayPanel" hidden>
@@ -937,10 +957,14 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
     <div id="ichiBox" hidden><div class="lbl">Ichimoku-Check</div><div class="ichi" id="ichiList"></div></div>
     <div class="lbl">Gefühl beim Einstieg</div>
     <div class="chips" id="emoChips" style="margin:6px 0 14px"></div>
+    <div class="lbl">Setup-Bewertung</div>
+    <div class="chips" id="gradeChips" style="margin:6px 0 14px"></div>
     <label class="fl">Notiz<textarea id="noteText" rows="4" placeholder="Warum rein, was lief gut, was nicht?"></textarea></label>
     <div class="lbl" style="margin-top:12px">Chart-Bilder</div>
     <div class="thumbs" id="noteImgs"></div>
     <input type="file" id="imgIn" accept="image/*" multiple hidden>
+    <div class="lbl" style="margin-top:12px">Sprachnotiz</div>
+    <div id="noteAud" class="aud"></div>
     <div class="ph" style="margin:14px 0 0"><button class="btn" type="button" id="noteDel">Löschen</button><span class="sp"></span><button class="btn pri" value="save" type="submit">Speichern</button></div>
   </form>
 </dialog>
@@ -1218,6 +1242,7 @@ $("#revNext").onclick=()=>{if(revWeek<0){revWeek++;renderReview()}};
 
 function renderDash(){
   renderToday();
+  renderMarket();renderAlarms();
   renderPlan();
   renderRisk();
   renderPositions();
@@ -1496,15 +1521,77 @@ $("#shareApp").onclick=async()=>{const url=location.origin+location.pathname;
   try{await navigator.clipboard.writeText(url);$("#shareApp").textContent="Link kopiert ✓"}catch(e){prompt("Link zum Teilen:",url)}};
 
 /* ---------- trade notes ---------- */
-let noteId=null,noteEmo="",noteIchi=[],noteImgs=[],addedImgs=[];
+let noteId=null,noteEmo="",noteIchi=[],noteImgs=[],addedImgs=[],noteGrade="",noteAud=[],addedAud=[],rec=null;
 const STRATS=["Ichimoku Cloud","Markterfahrung"];
 const EMO=["Ruhig","Fokussiert","FOMO","Revenge","Müde","Gestresst"];
 const ICHI=[["kumo","Preis klar über/unter der Wolke","Über/unter Wolke"],["tk","Tenkan/Kijun-Kreuz in Trade-Richtung","TK-Kreuz"],["chikou","Chikou Span frei","Chikou frei"],["future","Wolke voraus in Trade-Richtung","Wolke voraus"],["kijun","Stop hinter Kijun oder Wolke","Stop hinter Kijun"]];
-const hasNote=n=>!!(n&&(n.setup||n.text||n.emo||(n.ichi&&n.ichi.length)||(n.imgs&&n.imgs.length)));
+const hasNote=n=>!!(n&&(n.setup||n.text||n.emo||n.grade||(n.ichi&&n.ichi.length)||(n.imgs&&n.imgs.length)||(n.aud&&n.aud.length)));
+const GRADES=[["A","A · Top-Setup"],["B","B · Okay"],["C","C · Schwach"]];
 function renderIchi(){
   $("#ichiBox").hidden=$("#noteSetup").value!=="Ichimoku Cloud";
   $("#ichiList").innerHTML=ICHI.map(([k,l])=>`<label><input type="checkbox" data-ichi="${k}"${noteIchi.includes(k)?" checked":""}>${l}</label>`).join("");
   $("#ichiList").querySelectorAll("input").forEach(i=>i.onchange=()=>{noteIchi=i.checked?[...noteIchi,i.dataset.ichi]:noteIchi.filter(x=>x!==i.dataset.ichi)});
+}
+/* ---------- market: gold and DXY from MT5 (EA 1.50), US yields (Treasury, daily), Myfxbook sentiment via the push server ---------- */
+var macro=null,sent=null,sentAt=0;
+function loadMacro(){fetch("macro.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d){macro=d;renderMarket()}}).catch(()=>{})}
+async function loadSent(){if(Date.now()-sentAt<10*60000)return;sentAt=Date.now();const url=await pushServer();if(!url)return;
+  try{sent=await (await fetch(url+"/sentiment")).json()}catch(e){sent=null}renderMarket()}
+function renderMarket(){
+  const m=state.mt5||{},pct=(p,o)=>o>0?(p-o)/o*100:null,tiles=[];
+  const chg=v=>v==null?"":`<i class="${cls(v)}" style="font-style:normal;font-size:12px;display:block">${fmtR(v)} %</i>`;
+  if(m.gold&&m.gold.p)tiles.push(["Gold",m.gold.p.toLocaleString("de-CH",{minimumFractionDigits:2,maximumFractionDigits:2})+chg(pct(m.gold.p,m.gold.o))]);
+  if(m.dxy&&m.dxy.p)tiles.push(["Dollar-Index",m.dxy.p.toFixed(2)+chg(pct(m.dxy.p,m.dxy.o))]);
+  const y=macro&&macro.yields,bp=(a,b)=>{const v=Math.round((a-b)*100);return `<i class="${cls(-v)}" style="font-style:normal;font-size:12px;display:block">${v>0?"+":v<0?"−":"±"}${Math.abs(v)} Bp</i>`};
+  if(y){tiles.push(["US-Zins 10 J.",y.y10.toFixed(2)+" %"+bp(y.y10,y.prev10)]);tiles.push(["US-Zins 2 J.",y.y2.toFixed(2)+" %"+bp(y.y2,y.prev2)])}
+  $("#mktTiles").innerHTML=tiles.map(([a,b])=>`<div class="at"><span>${a}</span><b class="num">${b}</b></div>`).join("")||`<p class="note">Gold und Dollar-Index kommen mit dem EA ab Version 1.50.</p>`;
+  $("#mktNote").textContent=y?"Zinsen vom "+new Date(y.date+"T12:00").toLocaleDateString("de-CH",{day:"2-digit",month:"2-digit"}):"";
+  /* sentiment: many traders on one side is often a contrarian hint */
+  let h="";
+  if(sent&&sent.long!=null){const L=Math.round(sent.long),S=100-L;
+    const hint=L>=65?"Die meisten sind long. Das ist oft ein Kontra-Signal: Vorsicht bei Longs.":S>=65?"Die meisten sind short. Das ist oft ein Kontra-Signal: Vorsicht bei Shorts.":"Die Trader sind ziemlich ausgeglichen.";
+    h=`<div class="sent"><div class="ph" style="margin:0"><span class="lbl">Gold-Stimmung</span><span class="sp"></span><span class="note">Myfxbook-Trader</span></div>
+      <div class="sl"><span class="pos">${L} % Long</span><span class="neg">${S} % Short</span></div><div class="sb"><i style="width:${L}%"></i><u></u></div><p class="note">${hint}</p></div>`}
+  else if(sent&&sent.error==="setup")h=`<p class="note" style="margin-top:10px">Gold-Stimmung: noch nicht eingerichtet.</p>`;
+  $("#sentBox").innerHTML=h;
+}
+/* ---------- price alarms: kept in settings, sent to the push server, the EA checks the price and pushes ---------- */
+var alHit=[];
+async function loadAlHits(){const c=pushCfg(),url=await pushServer();if(!c.on||!c.key||!url)return;
+  try{alHit=(await (await fetch(url+"/alarms/"+c.key)).json()).hit||[];renderAlarms()}catch(e){}}
+function renderAlarms(){
+  const A=state.settings.alarms||[],g=state.mt5&&state.mt5.gold&&state.mt5.gold.p,c=pushCfg();
+  $("#alGold").textContent=g?"Gold "+g.toLocaleString("de-CH",{minimumFractionDigits:2,maximumFractionDigits:2}):"";
+  $("#alList").innerHTML=A.map(a=>{const hit=(alHit||[]).includes(a.id),d=g?a.p-g:null;
+    return `<div class="alr${hit?" hit":""}"><b>${a.p.toLocaleString("de-CH",{minimumFractionDigits:2,maximumFractionDigits:2})}</b><i>${hit?"✓ ausgelöst":d==null?"":(d>0?"▲ ":"▼ ")+Math.abs(d).toFixed(2)+" entfernt"}${a.note?" · "+esc(a.note):""}</i><button class="btn sm" type="button" data-aldel="${esc(a.id)}" aria-label="Alarm löschen">✕</button></div>`}).join("");
+  $("#alList").querySelectorAll("[data-aldel]").forEach(b=>b.onclick=()=>{state.settings.alarms=(state.settings.alarms||[]).filter(x=>x.id!==b.dataset.aldel);persist();renderAlarms();pushSync()});
+  $("#alNote").textContent=!c.on?"Für Alarme zuerst Push einschalten (Tools → Push-Nachrichten) und den PushLink beim EA eintragen.":A.length?"Du bekommst einen Push, sobald Gold den Preis erreicht. MT5 muss dafür laufen (EA ab Version 1.50).":"";
+}
+$("#alForm").onsubmit=e=>{e.preventDefault();const p=parseFloat($("#alP").value.replace(",","."));if(!(p>0))return;
+  state.settings.alarms=[...(state.settings.alarms||[]),{id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),p,sym:"XAUUSD",note:$("#alN").value.trim()}];
+  $("#alP").value="";$("#alN").value="";persist();renderAlarms();pushSync()};
+function renderGrade(){const el=$("#gradeChips");el.innerHTML="";GRADES.forEach(([v,l])=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=l;b.setAttribute("aria-pressed",noteGrade===v);b.onclick=()=>{noteGrade=noteGrade===v?"":v;renderGrade()};el.appendChild(b)})}
+/* voice notes: recorded with the microphone, kept in IndexedDB on this phone (not in the online backup) */
+async function renderAud(){
+  const el=$("#noteAud");
+  const rows=await Promise.all(noteAud.map(async id=>{const v=await IDB.get(id).catch(()=>null);return v?`<div class="ar"><audio controls preload="metadata" src="${v}"></audio><button class="btn sm" type="button" data-adel="${esc(id)}" aria-label="Sprachnotiz löschen">✕</button></div>`:""}));
+  const can=!!(navigator.mediaDevices&&window.MediaRecorder);
+  el.innerHTML=rows.join("")+(can?`<button class="btn sm${rec?" rec":""}" type="button" id="recBtn">${rec?"⏹ Aufnahme stoppen":"🎙 Sprachnotiz aufnehmen"}</button>`:`<p class="note">Aufnehmen geht in diesem Browser nicht.</p>`);
+  el.querySelectorAll("[data-adel]").forEach(b=>b.onclick=()=>{noteAud=noteAud.filter(x=>x!==b.dataset.adel);renderAud()});
+  const rb=$("#recBtn");if(rb)rb.onclick=toggleRec;
+}
+async function toggleRec(){
+  if(rec){rec.stop();return}
+  try{const stream=await navigator.mediaDevices.getUserMedia({audio:true}),chunks=[];
+    const type=["audio/mp4","audio/webm","audio/aac"].find(t=>MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t));
+    const r=new MediaRecorder(stream,type?{mimeType:type,audioBitsPerSecond:32000}:{});rec=r;
+    r.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+    r.onstop=()=>{stream.getTracks().forEach(t=>t.stop());rec=null;
+      const blob=new Blob(chunks,{type:r.mimeType||type||"audio/mp4"}),fr=new FileReader();
+      fr.onload=async()=>{const id="aud-"+Date.now().toString(36);await IDB.set(id,fr.result).catch(()=>{});noteAud.push(id);addedAud.push(id);renderAud()};
+      if(blob.size)fr.readAsDataURL(blob);else renderAud()};
+    r.start();renderAud();
+  }catch(e){rec=null;$("#noteAud").insertAdjacentHTML("beforeend",`<p class="note">Mikrofon nicht erlaubt. iPhone-Einstellungen → Bullion Monkey bzw. Safari → Mikrofon erlauben.</p>`)}
 }
 function renderEmo(){const el=$("#emoChips");el.innerHTML="";EMO.forEach(v=>{const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=v;b.setAttribute("aria-pressed",noteEmo===v);b.onclick=()=>{noteEmo=noteEmo===v?"":v;renderEmo()};el.appendChild(b)})}
 function renderNoteImgs(){
@@ -1518,25 +1605,26 @@ function openNote(id){
   $("#noteSub").innerHTML=x?`${esc(x.asset)} · ${x.side==="buy"?"Long":"Short"} ${(+x.volume).toFixed(2)} Lot · <span class="${cls(+x.pnl)}">${fmt(+x.pnl)}</span> · ${x.openUtc?"Einstieg "+new Date(x.openUtc).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"}):""}${x.closeUtc?" · Ausstieg "+new Date(x.closeUtc).toLocaleString("de-CH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"}):""}`:"";
   $("#noteSetup").value=nt.setup||"";$("#noteText").value=nt.text||"";
   if(!hasNote(nt))$("#noteSetup").value=LS.get("lastStrat","");   /* new note: start with the last strategy used */
-  noteEmo=nt.emo||"";noteIchi=(nt.ichi||[]).slice();noteImgs=(nt.imgs||[]).slice();addedImgs=[];
+  noteEmo=nt.emo||"";noteIchi=(nt.ichi||[]).slice();noteImgs=(nt.imgs||[]).slice();addedImgs=[];noteGrade=nt.grade||"";noteAud=(nt.aud||[]).slice();addedAud=[];
   const ch=$("#noteChips"),paint=()=>{ch.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.textContent===$("#noteSetup").value));renderIchi()};
   ch.innerHTML="";STRATS.forEach(v=>{const b=document.createElement("button");b.type="button";b.textContent=v;b.onclick=()=>{$("#noteSetup").value=$("#noteSetup").value===v?"":v;paint()};ch.appendChild(b)});paint();
-  renderEmo();renderNoteImgs();
+  renderEmo();renderGrade();renderNoteImgs();renderAud();
   $("#noteDel").hidden=!hasNote(nt);
   $("#noteDlg").showModal();
 }
 function saveNote(val){
   const N=state.settings.notes=state.settings.notes||{},old=N[noteId]||{},keep=hasNote(val)?val.imgs||[]:[];
   (old.imgs||[]).filter(id=>!keep.includes(id)).forEach(dropImg);
+  const keepA=hasNote(val)?val.aud||[]:[];(old.aud||[]).filter(id=>!keepA.includes(id)).forEach(id=>IDB.del(id).catch(()=>{}));
   N[noteId]=hasNote(val)?{...val,at:Date.now()}:{at:Date.now()};   /* an empty entry marks a deleted note, so the online backup forgets it too */
   if(val&&STRATS.includes(val.setup))LS.set("lastStrat",val.setup);
   persist();renderDash();if(!$("#view-ana").hidden)renderAna();if(!$("#view-jour").hidden)renderJournal();
 }
 $("#noteDlg").addEventListener("close",()=>{
   if($("#noteDlg").returnValue==="save"){const setup=$("#noteSetup").value.trim();
-    saveNote({setup,text:$("#noteText").value.trim(),emo:noteEmo,ichi:setup==="Ichimoku Cloud"?noteIchi:[],imgs:noteImgs})}
-  else addedImgs.forEach(dropImg);   /* cancelled: forget pictures added just now */
-  addedImgs=[];
+    saveNote({setup,text:$("#noteText").value.trim(),emo:noteEmo,grade:noteGrade,ichi:setup==="Ichimoku Cloud"?noteIchi:[],imgs:noteImgs,aud:noteAud})}
+  else{addedImgs.forEach(dropImg);addedAud.forEach(id=>IDB.del(id).catch(()=>{}))}   /* cancelled: forget pictures and recordings added just now */
+  addedImgs=[];addedAud=[];if(rec)rec.stop();
 });
 $("#noteX").onclick=()=>$("#noteDlg").close("cancel");
 $("#noteDel").onclick=()=>{saveNote(null);$("#noteDlg").close("cancel")};
@@ -1683,7 +1771,7 @@ function renderJournal(){
     :!L.length?`<p class="empty">Keine Trades für diesen Filter.</p>`
     :L.slice(0,jLimit).map(t=>{const d=new Date(t.closeUtc),o=t.openUtc?new Date(t.openUtc):null,st=t.nt.setup;return `<button class="jt" type="button" data-note="${esc(t.id)}">
       <span class="jl"><b>${esc(t.asset)}</b><i>${zd(d)}</i><i class="num">${(+t.volume).toFixed(2)} Lot</i></span>${SIDE(t.side)}
-      <span class="jm"><span class="tags"><span class="st${st?"":" none"}">${st?esc(st==="Ichimoku Cloud"?"Ichimoku":st):"Keine Strategie"}</span>${t.nt.emo?`<span class="st emo">${esc(t.nt.emo)}</span>`:""}${st==="Ichimoku Cloud"&&t.nt.ichi&&t.nt.ichi.length?`<span class="st emo">☁ ${t.nt.ichi.length}/5</span>`:""}</span>
+      <span class="jm"><span class="tags"><span class="st${st?"":" none"}">${st?esc(st==="Ichimoku Cloud"?"Ichimoku":st):"Keine Strategie"}</span>${t.nt.grade?`<span class="st emo">Setup ${esc(t.nt.grade)}</span>`:""}${t.nt.emo?`<span class="st emo">${esc(t.nt.emo)}</span>`:""}${t.nt.aud&&t.nt.aud.length?`<span class="st emo">🎙</span>`:""}${st==="Ichimoku Cloud"&&t.nt.ichi&&t.nt.ichi.length?`<span class="st emo">☁ ${t.nt.ichi.length}/5</span>`:""}</span>
         ${t.open!=null&&t.close!=null?`<span class="px num">${t.open} → ${t.close}</span>`:""}
         <span class="kv num">${kv(t)}</span>
         <span class="tm num">${o?(zd(o)!==zd(d)?zd(o)+" ":"")+zt(o):"–"} → ${zt(d)}${o?` · ${zdur(d-o)}`:""}</span>
@@ -1880,13 +1968,14 @@ function renderAna(){
   const basis=hasOpen?"nach Eröffnungszeit, in deiner Ortszeit":"nach Schliesszeit (neuer Expert Advisor liefert die Eröffnungszeit)";
   const NT=state.settings.notes||{};
   const setupPanel=`<div class="panel"><div class="ph"><h2>Nach Strategie</h2></div>${T.some(t=>(NT[t.id]||{}).setup)?bars(group(t=>(NT[t.id]||{}).setup||"Ohne Strategie")):`<p class="note">Ordne deine Trades im Journal einer Strategie zu (Ichimoku Cloud oder Markterfahrung), dann siehst du hier, welche besser läuft.</p>`}</div>`;
+  const gradePanel=T.some(t=>(NT[t.id]||{}).grade)?`<div class="panel"><div class="ph"><h2>Nach Setup-Bewertung</h2></div>${bars(group(t=>(NT[t.id]||{}).grade||"–",["A","B","C","–"]),k=>k==="–"?"Ohne":"Setup "+k)}</div>`:"";
   const emoPanel=T.some(t=>(NT[t.id]||{}).emo)?`<div class="panel"><div class="ph"><h2>Nach Gefühl</h2></div>${bars(group(t=>(NT[t.id]||{}).emo||"Ohne Angabe",[...EMO,"Ohne Angabe"]))}</div>`:"";
   const IT=T.filter(t=>(NT[t.id]||{}).setup==="Ichimoku Cloud"&&((NT[t.id]||{}).ichi||[]).length), ic=t=>(NT[t.id].ichi||[]).length;
   const ichiPanel=IT.length?`<div class="panel"><div class="ph"><h2>Ichimoku-Check</h2><span class="sp"></span><span class="note">${IT.length} Trades mit Check</span></div>
     ${bars([5,4,3,2,1].map(n=>({k:n+" von 5 erfüllt",list:IT.filter(t=>ic(t)===n)})).filter(r=>r.list.length))}
     <div class="lbl" style="margin:12px 0 2px">Wenn die Bedingung erfüllt war</div>
     ${bars(ICHI.map(([k,,l])=>({k:l,list:IT.filter(t=>NT[t.id].ichi.includes(k))})).filter(r=>r.list.length))}</div>`:"";
-  body.innerHTML=eqPanel(T,from)+`<div class="panel"><div class="atiles">${tiles.map(([a,b])=>`<div class="at"><span>${a}</span><b>${b}</b></div>`).join("")}</div><p class="note" style="margin-top:10px">Beträge in ${cur}.</p></div>${setupPanel}${ichiPanel}${emoPanel}
+  body.innerHTML=eqPanel(T,from)+`<div class="panel"><div class="atiles">${tiles.map(([a,b])=>`<div class="at"><span>${a}</span><b>${b}</b></div>`).join("")}</div><p class="note" style="margin-top:10px">Beträge in ${cur}.</p></div>${setupPanel}${gradePanel}${ichiPanel}${emoPanel}
   <div class="grid two">
     <div class="panel"><div class="ph"><h2>Long vs. Short</h2></div>${bars(group(t=>t.side==="buy"?"Long":"Short",["Long","Short"]))}</div>
     <div class="panel"><div class="ph"><h2>Sessions</h2><span class="sp"></span><span class="note">Asien ${lh(21)}–${lh(7)} · London ${lh(7)}–${lh(12)} · NY ${lh(12)}–${lh(21)} Uhr</span></div>${bars(group(sess,["Asien","London","New York"]),k=>sessLbl[k])}</div>
@@ -2044,6 +2133,7 @@ $("#cClear").onclick=()=>{["#cEntry","#cSl","#cTp","#cDist"].forEach(id=>$(id).v
 $("#calSub").href="webcal://"+location.host+location.pathname.replace(/[^/]*$/,"")+"gold-news.ics";
 /* ---------- boot ---------- */
 addEventListener("hashchange",showFirst);
+loadMacro();loadSent();loadAlHits();setInterval(()=>{loadSent();loadAlHits()},5*60000);
 load();if(state.settings.mt5Gist)state.mt5=LS.get("bm-mt5",null);showFirst();renderMt5();renderDash();renderHeadlines();renderTruth();renderNews();renderNewsKpi();renderSessions();
 async function loadNews(){try{const r=await fetch("news.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;state.news=await r.json()}catch(e){if(!state.news)state.news={events:[]}}renderNewsFilters();renderNews();renderNewsKpi();renderToday();if(!pushBoot&&state.news.events.length){pushBoot=1;pushSync()}}   /* once per start, so the server has the current settings */
 var pushBoot=0;
@@ -2060,7 +2150,7 @@ function pushOk(){return "serviceWorker" in navigator&&"PushManager" in window&&
 async function pushServer(){if(pushSrv)return pushSrv;try{const r=await fetch("push.json?t="+Date.now(),{cache:"no-store"});if(r.ok)pushSrv=(await r.json()).url}catch(e){}return pushSrv}
 function pushPrefs(){const c=pushCfg(),n=new Date();
   const st=events().filter(e=>isStar(e)&&e.t>n).map(e=>({id:starKey(e),t:e.t.toISOString(),title:e.title,country:e.country}));
-  return {news:c.news!==false,medium:!!c.medium,minutes:c.minutes||15,stars:c.stars===false?[]:st,sess:c.sess||PUSH_SESS.map(x=>x[0])}}
+  return {alarms:(state.settings.alarms||[]).map(a=>({id:a.id,p:a.p,sym:a.sym||"XAUUSD",note:a.note||""})),news:c.news!==false,medium:!!c.medium,minutes:c.minutes||15,stars:c.stars===false?[]:st,sess:c.sess||PUSH_SESS.map(x=>x[0])}}
 async function pushSync(){const c=pushCfg();if(!c.on||!c.key)return;const url=await pushServer();if(!url)return;
   try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();if(!sub){LS.set("bm-push",{...c,on:false});renderPush();return}
     await fetch(url+"/sub",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:c.key,sub:sub.toJSON(),prefs:pushPrefs()})})}catch(e){}}

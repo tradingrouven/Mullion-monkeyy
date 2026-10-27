@@ -10,7 +10,7 @@
 //| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.49"
+#property version   "1.50"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
@@ -28,6 +28,8 @@ input bool   PushHeadlines = true; // push gold-relevant headlines
 input string HeadlineWords = "gold,xau,fed ,fomc,powell,cpi,pce,nfp,non-farm,payrolls,inflation,rate cut,rate hike,treasury,yields,dollar,dxy,tariff,geopolit"; // comma list for the push filter
 input int    TruthMinutes = 2;   // read Trump's Truth Social posts (trumpstruth.org) every n minutes (0 = off)
 input bool   PushTruth    = true; // push Trump posts that match the words below
+input double BreakEvenR   = 1.0;  // push when a position is this many R in profit and the SL is not at entry yet (0 = off)
+input bool   PriceAlarms  = true; // price alarms set in the app (needs PushLink)
 input bool   ChartShots   = true; // chart picture at entry and exit, shown in the app's journal
 input string TruthWords   = "gold,tariff,china,fed,powell,rate,interest,dollar,inflation,trade,deal,iran,russia,war,oil,sanction,economy,stock,market,bitcoin"; // comma list for the Trump push filter
 
@@ -54,6 +56,12 @@ string g_truth = "";                      // JSON array body of the latest Trump
 datetime g_truthAt = 0;
 string g_truthSeen = "";                  // newest Trump post already handled, for the push
 bool   g_truthWarned = false;
+ulong  g_be[];                            // positions already reminded about break-even
+string g_alarms = "";                     // alarms from the app: JSON text from the push server
+datetime g_alarmsAt = 0;
+string g_alId[]; double g_alP[]; double g_alLast[];   // parsed alarms and the price seen last time, to detect a cross
+string g_alSym[]; string g_alNote[];
+string g_macro = "";                      // DXY and gold price, uploaded at most once a minute
 string g_shotGist = "";                   // second secret gist for the chart pictures, so the trade gist stays small
 string g_shots = "";                      // uploaded pictures, "|<position>-in|<position>-out|..."
 
@@ -91,6 +99,8 @@ void OnDeinit(const int reason) { EventKillTimer(); }
 void OnTimer()
   {
    CheckNoSl();
+   CheckBreakEven();
+   CheckAlarms();
    CheckCalendar();
    CheckJournal();
    if(FeedMinutes > 0 && TimeLocal() - g_newsAt >= FeedMinutes * 60)
@@ -434,12 +444,16 @@ void Sync()
       return;
    // the timestamp lives outside the comparison, so identical data is not re-uploaded every minute;
    // but every 5 minutes anyway, so the app sees that MT5 is still running
-   if(payload == g_last && !g_dirty && TimeLocal() - g_upAt < 300)
+   // DXY and the gold price change all the time: they don't count as a change, but are refreshed once a minute
+   string macro = Macro();
+   bool macroDue = (macro != g_macro && TimeLocal() - g_upAt >= 60);
+   if(payload == g_last && !g_dirty && !macroDue && TimeLocal() - g_upAt < 300)
       return;
-   string json = "{\"updatedAt\":\"" + IsoUtc(TimeGMT()) + "\"," + payload + "}";
+   string json = "{\"updatedAt\":\"" + IsoUtc(TimeGMT()) + "\"," + (macro != "" ? macro + "," : "") + payload + "}";
    if(Upload(json))
      {
       g_last = payload;
+      g_macro = macro;
       g_dirty = false;
       g_upAt = TimeLocal();
      }
@@ -663,6 +677,116 @@ bool Upload(const string json)
      }
    Print("Bullion Monkey: synchronisiert (", g_gist, ")");
    return true;
+  }
+
+//+------------------------------------------------------------------+
+//| Break-even reminder, price alarms, DXY                           |
+//+------------------------------------------------------------------+
+void CheckBreakEven()
+  {
+   if(BreakEvenR <= 0) return;
+   for(int i = 0; i < PositionsTotal(); i++)
+     {
+      ulong tk = PositionGetTicket(i);
+      if(tk == 0) continue;
+      double sl = PositionGetDouble(POSITION_SL), op = PositionGetDouble(POSITION_PRICE_OPEN), px = PositionGetDouble(POSITION_PRICE_CURRENT);
+      if(sl <= 0) continue;
+      bool buy = PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY;
+      double risk = buy ? op - sl : sl - op;
+      if(risk <= 0) continue;                       // SL already at entry or in profit
+      double r = (buy ? px - op : op - px) / risk;
+      if(r < BreakEvenR) continue;
+      bool seen = false;
+      for(int j = 0; j < ArraySize(g_be); j++) if(g_be[j] == tk) { seen = true; break; }
+      if(seen) continue;
+      int n = ArraySize(g_be); ArrayResize(g_be, n + 1); g_be[n] = tk;
+      Push("Bullion Monkey: " + PositionGetString(POSITION_SYMBOL) + (buy ? " Buy" : " Sell") + " ist " + DoubleToString(r, 1) + " R im Plus. SL auf Einstieg nachziehen?");
+     }
+  }
+
+// the push server keeps the alarms the app sets; read them every 30 s and push once when the price crosses one
+void CheckAlarms()
+  {
+   if(!PriceAlarms || PushLink == "" || StringFind(PushLink, "/push/") < 0) return;
+   if(TimeLocal() - g_alarmsAt >= 30)
+     {
+      g_alarmsAt = TimeLocal();
+      string url = PushLink; StringReplace(url, "/push/", "/alarms/");
+      char data[], res[]; string rh;
+      int code = WebRequest("GET", url, "", 5000, data, res, rh);
+      if(code == 200) ParseAlarms(CharArrayToString(res, 0, WHOLE_ARRAY, CP_UTF8));
+     }
+   for(int i = 0; i < ArraySize(g_alId); i++)
+     {
+      string sym = g_alSym[i] != "" && SymbolSelect(g_alSym[i], true) ? g_alSym[i] : _Symbol;
+      double px = SymbolInfoDouble(sym, SYMBOL_BID);
+      if(px <= 0) continue;
+      double last = g_alLast[i];
+      g_alLast[i] = px;
+      if(last <= 0 || g_alP[i] <= 0) continue;
+      if((last < g_alP[i] && px >= g_alP[i]) || (last > g_alP[i] && px <= g_alP[i]))
+        {
+         int dg = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);
+         Push("Bullion Monkey: 🔔 Preis-Alarm " + sym + " bei " + DoubleToString(g_alP[i], dg) + (g_alNote[i] != "" ? " · " + g_alNote[i] : ""));
+         string url = PushLink; StringReplace(url, "/push/", "/hit/");
+         string body = "{\"id\":\"" + g_alId[i] + "\"}";
+         char data[], res[]; string rh;
+         StringToCharArray(body, data, 0, WHOLE_ARRAY, CP_UTF8); ArrayResize(data, ArraySize(data) - 1);
+         WebRequest("POST", url, "Content-Type: application/json\r\n", 5000, data, res, rh);
+         g_alP[i] = 0;                               // fired; the server drops it from the list
+        }
+     }
+  }
+
+// {"alarms":[{"id":"..","p":4050.5,"sym":"XAUUSD","note":".."},...]}: keep the last seen price of alarms we already know
+void ParseAlarms(const string js)
+  {
+   string ids[]; double ps[], lasts[]; string syms[], notes[];
+   int n = 0, pos = 0;
+   while((pos = StringFind(js, "\"id\":\"", pos)) >= 0)
+     {
+      int e = StringFind(js, "}", pos);
+      if(e < 0) break;
+      string o = StringSubstr(js, pos, e - pos);
+      pos = e;
+      string id = JsonString(o, "id");
+      int pp = StringFind(o, "\"p\":");
+      if(id == "" || pp < 0) continue;
+      double p = StringToDouble(StringSubstr(o, pp + 4, 20));
+      ArrayResize(ids, n + 1); ArrayResize(ps, n + 1); ArrayResize(lasts, n + 1); ArrayResize(syms, n + 1); ArrayResize(notes, n + 1);
+      ids[n] = id; ps[n] = p; syms[n] = JsonString(o, "sym"); notes[n] = JsonString(o, "note"); lasts[n] = 0;
+      for(int k = 0; k < ArraySize(g_alId); k++) if(g_alId[k] == id) { lasts[n] = g_alLast[k]; if(g_alP[k] == 0) ps[n] = 0; }
+      n++;
+     }
+   ArrayResize(g_alId, n); ArrayResize(g_alP, n); ArrayResize(g_alLast, n); ArrayResize(g_alSym, n); ArrayResize(g_alNote, n);
+   for(int k = 0; k < n; k++) { g_alId[k] = ids[k]; g_alP[k] = ps[k]; g_alLast[k] = lasts[k]; g_alSym[k] = syms[k]; g_alNote[k] = notes[k]; }
+  }
+
+double DayOpen(const string sym)
+  {
+   double o[];
+   return CopyOpen(sym, PERIOD_D1, 0, 1, o) == 1 ? o[0] : 0;
+  }
+
+// US dollar index from the broker's six currency pairs (official ICE weights), and the gold price
+string Macro()
+  {
+   string out = "";
+   string gs = "XAUUSD";
+   if(!SymbolSelect(gs, true)) gs = _Symbol;
+   double gb = SymbolInfoDouble(gs, SYMBOL_BID), go = DayOpen(gs);
+   if(gb > 0) out = "\"gold\":{\"p\":" + DoubleToString(gb, 2) + ",\"o\":" + DoubleToString(go, 2) + "}";
+   string S[6] = {"EURUSD", "USDJPY", "GBPUSD", "USDCAD", "USDSEK", "USDCHF"};
+   double W[6] = {-0.576, 0.136, -0.119, 0.091, 0.042, 0.036};
+   double now = 50.14348112, open = 50.14348112;
+   for(int i = 0; i < 6; i++)
+     {
+      if(!SymbolSelect(S[i], true)) return out;
+      double b = SymbolInfoDouble(S[i], SYMBOL_BID), o = DayOpen(S[i]);
+      if(b <= 0 || o <= 0) return out;
+      now *= MathPow(b, W[i]); open *= MathPow(o, W[i]);
+     }
+   return out + (out != "" ? "," : "") + "\"dxy\":{\"p\":" + DoubleToString(now, 3) + ",\"o\":" + DoubleToString(open, 3) + "}";
   }
 
 //+------------------------------------------------------------------+

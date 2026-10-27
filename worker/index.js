@@ -5,6 +5,9 @@
 //   POST /unsub           {key}
 //   POST /push/<key>      {title?, body, url?}   from the EA
 //   POST /test/<key>      test push from the app
+//   GET  /alarms/<key>    price alarms set in the app (read by the EA, which checks the price) + the ones already hit
+//   GET  /sentiment       share of Myfxbook traders long/short on gold (needs worker secrets MYFXBOOK_EMAIL/PASSWORD)
+//   POST /hit/<key>       {id}   the EA reports an alarm it fired; it is not handed out again
 // Every minute: reminders before red USD news and before news the user starred, and session open/close.
 // The VAPID key pair is made on first use and kept in KV, so nothing needs to be configured.
 
@@ -18,11 +21,23 @@ export default {
     const url = new URL(req.url), p = url.pathname.split("/").filter(Boolean);
     try {
       if (req.method === "GET" && p[0] === "key") return json({ publicKey: (await vapid(env)).pub });
+      if (req.method === "GET" && p[0] === "alarms" && validKey(p[1])) {
+        const rec = await env.SUBS.get("s:" + p[1], "json"), hit = (await env.SUBS.get("h:" + p[1], "json")) || [];
+        const all = ((rec && rec.prefs && rec.prefs.alarms) || []).filter(a => a && a.id && +a.p > 0);
+        return json({ alarms: all.filter(a => !hit.includes(a.id)), hit });
+      }
+      if (req.method === "GET" && p[0] === "sentiment") return json(await sentiment(env));
       if (req.method !== "POST") return json({ ok: true, name: "Bullion Monkey Push" });
       const body = await req.json().catch(() => ({}));
       if (p[0] === "sub") {
         if (!validKey(body.key) || !body.sub || !body.sub.endpoint) return json({ error: "bad request" }, 400);
         await env.SUBS.put("s:" + body.key, JSON.stringify({ sub: body.sub, prefs: body.prefs || {}, at: Date.now() }));
+        return json({ ok: true });
+      }
+      if (p[0] === "hit" && validKey(p[1]) && typeof body.id === "string") {
+        const hit = (await env.SUBS.get("h:" + p[1], "json")) || [];
+        if (!hit.includes(body.id)) hit.push(body.id);
+        await env.SUBS.put("h:" + p[1], JSON.stringify(hit.slice(-200)));
         return json({ ok: true });
       }
       if (p[0] === "unsub") { if (validKey(body.key)) await env.SUBS.delete("s:" + body.key); return json({ ok: true }); }
@@ -46,6 +61,33 @@ export default {
 
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json", ...CORS } });
 const validKey = k => typeof k === "string" && /^[A-Za-z0-9_-]{16,64}$/.test(k);
+
+/* ---------- gold sentiment: Myfxbook community outlook (official API, kept 15 min) ---------- */
+async function sentiment(env) {
+  if (!env.MYFXBOOK_EMAIL || !env.MYFXBOOK_PASSWORD) return { error: "setup" };
+  const cached = await env.SUBS.get("sentiment", "json");
+  if (cached && Date.now() - cached.at < 15 * 60000) return cached;
+  const API = "https://www.myfxbook.com/api/";
+  const login = async () => {
+    const r = await (await fetch(API + "login.json?email=" + encodeURIComponent(env.MYFXBOOK_EMAIL) + "&password=" + encodeURIComponent(env.MYFXBOOK_PASSWORD))).json();
+    if (r.error || !r.session) throw new Error(r.message || "login");
+    await env.SUBS.put("mfx-session", r.session);
+    return r.session;
+  };
+  try {
+    let session = await env.SUBS.get("mfx-session") || await login();
+    const get = s => fetch(API + "get-community-outlook.json?session=" + encodeURIComponent(decodeURIComponent(s))).then(r => r.json());
+    let o = await get(session);
+    if (o.error) o = await get(await login());   // session expired
+    const g = (o.symbols || []).find(x => x.name === "XAUUSD");
+    if (!g) throw new Error(o.message || "no XAUUSD");
+    const out = { at: Date.now(), long: +g.longPercentage, short: +g.shortPercentage, longPrice: +g.avgLongPrice, shortPrice: +g.avgShortPrice, positions: +g.totalPositions };
+    await env.SUBS.put("sentiment", JSON.stringify(out));
+    return out;
+  } catch (e) {
+    return cached || { error: String(e && e.message || e) };
+  }
+}
 
 /* ---------- news reminders ---------- */
 async function newsReminders(env) {
