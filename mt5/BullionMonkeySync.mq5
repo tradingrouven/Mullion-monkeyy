@@ -10,7 +10,7 @@
 //| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.47"
+#property version   "1.48"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
@@ -39,6 +39,7 @@ input string TruthWords   = "gold,tariff,china,fed,powell,rate,interest,dollar,i
 string g_gist = "";
 string g_last = "";     // last uploaded trade/balance payload, to skip unchanged uploads
 bool   g_dirty = true;
+datetime g_upAt = 0;    // last upload, for the 5-minute heartbeat
 datetime g_lossDay = 0, g_tradesDay = 0, g_journalDay = 0;   // day of the last limit push, so each fires once a day
 ulong  g_noSl[];                          // positions already warned about a missing stop-loss
 string g_news = "";                       // JSON array body of the latest headlines
@@ -421,14 +422,16 @@ void Sync()
    string payload = BuildPayload();
    if(payload == "")
       return;
-   // the timestamp lives outside the comparison, so identical data is not re-uploaded every minute
-   if(payload == g_last && !g_dirty)
+   // the timestamp lives outside the comparison, so identical data is not re-uploaded every minute;
+   // but every 5 minutes anyway, so the app sees that MT5 is still running
+   if(payload == g_last && !g_dirty && TimeLocal() - g_upAt < 300)
       return;
    string json = "{\"updatedAt\":\"" + IsoUtc(TimeGMT()) + "\"," + payload + "}";
    if(Upload(json))
      {
       g_last = payload;
       g_dirty = false;
+      g_upAt = TimeLocal();
      }
   }
 
