@@ -10,7 +10,7 @@
 //| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.46"
+#property version   "1.47"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
@@ -51,6 +51,13 @@ string g_truthSeen = "";                  // newest Trump post already handled, 
 bool   g_truthWarned = false;
 
 //+------------------------------------------------------------------+
+// only on a fresh start or new settings, not when the chart just changes timeframe
+bool IsNewStart()
+  {
+   int r = UninitializeReason();
+   return r != REASON_CHARTCHANGE;
+  }
+
 int OnInit()
   {
    if(StringLen(GitHubToken) < 10)
@@ -65,6 +72,8 @@ int OnInit()
    if(FeedMinutes > 0) FetchNews();
    if(TruthMinutes > 0) FetchTruth();
    Sync();
+   if(PushLink != "" && IsNewStart())   // test message, so you see right away that pushes reach the phone
+      PushApp("MT5 ist mit der App verbunden ✓ Trades, Limits und Journal-Erinnerung kommen ab jetzt als Push.", false);
    return(INIT_SUCCEEDED);
   }
 
