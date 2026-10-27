@@ -10,7 +10,7 @@
 //| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.44"
+#property version   "1.45"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
@@ -19,6 +19,7 @@ input int    SyncSeconds = 15;   // check interval in seconds
 input bool   PushTrades  = true; // push message when a trade opens or closes
 input double DailyLossPct = 3.0; // push when today's loss reaches this % (0 = off)
 input int    MaxTradesDay = 3;   // push when more trades than this are opened today (0 = off)
+input int    JournalHour  = 21;  // evening reminder to write the journal, local hour (-1 = off)
 input int    NewsPushMinutes = 15; // push this many minutes before high-impact USD news (0 = off)
 input int    NoSlMinutes  = 2;   // push when a position has no stop-loss after this many minutes (0 = off)
 input int    FeedMinutes  = 2;   // read FinancialJuice headlines every n minutes (0 = off)
@@ -37,7 +38,7 @@ input string TruthWords   = "gold,tariff,china,fed,powell,rate,interest,dollar,i
 string g_gist = "";
 string g_last = "";     // last uploaded trade/balance payload, to skip unchanged uploads
 bool   g_dirty = true;
-datetime g_lossDay = 0, g_tradesDay = 0;   // day of the last limit push, so each fires once a day
+datetime g_lossDay = 0, g_tradesDay = 0, g_journalDay = 0;   // day of the last limit push, so each fires once a day
 ulong  g_noSl[];                          // positions already warned about a missing stop-loss
 string g_news = "";                       // JSON array body of the latest headlines
 datetime g_newsAt = 0;
@@ -72,6 +73,7 @@ void OnTimer()
   {
    CheckNoSl();
    CheckCalendar();
+   CheckJournal();
    if(FeedMinutes > 0 && TimeLocal() - g_newsAt >= FeedMinutes * 60)
       FetchNews();
    if(TruthMinutes > 0 && TimeLocal() - g_truthAt >= TruthMinutes * 60)
@@ -135,7 +137,7 @@ void PushDeal(const ulong deal)
         {
          double p = HistoryDealGetDouble(deal, DEAL_PROFIT) + HistoryDealGetDouble(deal, DEAL_SWAP)
                   + HistoryDealGetDouble(deal, DEAL_COMMISSION) + HistoryDealGetDouble(deal, DEAL_FEE);
-         Push(StringFormat("Bullion Monkey: %s geschlossen %s%.2f %s · heute %s%.2f %s",
+         Push(StringFormat("Bullion Monkey: %s geschlossen %s%.2f %s · heute %s%.2f %s. Schreib kurz ins Journal: Setup, Gefühl, Lektion.",
               sym, p >= 0 ? "+" : "", p, cur, dayPnl >= 0 ? "+" : "", dayPnl, cur));
         }
      }
@@ -339,6 +341,33 @@ void CheckCalendar()
       int n = ArraySize(g_calSeen); ArrayResize(g_calSeen, n + 1); g_calSeen[n] = vals[i].id;
       Push("Bullion Monkey: In " + IntegerToString((int)((vals[i].time - now + 59) / 60)) + " Min. USD-News: " + ev.name + " (hohes Risiko für Gold)");
      }
+  }
+
+// once a day in the evening: if there were trades today, remind to fill in the journal
+void CheckJournal()
+  {
+   if(JournalHour < 0) return;
+   MqlDateTime l; TimeToStruct(TimeLocal(), l);
+   if(l.hour < JournalHour) return;
+   l.hour = 0; l.min = 0; l.sec = 0;
+   datetime today = StructToTime(l);
+   if(g_journalDay == today) return;
+   g_journalDay = today;
+   MqlDateTime t; TimeToStruct(TimeTradeServer(), t); t.hour = 0; t.min = 0; t.sec = 0;
+   double pnl = 0; int n = 0;
+   if(!HistorySelect(StructToTime(t), TimeTradeServer() + 60)) return;
+   for(int i = 0; i < HistoryDealsTotal(); i++)
+     {
+      ulong tk = HistoryDealGetTicket(i);
+      long ty = HistoryDealGetInteger(tk, DEAL_TYPE);
+      if(ty != DEAL_TYPE_BUY && ty != DEAL_TYPE_SELL) continue;
+      pnl += HistoryDealGetDouble(tk, DEAL_PROFIT) + HistoryDealGetDouble(tk, DEAL_SWAP)
+           + HistoryDealGetDouble(tk, DEAL_COMMISSION) + HistoryDealGetDouble(tk, DEAL_FEE);
+      if(HistoryDealGetInteger(tk, DEAL_ENTRY) == DEAL_ENTRY_IN) n++;
+     }
+   if(n > 0)
+      Push(StringFormat("Bullion Monkey: Heute %d Trade%s, %s%.2f %s. Zeit fürs Journal: Notizen und Screenshots in der App ergänzen.",
+           n, n == 1 ? "" : "s", pnl >= 0 ? "+" : "", pnl, AccountInfoString(ACCOUNT_CURRENCY)));
   }
 
 void CheckNoSl()
