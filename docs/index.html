@@ -415,7 +415,7 @@ button.hero{cursor:pointer}
 .status.open{border-color:var(--line);background:linear-gradient(120deg,rgba(255,255,255,.05),rgba(255,255,255,.01)),#0d0c0a;box-shadow:none}
 .status.open .hico{border-color:#8f8775;color:#cfc7b4;box-shadow:none}
 /* number strip */
-.strip{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;padding:0 2px}
+.strip{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr;padding:0 2px}
 .strip>div{display:flex;flex-direction:column;gap:3px;padding:2px 9px;border-left:1px solid var(--line);min-width:0}
 .strip>div:first-child{border-left:0;padding-left:2px}
 .strip>div>span{font-size:11.5px;color:var(--muted);line-height:1.2}
@@ -630,7 +630,9 @@ details.more[open] summary .chev{transform:rotate(-45deg)}
   .wm em{font-size:7px;letter-spacing:.35em}
   .eye{order:3;margin-left:4px;width:32px;height:32px}
   .tab[aria-selected="true"]::after{content:"";position:absolute;bottom:-2px;width:30px;height:2px;border-radius:2px;background:var(--accent)}
-  .strip b{font-size:15px}
+  .strip b{font-size:13.5px}
+  .strip>div{padding:2px 5px}
+  .strip>div>span,.strip>div>i{font-size:10.5px}
   .news tr:not(.dayrow){grid-template-columns:44px 58px 14px minmax(0,1fr) auto auto}
   .sum4 b{font-size:16px}
   .nt{font-size:22px}
@@ -695,7 +697,8 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
     <div><span>Kontostand</span><b class="num" id="kBal">–</b><i id="kBalS"></i></div>
     <div><span>Heute</span><b class="num" id="kDay">–</b><i id="kDayS"></i></div>
     <div><span>Woche</span><b class="num" id="kWeek">–</b><i id="kWeekS"></i></div>
-    <div><span>Tagesrisiko frei</span><b class="num" id="kFree">–</b><i id="kFreeS"></i></div>
+    <div><span>Monat</span><b class="num" id="kMon">–</b><i id="kMonS"></i></div>
+    <div><span>Risiko frei</span><b class="num" id="kFree">–</b><i id="kFreeS"></i></div>
   </div>
   <div class="quick"><button class="qb" type="button" id="tdCheck"></button><button class="qb" type="button" id="tdStreak" hidden></button></div>
   <button class="btn review" id="reviewBanner" type="button" hidden>📋 Dein Wochenrückblick ist bereit →</button>
@@ -1211,6 +1214,9 @@ function renderToday(){
   const dayP=d?d.day:((days[ymd(n)]||{}).pnl||0),wkP=d?d.week:Object.entries(days).filter(([k])=>k>=wsK).reduce((a,[,v])=>a+v.pnl,0);
   $("#kDay").className="num "+cls(dayP);$("#kDay").textContent=fmt(dayP);$("#kDayS").innerHTML=d?pc(d.day,d.dayStart):"";
   $("#kWeek").className="num "+cls(wkP);$("#kWeek").textContent=fmt(wkP);$("#kWeekS").innerHTML=d?pc(d.week,d.wkStart):`KW ${isoWeek(n)}`;
+  const msK=ymd(new Date(n.getFullYear(),n.getMonth(),1)),moP=Object.entries(days).filter(([k])=>k>=msK).reduce((a,[,v])=>a+v.pnl,0);
+  const moBase=d?d.bal-moP-cashList().filter(x=>ymd(x.c)>=msK).reduce((a,x)=>a+x.a,0):0;
+  $("#kMon").className="num "+cls(moP);$("#kMon").textContent=fmt(moP);$("#kMonS").innerHTML=d?pc(moP,moBase):MON[n.getMonth()];
   if(d&&L.day>0){const lim=d.dayStart*L.day/100,left=Math.max(0,lim-Math.max(0,-d.day));$("#kFree").textContent=Math.round(left/lim*100)+" %";$("#kFree").className="num "+(left<=0?"neg":"");$("#kFreeS").textContent=plain(left)+" "+d.cur}
   else{$("#kFree").textContent="–";$("#kFree").className="num";$("#kFreeS").textContent=d?"Tageslimit aus":""}
   const cb=$("#tdCheck");
