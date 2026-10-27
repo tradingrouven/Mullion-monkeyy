@@ -2,7 +2,7 @@
 <html lang="de-CH">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -32,6 +32,7 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+html{touch-action:manipulation;-webkit-text-size-adjust:100%}
 body{background:var(--bg);color:var(--fg);font-family:var(--font-ui);font-size:14px;line-height:1.45}
 .num{font-family:var(--font-num);font-variant-numeric:tabular-nums}
 .pos{color:var(--win)} .neg{color:var(--loss)} .mut{color:var(--muted)}
@@ -310,7 +311,7 @@ td.r,th.r{text-align:right}
   .calhead #monPill{flex-basis:auto}
   .calhead .sp{flex-basis:100%;height:0}
   .calhead #monTitle{min-width:0!important;flex:1}
-  input,select{font-size:16px}
+  input,select,textarea{font-size:16px}
   .hm{display:none}
   .news thead{display:none}
   .news tr:not(.dayrow){display:grid;grid-template-columns:46px 38px 16px minmax(0,1fr) auto auto;column-gap:6px;align-items:start;border-bottom:1px solid var(--line);padding:7px 2px}
@@ -2333,6 +2334,9 @@ loadNews();
 syncMt5();setInterval(()=>{if(!document.hidden)syncMt5(true)},60000);
 renderCloud();if(cloud.token)cloudPull().then(cloudPush).catch(cloudFail);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){loadNews();syncMt5();renderDash();if(cloud.token&&Date.now()-clPulled>5*6e4)cloudPull().catch(cloudFail)}});
+/* no zooming: iOS ignores user-scalable=no, so pinching is stopped here (double-tap zoom is off via touch-action) */
+["gesturestart","gesturechange"].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
+document.addEventListener("touchmove",e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 /* push messages through our Cloudflare server (worker/); its address comes from push.json */
 var pushSrv=null;   /* var + function declarations: renderPush can run (Tools opened at start) before this code */
