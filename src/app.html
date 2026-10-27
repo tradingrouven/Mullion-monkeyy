@@ -909,7 +909,7 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
       <div class="ph" style="margin:10px 0"><span class="lbl">Vorlauf</span><span class="chips" id="pushMin"></span></div>
       <p class="lbl" style="margin:4px 0 6px">Session Start &amp; Ende (Schweizer Zeit)</p>
       <div class="chips" id="pushSess" style="margin-bottom:10px"></div>
-      <div class="chips" style="margin-bottom:10px"><button class="chip" type="button" id="pushRev">📋 Wochenrückblick So 18:00</button></div>
+      <div class="chips" style="margin-bottom:10px" id="pushExtra"></div>
       <p class="note">Für Trades, Limits und die Journal-Erinnerung: diesen Link in MT5 beim EA im Feld <b>PushLink</b> einfügen und unter Extras → Optionen → Expert Advisors bei WebRequest <b id="pushBase"></b> hinzufügen.</p>
       <div class="ph" style="margin:6px 0 12px;gap:8px"><input id="pushLink" readonly style="flex:1;min-width:0"><button class="btn sm" type="button" id="pushCopy">Kopieren</button></div>
       <div class="ph" style="gap:8px"><button class="btn sm" type="button" id="pushTest">Test-Push senden</button><span class="sp"></span><button class="btn sm" type="button" id="pushOff">Ausschalten</button></div>
@@ -1638,7 +1638,7 @@ async function syncMt5(force){
     mt5Etag=r.headers.get("ETag")||"";
     const g=await r.json(),f=g.files&&g.files[MT5_FILE];if(!f){$("#mt5Note").textContent="Im Gist fehlen die MT5-Daten.";return}
     const txt=f.truncated?await (await fetch(f.raw_url)).text():f.content;
-    state.mt5=JSON.parse(txt);state.mt5.owner=g.owner&&g.owner.login;LS.set("bm-mt5",state.mt5);renderMt5();renderDash();renderHeadlines();renderTruth();if(!$("#view-ana").hidden)renderAna();if(!$("#view-jour").hidden)renderJournal();if(!$("#view-calc").hidden)renderCalc();
+    state.mt5=fixR(JSON.parse(txt));state.mt5.owner=g.owner&&g.owner.login;LS.set("bm-mt5",state.mt5);renderMt5();renderDash();renderHeadlines();renderTruth();if(!$("#view-ana").hidden)renderAna();if(!$("#view-jour").hidden)renderJournal();if(!$("#view-calc").hidden)renderCalc();
   }catch(e){$("#mt5Note").textContent="Keine Verbindung. Angezeigt wird der letzte Stand."}
 }
 $("#mt5Form").onsubmit=e=>{e.preventDefault();const id=$("#mt5Id").value.trim().replace(/^.*gist\.github\.com\/[^/]+\//,"");if(!id)return;
@@ -1799,7 +1799,7 @@ function excursion(t,d){
   if(!d||!d.bars||!d.bars.length||!t.openUtc||!(+t.open>0))return null;
   const os=Date.parse(t.openUtc)/1e3,cs=Date.parse(t.closeUtc)/1e3,tf=(d.tf||5)*60,buy=t.side==="buy",op=+t.open;
   const B=d.bars.filter(b=>b[0]+tf>os&&b[0]<=cs);if(!B.length)return null;
-  const risk=+t.sl>0?Math.abs(op-+t.sl):t.r&&+t.close>0?Math.abs(+t.close-op)/Math.abs(+t.r):0;
+  const risk=+t.sl>0?Math.abs(op-+t.sl):t.r&&!t.noSl&&+t.close>0?Math.abs(+t.close-op)/Math.abs(+t.r):0;
   let mae=0,mfe=0,first="";
   for(const b of B){const adv=buy?op-b[3]:b[2]-op,fav=buy?b[2]-op:op-b[3];mae=Math.max(mae,adv);mfe=Math.max(mfe,fav);
     if(!first&&risk>0){if(adv>=risk&&fav>=risk)first="?";else if(fav>=risk)first="fav";else if(adv>=risk)first="adv"}}
@@ -1830,10 +1830,10 @@ function openTrade(id){
 async function renderTrade(){
   const id=tdId,t=((state.mt5&&state.mt5.trades)||[]).find(x=>x.id===id);if(!t)return;
   const nt=(state.settings.notes||{})[id]||{},o=t.openUtc?new Date(t.openUtc):null,c=new Date(t.closeUtc),b0=balBefore(t);
-  const risk=t.risk!=null?+t.risk:t.r?Math.abs(+t.pnl/+t.r):null,dg=Math.max(2,((String(t.open||"").split(".")[1])||"").length);
+  const risk=t.noSl?null:t.risk!=null?+t.risk:t.r?Math.abs(+t.pnl/+t.r):null,dg=Math.max(2,((String(t.open||"").split(".")[1])||"").length);
   const px=v=>v>0?(+v).toLocaleString("de-CH",{minimumFractionDigits:Math.min(dg,3),maximumFractionDigits:Math.min(dg,3)}):"–";
   $("#tdHead").innerHTML=`<b class="a">${esc(t.asset)} ${SIDE(t.side)}</b><span class="p ${cls(+t.pnl)}">${fmt(+t.pnl)}</span>
-    <i>${(+t.volume).toFixed(2)} Lot${t.r!=null?" · "+(t.r>=0?"1:"+(+t.r).toFixed(1):fmtR(+t.r,1)+" R"):""}</i><i class="r ${t.r!=null?cls(+t.r):""}">${t.r!=null?fmtR(+t.r,1)+" R":"kein SL"}</i>
+    <i>${(+t.volume).toFixed(2)} Lot${t.r!=null?" · "+(t.r>=0?"1:"+(+t.r).toFixed(1):fmtR(+t.r,1)+" R"):""}</i><i class="r ${t.r!=null?cls(+t.r):""}">${t.r!=null?fmtR(+t.r,1)+" R"+(t.noSl?" · kein SL":""):"kein SL"}</i>
     <i style="grid-column:1/-1">${o?zd(o)+" "+zt(o)+" – ":""}${zd(c)!==(o&&zd(o))?zd(c)+" ":""}${zt(c)}${o?" · "+zdur(c-o):""}</i>`;
   $("#tdTabs").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tt===tdTab));
   const body=$("#tdBody");
@@ -1979,10 +1979,10 @@ function renderJournal(){
   /* balance right before a trade: today's balance minus everything booked after it opened */
   const C=cashList(),TT=(state.mt5&&state.mt5.trades)||[];
   const balAt=t=>{const o=new Date(t.openUtc||t.closeUtc);return bal-TT.filter(x=>new Date(x.closeUtc)>o).reduce((a,x)=>a+(+x.pnl||0),0)-C.filter(x=>x.c>o).reduce((a,x)=>a+x.a,0)};
-  const kv=t=>{const b0=balAt(t),risk=t.risk!=null?+t.risk:t.r?Math.abs(+t.pnl/+t.r):null;
+  const kv=t=>{const b0=balAt(t),risk=t.noSl?null:t.risk!=null?+t.risk:t.r?Math.abs(+t.pnl/+t.r):null;
     const crv=v=>v==null?"–":v>=0?"1:"+v.toFixed(1):fmtR(v,1)+" R";
     return [["CRV",t.r!=null?crv(+t.r):"–",t.r!=null?cls(+t.r):""],
-      ["Risiko",risk&&b0>0?(risk/b0*100).toFixed(2)+" %":"–",""],["Ergebnis",b0>0?fmtR(+t.pnl/b0*100)+" %":"–",cls(+t.pnl)]]
+      ["Risiko",risk&&b0>0?(risk/b0*100).toFixed(2)+" %":t.noSl?"kein SL":"–",t.noSl?"neg":""],["Ergebnis",b0>0?fmtR(+t.pnl/b0*100)+" %":"–",cls(+t.pnl)]]
       .map(([a,v,c])=>`<span><i>${a}</i><b class="${c}">${v}</b></span>`).join("")};
   $("#jCount").textContent=L.length?`${Math.min(jLimit,L.length)} von ${L.length}`:"";
   $("#jList").innerHTML=!state.mt5?`<p class="empty">Verbinde zuerst MT5 unter Tools, dann erscheinen hier deine Trades.</p>`
@@ -2165,6 +2165,8 @@ function renderHeadlines(){
 /* ---------- analyse ---------- */
 const PER={m:"Dieser Monat",q:"3 Monate",a:"Alles"};
 state.per=LS.get("aPer","a");
+/* a loss without a stop-loss has no real R: it counts as −1 R so week R, goals and what-if stay honest */
+function fixR(m){if(m&&Array.isArray(m.trades))m.trades.forEach(t=>{if((t.r==null||t.noSl)&&+t.pnl<0){t.r=-1;t.noSl=true}});return m}
 function mt5Trades(){return ((state.mt5&&state.mt5.trades)||[]).map(t=>({...t,pnl:+t.pnl||0,o:new Date(t.openUtc||t.closeUtc),c:new Date(t.closeUtc)})).sort((a,b)=>a.c-b.c)}
 /* account curve: balance after every trade, rebuilt backwards from today's balance; deposits/withdrawals move the high too, so they don't count as drawdown */
 function eqPanel(T,from){
@@ -2456,7 +2458,7 @@ $("#calSub").href="webcal://"+location.host+location.pathname.replace(/[^/]*$/,"
 /* ---------- boot ---------- */
 addEventListener("hashchange",showFirst);
 loadMacro();loadSent();loadAlHits();setInterval(()=>{loadSent();loadAlHits()},5*60000);
-load();if(state.settings.mt5Gist)state.mt5=LS.get("bm-mt5",null);showFirst();renderMt5();renderDash();renderHeadlines();renderTruth();renderNews();renderNewsKpi();renderSessions();
+load();if(state.settings.mt5Gist)state.mt5=fixR(LS.get("bm-mt5",null));showFirst();renderMt5();renderDash();renderHeadlines();renderTruth();renderNews();renderNewsKpi();renderSessions();
 async function loadNews(){try{const r=await fetch("news.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;state.news=await r.json()}catch(e){if(!state.news)state.news={events:[]}}renderNewsFilters();renderNews();renderNewsKpi();renderToday();if(!pushBoot&&state.news.events.length){pushBoot=1;pushSync()}}   /* once per start, so the server has the current settings */
 var pushBoot=0;
 loadNews();
@@ -2481,7 +2483,7 @@ function pushOk(){return "serviceWorker" in navigator&&"PushManager" in window&&
 async function pushServer(){if(pushSrv)return pushSrv;try{const r=await fetch("push.json?t="+Date.now(),{cache:"no-store"});if(r.ok)pushSrv=(await r.json()).url}catch(e){}return pushSrv}
 function pushPrefs(){const c=pushCfg(),n=new Date();
   const st=events().filter(e=>isStar(e)&&e.t>n).map(e=>({id:starKey(e),t:e.t.toISOString(),title:e.title,country:e.country}));
-  return {alarms:(state.settings.alarms||[]).map(a=>({id:a.id,p:a.p,sym:a.sym||"XAUUSD",note:a.note||""})),news:c.news!==false,medium:!!c.medium,minutes:c.minutes||15,stars:c.stars===false?[]:st,sess:c.sess||PUSH_SESS.map(x=>x[0]),review:c.review!==false}}
+  return {alarms:(state.settings.alarms||[]).map(a=>({id:a.id,p:a.p,sym:a.sym||"XAUUSD",note:a.note||""})),news:c.news!==false,medium:!!c.medium,minutes:c.minutes||15,stars:c.stars===false?[]:st,sess:c.sess||PUSH_SESS.map(x=>x[0]),review:c.review!==false,month:c.month!==false,quiet:c.quiet!==false}}
 async function pushSync(){const c=pushCfg();if(!c.on||!c.key)return;const url=await pushServer();if(!url)return;
   try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();if(!sub){LS.set("bm-push",{...c,on:false});renderPush();return}
     await fetch(url+"/sub",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:c.key,sub:sub.toJSON(),prefs:pushPrefs()})})}catch(e){}}
@@ -2493,7 +2495,7 @@ async function renderPush(){
   if(!c.on){st.className="pill";st.textContent="Aus";note.textContent="Bekomme Meldungen vor wichtigen News, bei geschlossenen Trades, Limits und als Journal-Erinnerung.";$("#pushOn").hidden=false;return}
   st.className="pill ok";st.textContent="Aktiv";note.textContent="Dieses Handy bekommt Push-Nachrichten.";$("#pushOpts").hidden=false;
   const P=$("#pushPrefs");P.innerHTML="";[["news","🔴 Rote USD-News",c.news!==false],["medium","🟠 Auch mittlere USD-News",!!c.medium],["stars","★ Markierte News",c.stars!==false]].forEach(([k,l,on])=>{const b=document.createElement("button");b.className="chip";b.type="button";b.textContent=l;b.setAttribute("aria-pressed",on);b.onclick=()=>{LS.set("bm-push",{...pushCfg(),[k]:!on});renderPush();pushSync()};P.appendChild(b)});
-  const RB=$("#pushRev");RB.setAttribute("aria-pressed",pushPrefs().review);RB.onclick=()=>{LS.set("bm-push",{...pushCfg(),review:!pushPrefs().review});renderPush();pushSync()};
+  const X=$("#pushExtra");X.innerHTML="";[["review","📋 Wochenrückblick So 18:00"],["month","📊 Monatsbericht am 1."],["quiet","🌙 Ruhezeit 22–7 Uhr (keine Schlagzeilen)"]].forEach(([k,t])=>{const pp=pushPrefs(),b=document.createElement("button");b.className="chip";b.type="button";b.textContent=t;b.setAttribute("aria-pressed",pp[k]);b.onclick=()=>{LS.set("bm-push",{...pushCfg(),[k]:!pp[k]});renderPush();pushSync()};X.appendChild(b)});
   const S=$("#pushSess");S.innerHTML="";PUSH_SESS.forEach(([n,t])=>{const cur=pushPrefs().sess,on=cur.includes(n),b=document.createElement("button");b.className="chip";b.type="button";b.textContent=n+" "+t;b.setAttribute("aria-pressed",on);b.onclick=()=>{LS.set("bm-push",{...pushCfg(),sess:on?cur.filter(x=>x!==n):[...cur,n]});renderPush();pushSync()};S.appendChild(b)});
   const M=$("#pushMin");M.innerHTML="";[5,10,15,30,60].forEach(m=>{const b=document.createElement("button");b.className="chip";b.type="button";b.textContent=m+" Min.";b.setAttribute("aria-pressed",(c.minutes||15)===m);b.onclick=()=>{LS.set("bm-push",{...pushCfg(),minutes:m});renderPush();pushSync()};M.appendChild(b)});
   $("#pushLink").value=url+"/push/"+c.key;$("#pushBase").textContent=url;

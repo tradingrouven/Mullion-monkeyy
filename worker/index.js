@@ -44,6 +44,7 @@ export default {
       if ((p[0] === "push" || p[0] === "test") && validKey(p[1])) {
         const rec = await env.SUBS.get("s:" + p[1], "json");
         if (!rec) return json({ error: "unknown key" }, 404);
+        if (p[0] === "push" && quiet(rec, body.body)) return json({ ok: true, quiet: true });
         const msg = p[0] === "test"
           ? { title: "Bullion Monkey", body: "Test: Push-Nachrichten funktionieren ✓", url: APP }
           : { title: String(body.title || "Bullion Monkey").slice(0, 80), body: String(body.body || "").slice(0, 400), url: body.url || APP + (body.journal ? "#journal" : "") };
@@ -128,7 +129,10 @@ async function sessionPushes(env) {
   const o = {};
   for (const x of new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Zurich", hourCycle: "h23", weekday: "short", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date())) o[x.type] = x.value;
   const min = +o.hour * 60 + +o.minute, due = [];
-  if (o.weekday === "Sun" && min >= 1080 && min < 1083) return weeklyReview(env, o);   // Sunday 18:00
+  if (o.day === "01" && min >= 540 && min < 543) await digest(env, o, "month", "📊 Dein Monatsbericht ist da",
+    `Der ${MONTHS[(+o.month + 10) % 12]} ist abgeschlossen. Schau dir Ergebnis, Fehler und Ziele in Ruhe an.`);   // 1st of the month 09:00
+  if (o.weekday === "Sun" && min >= 1080 && min < 1083) return digest(env, o, "review", "📋 Dein Wochenrückblick ist bereit",
+    "Wie lief die Woche? Drei kurze Fragen, dann bist du bereit für Montag.");   // Sunday 18:00
   if (o.weekday === "Sat" || o.weekday === "Sun") return;
   for (const [name, open, close] of SESSIONS)
     for (const [what, at] of [["open", open], ["close", close]])
@@ -155,20 +159,27 @@ async function sessionPushes(env) {
   }
 }
 
-async function weeklyReview(env, o) {
+const MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+// weekly review and monthly report: one push per subscriber, on unless switched off in the app
+async function digest(env, o, pref, title, body) {
   const list = await env.SUBS.list({ prefix: "s:" });
   for (const k of list.keys) {
     const key = k.name.slice(2), rec = await env.SUBS.get(k.name, "json");
-    if (!rec || !rec.sub || (rec.prefs && rec.prefs.review === false)) continue;
-    const seen = "x:" + key + ":review:" + o.year + o.month + o.day;
+    if (!rec || !rec.sub || (rec.prefs && rec.prefs[pref] === false)) continue;
+    const seen = "x:" + key + ":" + pref + ":" + o.year + o.month + o.day;
     if (await env.SUBS.get(seen)) continue;
     await env.SUBS.put(seen, "1", { expirationTtl: 86400 * 2 });
-    await send(env, key, rec.sub, {
-      title: "📋 Dein Wochenrückblick ist bereit",
-      body: "Wie lief die Woche? Drei kurze Fragen, dann bist du bereit für Montag.",
-      url: APP + "#analyse", tag: "review"
-    });
+    await send(env, key, rec.sub, { title, body, url: APP + "#analyse", tag: pref });
   }
+}
+
+// quiet hours 22–07 Swiss time: headlines and Trump posts from the EA are dropped, trades and limits still come
+function quiet(rec, text) {
+  if (rec.prefs && rec.prefs.quiet === false) return false;
+  const t = String(text || "");
+  if (!t.startsWith("📰") && !t.startsWith("🇺🇸")) return false;
+  const h = +new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Zurich", hourCycle: "h23", hour: "2-digit" }).format(new Date());
+  return h >= 22 || h < 7;
 }
 
 /* ---------- web push (RFC 8291 + VAPID, RFC 8292) ---------- */
