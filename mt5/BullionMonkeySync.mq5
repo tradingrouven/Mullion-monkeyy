@@ -10,7 +10,7 @@
 //| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.50"
+#property version   "1.51"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
@@ -85,6 +85,7 @@ int OnInit()
       g_gist = ReadSavedId();
    g_shotGist = ReadText(SHOT_ID);
    g_shots = ReadText(SHOT_DONE);
+   BackfillBars();
    EventSetTimer(SyncSeconds < 10 ? 10 : SyncSeconds);
    if(FeedMinutes > 0) FetchNews();
    if(TruthMinutes > 0) FetchTruth();
@@ -604,8 +605,8 @@ string BuildPayload()
                + ",\"volStep\":" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP), 2)
                + ",\"volMax\":" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX), 2) + "}";
 
-   // chart pictures: {"mt5-<position>":"io"} (i = entry, o = exit)
-   string shots = "";
+   // chart pictures and candles: {"mt5-<position>":"iob"} (i = entry picture, o = exit picture, b = candles)
+   string ids2[], has2[];
    string parts[];
    int np = StringSplit(g_shots, '|', parts);
    for(int i = 0; i < np; i++)
@@ -613,13 +614,14 @@ string BuildPayload()
       int d = StringFind(parts[i], "-");
       if(d <= 0) continue;
       string id = StringSubstr(parts[i], 0, d), tg = StringSubstr(parts[i], d + 1, 1);
-      if(StringFind(shots, "\"mt5-" + id + "\"") >= 0) continue;
-      string has = tg;
-      string other = (tg == "i") ? "o" : "i";
-      if(StringFind(g_shots, "|" + id + "-" + (other == "i" ? "in" : "out") + "|") >= 0) has = "io";
-      if(shots != "") shots += ",";
-      shots += "\"mt5-" + id + "\":\"" + has + "\"";
+      int k = -1;
+      for(int j = 0; j < ArraySize(ids2); j++) if(ids2[j] == id) { k = j; break; }
+      if(k < 0) { k = ArraySize(ids2); ArrayResize(ids2, k + 1); ArrayResize(has2, k + 1); ids2[k] = id; has2[k] = ""; }
+      if(StringFind(has2[k], tg) < 0) has2[k] += tg;
      }
+   string shots = "";
+   for(int j = 0; j < ArraySize(ids2); j++)
+      shots += (shots == "" ? "" : ",") + "\"mt5-" + ids2[j] + "\":\"" + has2[j] + "\"";
    string sh = (g_shotGist != "") ? ",\"shotGist\":\"" + g_shotGist + "\",\"shots\":{" + shots + "}" : "";
 
    return acc + "," + spec + sh + ",\"headlines\":[" + g_news + "],\"truths\":[" + g_truth + "],\"positions\":[" + pos + "],\"trades\":[" + trades + "],\"cash\":[" + cash + "]";
@@ -800,6 +802,7 @@ void TakeShot(const ulong deal)
    if(type != DEAL_TYPE_BUY && type != DEAL_TYPE_SELL) return;
    long entry = HistoryDealGetInteger(deal, DEAL_ENTRY);
    string sym = HistoryDealGetString(deal, DEAL_SYMBOL);
+   if(entry != DEAL_ENTRY_IN) SaveBars(HistoryDealGetInteger(deal, DEAL_POSITION_ID));
    long chart = (ChartSymbol(0) == sym) ? ChartID() : 0;
    for(long c = ChartFirst(); chart == 0 && c >= 0; c = ChartNext(c))
       if(ChartSymbol(c) == sym) chart = c;
@@ -810,22 +813,78 @@ void TakeShot(const ulong deal)
       Print("Bullion Monkey: Chart-Bild fehlgeschlagen ", GetLastError());
   }
 
+// candles around a closed position (open to close plus some before and after), for the chart in the app's trade details
+void SaveBars(const long posId)
+  {
+   if(!ChartShots || !HistorySelectByPosition(posId)) return;
+   datetime op = 0, cl = 0; string sym = "";
+   for(int i = 0; i < HistoryDealsTotal(); i++)
+     {
+      ulong tk = HistoryDealGetTicket(i);
+      datetime t = (datetime)HistoryDealGetInteger(tk, DEAL_TIME);
+      long en = HistoryDealGetInteger(tk, DEAL_ENTRY);
+      if(en == DEAL_ENTRY_IN && (op == 0 || t < op)) { op = t; sym = HistoryDealGetString(tk, DEAL_SYMBOL); }
+      if(en != DEAL_ENTRY_IN && t > cl) cl = t;
+     }
+   if(op == 0 || cl == 0 || sym == "") return;
+   long dur = (long)(cl - op);
+   ENUM_TIMEFRAMES tf = dur < 2400 ? PERIOD_M1 : dur < 6 * 3600 ? PERIOD_M5 : dur < 20 * 3600 ? PERIOD_M15 : dur < 4 * 86400 ? PERIOD_H1 : PERIOD_H4;
+   int sec = PeriodSeconds(tf);
+   MqlRates r[];
+   int n = CopyRates(sym, tf, op - 30 * sec, cl + 15 * sec, r);
+   if(n <= 0) return;
+   long offset = (long)(TimeTradeServer() - TimeGMT());
+   int dg = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);
+   string o = "{\"tf\":" + IntegerToString(sec / 60) + ",\"bars\":[";
+   for(int i = 0; i < n; i++)
+      o += (i > 0 ? "," : "") + "[" + IntegerToString((long)r[i].time - offset) + "," + DoubleToString(r[i].open, dg) + "," + DoubleToString(r[i].high, dg) + "," + DoubleToString(r[i].low, dg) + "," + DoubleToString(r[i].close, dg) + "]";
+   o += "]}";
+   int h = FileOpen(SHOT_DIR + "\\" + IntegerToString(posId) + "-bars.json", FILE_WRITE | FILE_BIN);
+   if(h == INVALID_HANDLE) return;
+   uchar u[]; StringToCharArray(o, u, 0, WHOLE_ARRAY, CP_UTF8); ArrayResize(u, ArraySize(u) - 1);
+   FileWriteArray(h, u);
+   FileClose(h);
+  }
+
+// once: candles for the trades of the last 60 days that have none yet
+void BackfillBars()
+  {
+   if(!ChartShots || !HistorySelect(TimeCurrent() - 60 * 86400, TimeCurrent() + 86400)) return;
+   long done[];
+   int total = HistoryDealsTotal();
+   for(int i = 0; i < total; i++)
+     {
+      ulong tk = HistoryDealGetTicket(i);
+      long ty = HistoryDealGetInteger(tk, DEAL_TYPE);
+      if((ty != DEAL_TYPE_BUY && ty != DEAL_TYPE_SELL) || HistoryDealGetInteger(tk, DEAL_ENTRY) == DEAL_ENTRY_IN) continue;
+      long p = HistoryDealGetInteger(tk, DEAL_POSITION_ID);
+      bool seen = StringFind(g_shots, "|" + IntegerToString(p) + "-bars|") >= 0;
+      for(int j = 0; !seen && j < ArraySize(done); j++) if(done[j] == p) seen = true;
+      if(seen) continue;
+      int n = ArraySize(done); ArrayResize(done, n + 1); done[n] = p;
+     }
+   for(int k = 0; k < ArraySize(done); k++) SaveBars(done[k]);
+  }
+
 // one waiting picture per timer run, as base64 text into the pictures gist; the app shows it in the journal
 void UploadShot()
   {
    string name;
    long h = FileFindFirst(SHOT_DIR + "\\*.png", name);
+   if(h == INVALID_HANDLE) h = FileFindFirst(SHOT_DIR + "\\*.json", name);
    if(h == INVALID_HANDLE) return;
    FileFindClose(h);
+   bool bars = StringFind(name, ".json") > 0;
    string path = SHOT_DIR + "\\" + name;
    int f = FileOpen(path, FILE_READ | FILE_BIN);
    if(f == INVALID_HANDLE) return;
    uchar png[], key[], b64[];
    FileReadArray(f, png);
    FileClose(f);
-   if(ArraySize(png) == 0 || CryptEncode(CRYPT_BASE64, png, key, b64) <= 0) { FileDelete(path); return; }
-   string tag = StringSubstr(name, 0, StringLen(name) - 4);   // "<position>-in"
-   string files = "\"files\":{\"" + tag + ".txt\":{\"content\":\"" + CharArrayToString(b64, 0, WHOLE_ARRAY, CP_ACP) + "\"}}";
+   if(ArraySize(png) == 0 || (!bars && CryptEncode(CRYPT_BASE64, png, key, b64) <= 0)) { FileDelete(path); return; }
+   string tag = StringSubstr(name, 0, StringLen(name) - (bars ? 5 : 4));   // "<position>-in" or "<position>-bars"
+   string content = bars ? Esc(CharArrayToString(png, 0, WHOLE_ARRAY, CP_UTF8)) : CharArrayToString(b64, 0, WHOLE_ARRAY, CP_ACP);
+   string files = "\"files\":{\"" + tag + (bars ? ".json" : ".txt") + "\":{\"content\":\"" + content + "\"}}";
    string body = (g_shotGist == "") ? "{\"description\":\"Bullion Monkey Charts\",\"public\":false," + files + "}" : "{" + files + "}";
    string resp;
    int code = GitHub(g_shotGist == "" ? "POST" : "PATCH", g_shotGist == "" ? API : API + "/" + g_shotGist, body, resp);

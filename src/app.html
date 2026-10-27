@@ -518,6 +518,12 @@ button.hero{cursor:pointer}
 .alr{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}.alr b{font:600 15px var(--font-num)}.alr i{font-style:normal;color:var(--muted);font-size:12.5px;flex:1;min-width:0}.alr.hit{opacity:.55}
 .sent{margin-top:12px}.sent .sb{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:6px 0}.sent .sb i{background:var(--win)}.sent .sb u{background:var(--loss);flex:1}
 .sent .sl{display:flex;justify-content:space-between;font:600 13px var(--font-num)}
+#tdDlg{max-height:calc(100vh - 24px);overflow:auto}
+.tdh{display:grid;grid-template-columns:1fr auto;gap:2px 10px;margin:10px 0 12px}.tdh b.a{font:700 18px var(--font-ui);display:flex;align-items:center;gap:8px}.tdh .p{font:700 18px var(--font-num);text-align:right}.tdh i{font-style:normal;color:var(--muted);font-size:12.5px}.tdh .r{text-align:right}.tdh i.pos{color:var(--win)}.tdh i.neg{color:var(--loss)}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}.seg button{border:1px solid var(--line);background:var(--surface-2);color:var(--fg);border-radius:9px;padding:8px 2px;font:600 12.5px var(--font-ui)}.seg button[aria-pressed="true"]{background:var(--gold-grad);color:var(--accent-ink);border-color:var(--accent)}
+.kvl{display:flex;flex-direction:column}.kvl div{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:14px}.kvl div>span{color:var(--muted)}.kvl div b{font:600 14px var(--font-num);text-align:right}
+.tchart{width:100%;display:block;background:#0b0b0a;border:1px solid var(--line);border-radius:10px}.tchart text{font:10px var(--font-num);fill:var(--muted)}
+.tdimgs{display:grid;grid-template-columns:1fr;gap:10px}.tdimgs img{width:100%;border-radius:10px;border:1px solid var(--line)}
 .aud{display:flex;flex-direction:column;gap:8px;margin-top:6px}
 .aud .ar{display:flex;align-items:center;gap:8px}.aud audio{flex:1;min-width:0;height:36px}
 .btn.rec{border-color:var(--loss);color:var(--loss)}
@@ -928,6 +934,12 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
   <p class="note" id="dayS" style="margin:-8px 0 8px"></p>
   <div id="dayList"></div>
 </dialog>
+<dialog id="tdDlg" class="sheet">
+  <div class="ph"><button class="btn sm" type="button" id="tdX" aria-label="Zurück">←</button><h2 style="margin-left:8px">Trade-Details</h2><span class="sp"></span><button class="btn sm" type="button" id="tdEdit">✎ Notiz</button></div>
+  <div class="tdh" id="tdHead"></div>
+  <div class="seg" id="tdTabs"><button type="button" data-tt="ov" aria-pressed="true">Übersicht</button><button type="button" data-tt="ch">Chart</button><button type="button" data-tt="no">Notizen</button><button type="button" data-tt="im">Bilder</button></div>
+  <div id="tdBody"></div>
+</dialog>
 <dialog id="imgDlg" class="sheet imgv">
   <img id="imgBig" alt="Chart-Bild">
   <div class="ph" style="margin:10px 0 0"><button class="btn sm" id="imgDel" type="button">Bild löschen</button><span class="sp"></span><button class="btn sm" id="imgX" type="button">Schliessen</button></div>
@@ -1311,7 +1323,7 @@ function renderDash(){
     :own.length?own.map(t=>`<div class="trow"><b class="ta">${esc(t.asset)}</b><span class="tl">${esc(t.lot||"")}</span><span class="tp"></span><b class="tv num ${cls(+t.pnl)}">${fmt(+t.pnl)}</b><span class="tt num">${dd(t.date)}</span><button class="btn sm" data-del="${esc(t.id)}" aria-label="Eintrag löschen">✕</button></div>`).join("")
     :`<p class="empty">Noch keine Trades. Verbinde MT5 unter Tools → Daten &amp; Sync.</p>`;
   tb.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>delTrade(b.dataset.del));
-  tb.querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openNote(b.dataset.note));
+  tb.querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openTrade(b.dataset.note));
 }
 
 function drawChart(monthDays){
@@ -1634,6 +1646,75 @@ async function imgSrc(id){
       if(r.ok){v=await r.text();if(/^data:image\/(jpeg|png|webp);base64,/.test(v)){IDB.set(id,v).catch(()=>{});if(!cloud.up.includes(id)){cloud.up.push(id);saveCloud()}}else v=null}}catch(e){}}
   return imgCache[id]=v||"";
 }
+/* ---------- trade details: tap a closed trade in the journal ---------- */
+let tdId=null,tdTab="ov";
+function balBefore(t){const m=state.mt5,bal=+((m&&m.account&&m.account.balance)||0),o=new Date(t.openUtc||t.closeUtc);
+  return bal-((m&&m.trades)||[]).filter(x=>new Date(x.closeUtc)>o).reduce((a,x)=>a+(+x.pnl||0),0)-cashList().filter(x=>x.c>o).reduce((a,x)=>a+x.a,0)}
+async function tradeBars(id){
+  const m=state.mt5||{},f=(m.shots||{})[id]||"",pid=String(id).replace(/^mt5-/,""),k="bars:"+pid;
+  if(!f.includes("b")||!m.shotGist||!m.owner)return null;
+  let v=await IDB.get(k).catch(()=>null);
+  if(!v)try{const r=await fetch(`https://gist.githubusercontent.com/${encodeURIComponent(m.owner)}/${encodeURIComponent(m.shotGist)}/raw/${encodeURIComponent(pid)}-bars.json`);if(r.ok){v=await r.json();if(v&&v.bars)IDB.set(k,v).catch(()=>{});else v=null}}catch(e){v=null}
+  return v;
+}
+/* candles with entry, SL, TP and exit as lines */
+function candleSvg(t,d,H){
+  const B=d.bars,W=340,R=46,top=8,bot=18,ch=H-top-bot,cw=(W-R)/B.length;
+  const lv=[+t.open,+t.close,+t.sl,+t.tp].filter(x=>x>0);
+  let lo=Math.min(...B.map(b=>b[3]),...lv),hi=Math.max(...B.map(b=>b[2]),...lv);const pd=(hi-lo)*.06||1;lo-=pd;hi+=pd;
+  const Y=v=>(top+(hi-v)/(hi-lo)*ch).toFixed(1),dg=Math.max(0,((String(t.open||B[0][1]).split(".")[1])||"").length);
+  const ix=ts=>{const s=Date.parse(ts)/1000;let k=0;B.forEach((b,i)=>{if(b[0]<=s)k=i});return k},X=i=>(i*cw+cw/2).toFixed(1);
+  let h=`<svg class="tchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Kerzen-Chart des Trades">`;
+  B.forEach((b,i)=>{const up=b[4]>=b[1],c=up?"#3fbf8c":"#e5615c",x=X(i),y1=Y(Math.max(b[1],b[4])),y2=Y(Math.min(b[1],b[4]));
+    h+=`<line x1="${x}" x2="${x}" y1="${Y(b[2])}" y2="${Y(b[3])}" stroke="${c}" stroke-width="1"/><rect x="${(i*cw+cw*.15).toFixed(1)}" y="${y1}" width="${Math.max(1,cw*.7).toFixed(1)}" height="${Math.max(.8,y2-y1).toFixed(1)}" fill="${c}"/>`});
+  const line=(v,c,l)=>v>0?`<line x1="0" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="${c}" stroke-width="1.2" stroke-dasharray="${l==="Exit"?"3 3":"0"}"/><rect x="${W-R+1}" y="${+Y(v)-8}" width="${R-2}" height="16" rx="3" fill="${c}"/><text x="${W-R/2}" y="${+Y(v)+3.5}" text-anchor="middle" style="fill:#0b0b0a;font-weight:700">${l}</text>`:"";
+  h+=line(+t.tp,"#3fbf8c","TP")+line(+t.sl,"#e5615c","SL")+line(+t.open,"#5b9cf0","Entry")+line(+t.close,"#ebb03a","Exit");
+  if(t.openUtc)h+=`<circle cx="${X(ix(t.openUtc))}" cy="${Y(+t.open)}" r="4" fill="#5b9cf0" stroke="#0b0b0a"/>`;
+  h+=`<circle cx="${X(ix(t.closeUtc))}" cy="${Y(+t.close)}" r="4" fill="#ebb03a" stroke="#0b0b0a"/>`;
+  [hi-pd,(hi+lo)/2,lo+pd].forEach(v=>h+=`<text x="3" y="${+Y(v)-3}" text-anchor="start">${v.toFixed(dg>2?1:dg)}</text>`);
+  const tl=[0,Math.floor(B.length/2),B.length-1];tl.forEach((i,j)=>h+=`<text x="${X(i)}" y="${H-4}" text-anchor="${["start","middle","end"][j]}">${zt(new Date(B[i][0]*1000))}</text>`);
+  return h+"</svg>";
+}
+function openTrade(id){
+  const t=((state.mt5&&state.mt5.trades)||[]).find(x=>x.id===id);if(!t){openNote(id);return}
+  tdId=id;tdTab="ov";renderTrade();$("#tdDlg").showModal();$("#tdDlg").scrollTop=0;
+}
+async function renderTrade(){
+  const id=tdId,t=((state.mt5&&state.mt5.trades)||[]).find(x=>x.id===id);if(!t)return;
+  const nt=(state.settings.notes||{})[id]||{},o=t.openUtc?new Date(t.openUtc):null,c=new Date(t.closeUtc),b0=balBefore(t);
+  const risk=t.risk!=null?+t.risk:t.r?Math.abs(+t.pnl/+t.r):null,dg=Math.max(2,((String(t.open||"").split(".")[1])||"").length);
+  const px=v=>v>0?(+v).toLocaleString("de-CH",{minimumFractionDigits:Math.min(dg,3),maximumFractionDigits:Math.min(dg,3)}):"–";
+  $("#tdHead").innerHTML=`<b class="a">${esc(t.asset)} ${SIDE(t.side)}</b><span class="p ${cls(+t.pnl)}">${fmt(+t.pnl)}</span>
+    <i>${(+t.volume).toFixed(2)} Lot${t.r!=null?" · "+(t.r>=0?"1:"+(+t.r).toFixed(1):fmtR(+t.r,1)+" R"):""}</i><i class="r ${t.r!=null?cls(+t.r):""}">${t.r!=null?fmtR(+t.r,1)+" R":"kein SL"}</i>
+    <i style="grid-column:1/-1">${o?zd(o)+" "+zt(o)+" – ":""}${zd(c)!==(o&&zd(o))?zd(c)+" ":""}${zt(c)}${o?" · "+zdur(c-o):""}</i>`;
+  $("#tdTabs").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tt===tdTab));
+  const body=$("#tdBody");
+  const chartBox=async H=>{body.querySelector("[data-chart]").innerHTML=`<p class="note">Chart wird geladen …</p>`;const d=await tradeBars(id);if(tdId!==id)return;
+    const el=body.querySelector("[data-chart]");if(!el)return;
+    el.innerHTML=d&&d.bars&&d.bars.length?candleSvg(t,d,H)+`<p class="note" style="margin-top:6px">Kerzen ${d.tf>=60?d.tf/60+" h":d.tf+" Min."} · blau Einstieg, gold Ausstieg</p>`:`<p class="note">Für diesen Trade gibt es noch keinen Chart. Der EA ab Version 1.51 speichert die Kerzen beim Schliessen (und einmal für die letzten 60 Tage).</p>`};
+  if(tdTab==="ov"){
+    const rows=[["Einstieg",px(t.open)],["Stop Loss",px(t.sl)],["Take Profit",px(t.tp)],["Ausstieg",px(t.close)],
+      ["Risiko",risk?`${fmt(-risk).replace("−","")}${b0>0?" ("+(risk/b0*100).toFixed(2)+" %)":""}`:"–"],
+      ["Ergebnis",`<span class="${cls(+t.pnl)}">${fmt(+t.pnl)}${b0>0?" ("+fmtR(+t.pnl/b0*100)+" %)":""}</span>`]];
+    body.innerHTML=`<div data-chart></div><div class="kvl" style="margin-top:10px">${rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("")}</div>`;chartBox(200)}
+  else if(tdTab==="ch"){body.innerHTML=`<div data-chart></div>`;chartBox(320)}
+  else if(tdTab==="no"){
+    const ic=nt.setup==="Ichimoku Cloud"&&nt.ichi?nt.ichi.length:null;
+    const rows=[["Strategie",esc(nt.setup||"–")],["Setup-Bewertung",nt.grade?"Setup "+esc(nt.grade):"–"],["Gefühl",esc(nt.emo||"–")]].concat(ic!=null?[["Ichimoku-Check",ic+" von 5"]]:[]);
+    const auds=await Promise.all((nt.aud||[]).map(a=>IDB.get(a).catch(()=>null)));
+    body.innerHTML=`<div class="kvl">${rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("")}</div>
+      <p style="white-space:pre-wrap;margin:12px 0">${nt.text?esc(nt.text):`<span class="mut">Noch keine Notiz.</span>`}</p>
+      ${auds.filter(Boolean).map(v=>`<audio controls preload="metadata" src="${v}" style="width:100%;margin-bottom:8px"></audio>`).join("")}
+      <button class="btn pri" type="button" id="tdNote" style="width:100%">✎ Notiz bearbeiten</button>`;
+    $("#tdNote").onclick=()=>{$("#tdDlg").close();openNote(id)}}
+  else{
+    const im=[...shotIds(id),...(nt.imgs||[])];
+    body.innerHTML=im.length?`<div class="tdimgs">${im.map(x=>`<img data-img="${esc(x)}" alt="Chart-Bild">`).join("")}</div>`:`<p class="note">Noch keine Bilder. Der EA macht sie beim Einstieg und Ausstieg, eigene fügst du über «Notiz» hinzu.</p>`;
+    fillImgs(body);body.querySelectorAll("img").forEach(x=>x.onclick=()=>openImg(x.dataset.img))}
+}
+$("#tdTabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{tdTab=b.dataset.tt;renderTrade()});
+$("#tdX").onclick=()=>$("#tdDlg").close();
+$("#tdEdit").onclick=()=>{const id=tdId;$("#tdDlg").close();openNote(id)};
 /* the EA's chart pictures of a trade: ids "ea:<position>-in" / "-out" */
 function shotIds(tid){const f=((state.mt5&&state.mt5.shots)||{})[tid]||"",p=String(tid).replace(/^mt5-/,"");return [...(f.includes("i")?["ea:"+p+"-in"]:[]),...(f.includes("o")?["ea:"+p+"-out"]:[])]}
 function fillImgs(root){root.querySelectorAll("img[data-img]").forEach(async im=>{const v=await imgSrc(im.dataset.img);if(v)im.src=v;else im.alt="Bild fehlt"})}
@@ -1763,7 +1844,7 @@ function renderJournal(){
         <span class="tx${t.nt.text?"":" mut"}">${t.nt.text?esc(t.nt.text):"Noch keine Notiz. Tippen zum Schreiben."}</span></span>
       <span class="jr"><b class="num ${cls(+t.pnl)}">${fmt(+t.pnl)}</b>${t.r!=null?`<i class="num ${cls(+t.r)}">${fmtR(+t.r,1)} R</i>`:`<i class="mut">kein SL</i>`}</span>
       ${(()=>{const im=[...shotIds(t.id),...(t.nt.imgs||[])];return im.length?`<span class="thumbs">${im.map(id=>`<img data-img="${esc(id)}" alt="Chart-Bild">`).join("")}</span>`:""})()}</button>`}).join("");
-  $("#jList").querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openNote(b.dataset.note));
+  $("#jList").querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openTrade(b.dataset.note));
   fillImgs($("#jList"));$("#jList").querySelectorAll("img[data-img]").forEach(im=>im.onclick=e=>{e.stopPropagation();openImg(im.dataset.img)});
   $("#jMore").hidden=L.length<=jLimit;
   renderPatterns();
