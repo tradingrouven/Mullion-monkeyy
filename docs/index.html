@@ -538,6 +538,12 @@ button.hero{cursor:pointer}
 .kvl{display:flex;flex-direction:column}.kvl div{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:14px}.kvl div>span{color:var(--muted)}.kvl div b{font:600 14px var(--font-num);text-align:right}
 .tchart{width:100%;display:block;background:#0b0b0a;border:1px solid var(--line);border-radius:10px}.tchart text{font:10px var(--font-num);fill:var(--muted)}
 .tdimgs{display:grid;grid-template-columns:1fr;gap:10px}.tdimgs img{width:100%;border-radius:10px;border:1px solid var(--line)}
+.seg.s3{grid-template-columns:repeat(3,1fr)}
+.goalc{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;margin:4px 0 12px}.goalc h3{margin:0;font:700 17px var(--font-ui)}.goalc i{font-style:normal;color:var(--muted);font-size:13px}
+.ring{width:118px;height:118px}.ring text{font:700 22px var(--font-num);fill:var(--accent)}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}.g3 span{display:block;color:var(--muted);font-size:12px}.g3 b{font:600 15px var(--font-num)}
+.grule{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}.grule .ck{font-style:normal;line-height:1;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;flex:none;background:var(--surface-2);color:var(--muted)}.grule .ck.ok{background:var(--win);color:#08130e}.grule .ck.no{background:var(--loss);color:#1a0706}.grule span{flex:1}.grule b{font:600 14px var(--font-num)}
+.goalf{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.goalf label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}.goalf .full{grid-column:1/-1}
 .aud{display:flex;flex-direction:column;gap:8px;margin-top:6px}
 .aud .ar{display:flex;align-items:center;gap:8px}.aud audio{flex:1;min-width:0;height:36px}
 .btn.rec{border-color:var(--loss);color:var(--loss)}
@@ -807,6 +813,12 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
 </section>
 <!-- ANALYSE -->
 <section id="view-ana" class="grid" hidden>
+  <div class="panel goldb" id="goalPanel">
+    <div class="ph"><h2>Ziele</h2><span class="sp"></span><button class="btn sm" type="button" id="goalEdit">Bearbeiten</button></div>
+    <div class="seg s3" id="goalPer"></div>
+    <div id="goalBody"></div>
+    <form id="goalForm" class="goalf" hidden></form>
+  </div>
   <div class="panel" id="revPanel">
     <div class="ph nav"><h2>Wochenrückblick</h2><span class="sp"></span><button class="btn sm" id="revPrev" type="button" aria-label="Vorherige Woche">←</button><b id="revTitle" class="num" style="min-width:112px;text-align:center;font-size:13px"></b><button class="btn sm" id="revNext" type="button" aria-label="Nächste Woche">→</button></div>
     <div id="revBody"></div>
@@ -2018,8 +2030,43 @@ function eqPanel(T,from){
     <div class="atiles" style="margin-top:12px">${[["Start",plain(start)],["Jetzt",plain(+a.balance)],["Ergebnis",`<span class="${cls(net)}">${fmtR(start+inv>0?net/(start+inv)*100:0)} %</span>`],["Max. Drawdown",`<span class="${mdd>0?"neg":""}">${mdd>0?"−":""}${mdd.toFixed(1)} %</span>`]].map(([x,y])=>`<div class="at"><span>${x}</span><b>${y}</b></div>`).join("")}</div>
     <p class="note" style="margin-top:8px">${cur>0.05?`Aktuell ${cur.toFixed(1)} % unter deinem Höchststand.`:"Du bist auf deinem Höchststand ✓"} Ein- und Auszahlungen zählen nicht als Gewinn oder Verlust.</p></div>`;
 }
+/* ---------- goals: profit target with a ring, plus rules (min. trades, win rate, max. drawdown) per month / year / overall ---------- */
+const GOAL_DEF={m:{profit:100,trades:15,win:60,dd:10},y:{profit:1200,trades:150,win:60,dd:15},a:{profit:2000,trades:0,win:60,dd:20}};
+const GPER={m:"Monat",y:"Jahr",a:"Gesamt"};
+let goalP=LS.get("goalP","m");
+function goals(){const g=state.settings.goals||{};return {m:{...GOAL_DEF.m,...g.m},y:{...GOAL_DEF.y,...g.y},a:{...GOAL_DEF.a,...g.a}}}
+function renderGoals(){
+  const G=goals()[goalP],now=new Date(),cur=(state.mt5&&state.mt5.account&&state.mt5.account.currency)||"USD";
+  const from=goalP==="m"?new Date(now.getFullYear(),now.getMonth(),1):goalP==="y"?new Date(now.getFullYear(),0,1):new Date(0);
+  const to=goalP==="m"?new Date(now.getFullYear(),now.getMonth()+1,1):goalP==="y"?new Date(now.getFullYear()+1,0,1):null;
+  $("#goalPer").innerHTML=Object.entries(GPER).map(([k,v])=>`<button type="button" data-gp="${k}" aria-pressed="${k===goalP}">${v}</button>`).join("");
+  $("#goalPer").querySelectorAll("button").forEach(b=>b.onclick=()=>{goalP=b.dataset.gp;LS.set("goalP",goalP);renderGoals()});
+  if(!state.mt5){$("#goalBody").innerHTML=`<p class="note">Verbinde MT5, dann siehst du hier deinen Fortschritt.</p>`;return}
+  const T=mt5Trades().filter(t=>t.c>=from),net=T.reduce((a,t)=>a+t.pnl,0),win=T.length?T.filter(t=>t.pnl>0).length/T.length*100:0;
+  /* drawdown in the period, deposits move the high */
+  const a=state.mt5.account||{},C=cashList().filter(x=>x.c>=from),ev=[...T.map(t=>({c:t.c,v:t.pnl})),...C.map(x=>({c:x.c,v:x.a,cash:1}))].sort((x,y)=>x.c-y.c);
+  let b=+a.balance-ev.reduce((s2,x)=>s2+x.v,0),peak=b,dd=0;for(const x of ev){b+=x.v;if(x.cash)peak+=x.v;peak=Math.max(peak,b);if(peak>0)dd=Math.max(dd,(peak-b)/peak*100)}
+  const pct=G.profit>0?Math.max(0,Math.min(1,net/G.profit)):0,R=50,Cc=2*Math.PI*R;
+  const title=goalP==="m"?MON[now.getMonth()]+" "+now.getFullYear():goalP==="y"?"Jahr "+now.getFullYear():"Seit Beginn";
+  const left=to?Math.ceil((to-now)/864e5):null;
+  const ring=`<svg class="ring" viewBox="0 0 120 120" aria-label="${Math.round(pct*100)} % vom Ziel"><circle cx="60" cy="60" r="${R}" fill="none" stroke="#2a2620" stroke-width="10"/><circle cx="60" cy="60" r="${R}" fill="none" stroke="url(#gRing)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${(Cc*pct).toFixed(1)} ${Cc.toFixed(1)}" transform="rotate(-90 60 60)"/><defs><linearGradient id="gRing" x1="0" x2="1"><stop offset="0" stop-color="#f8cf5c"/><stop offset="1" stop-color="#bf821d"/></linearGradient></defs><text x="60" y="68" text-anchor="middle">${Math.round(pct*100)} %</text></svg>`;
+  const rules=[];
+  if(G.trades>0)rules.push([`Min. ${G.trades} Trades`,`${T.length} / ${G.trades}`,T.length>=G.trades?"ok":""]);
+  if(G.win>0)rules.push([`Trefferquote ≥ ${G.win} %`,T.length?Math.round(win)+" %":"–",!T.length?"":win>=G.win?"ok":"no"]);
+  if(G.dd>0)rules.push([`Max. Drawdown < ${G.dd} %`,dd.toFixed(1)+" %",dd<G.dd?"ok":"no"]);
+  $("#goalBody").innerHTML=`<div class="goalc"><div><h3>${title}</h3><i>${left!=null?"Noch "+left+" Tag"+(left===1?"":"e"):T.length+" Trades insgesamt"}</i></div>${ring}</div>
+    <div class="g3"><div><span>Ziel Gewinn</span><b>${plain(G.profit)}</b></div><div><span>Aktuell</span><b class="${cls(net)}">${fmt(net)}</b></div><div><span>Verbleibend</span><b>${plain(Math.max(0,G.profit-net))}</b></div></div>
+    ${rules.map(([l,v,st])=>`<div class="grule"><i class="ck ${st}">${st==="ok"?"✓":st==="no"?"✕":"…"}</i><span>${l}</span><b>${v}</b></div>`).join("")}
+    <p class="note" style="margin-top:8px">Beträge in ${cur}.</p>`;
+}
+$("#goalEdit").onclick=()=>{const f=$("#goalForm");if(!f.hidden){f.hidden=true;return}const G=goals()[goalP];
+  f.innerHTML=`<p class="lbl full">Ziele für: ${GPER[goalP]}</p>`+[["profit","Ziel Gewinn"],["trades","Min. Trades"],["win","Trefferquote ≥ %"],["dd","Max. Drawdown < %"]].map(([k,l])=>`<label>${l}<input type="number" inputmode="decimal" min="0" step="any" data-gk="${k}" value="${G[k]}"></label>`).join("")+`<p class="note full">0 schaltet eine Regel aus.</p><button class="btn pri full" type="submit">Speichern</button>`;
+  f.hidden=false};
+$("#goalForm").onsubmit=e=>{e.preventDefault();const g=state.settings.goals=state.settings.goals||{},o={...goals()[goalP]};
+  $("#goalForm").querySelectorAll("[data-gk]").forEach(i=>{const v=parseFloat(i.value.replace(",","."));if(!isNaN(v)&&v>=0)o[i.dataset.gk]=v});
+  g[goalP]=o;persist();$("#goalForm").hidden=true;renderGoals()};
 function renderAna(){
-  renderReview();renderMonthCal();renderDisc();
+  renderGoals();renderReview();renderMonthCal();renderDisc();
   const pe=$("#aPer");pe.innerHTML="";Object.entries(PER).forEach(([k,v])=>{const b=document.createElement("button");b.className="chip";b.textContent=v;b.setAttribute("aria-pressed",state.per===k);b.onclick=()=>{state.per=k;LS.set("aPer",k);renderAna()};pe.appendChild(b)});
   const body=$("#anaBody");
   if(!state.mt5){body.innerHTML=`<div class="panel empty">Verbinde zuerst MT5 im Dashboard, dann siehst du hier deine Auswertung.</div>`;return}
