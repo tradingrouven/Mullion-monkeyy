@@ -10,7 +10,7 @@
 //| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.52"
+#property version   "1.53"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
@@ -783,6 +783,30 @@ double DayOpen(const string sym)
    return CopyOpen(sym, PERIOD_D1, 0, 1, o) == 1 ? o[0] : 0;
   }
 
+// the broker's name for a pair: exact, or with a suffix like "USDSEK.ecn" ("" when the broker has none)
+string FindSym(const string base)
+  {
+   if(SymbolSelect(base, true)) return base;
+   for(int i = 0; i < SymbolsTotal(false); i++)
+     {
+      string n = SymbolName(i, false);
+      if(StringFind(n, base) == 0 && SymbolSelect(n, true)) return n;
+     }
+   return "";
+  }
+
+// bid and today's open of a pair; USDSEK falls back to EURSEK / EURUSD when the broker has no USDSEK
+bool PairNow(const string base, double &b, double &o)
+  {
+   string s = FindSym(base);
+   if(s != "") { b = SymbolInfoDouble(s, SYMBOL_BID); o = DayOpen(s); return b > 0 && o > 0; }
+   if(base != "USDSEK") return false;
+   double b1, o1, b2, o2;
+   if(!PairNow("EURSEK", b1, o1) || !PairNow("EURUSD", b2, o2)) return false;
+   b = b1 / b2; o = o1 / o2; return true;
+  }
+
+bool g_dxyWarned = false;
 // US dollar index from the broker's six currency pairs (official ICE weights), and the gold price
 string Macro()
   {
@@ -796,9 +820,12 @@ string Macro()
    double now = 50.14348112, open = 50.14348112;
    for(int i = 0; i < 6; i++)
      {
-      if(!SymbolSelect(S[i], true)) return out;
-      double b = SymbolInfoDouble(S[i], SYMBOL_BID), o = DayOpen(S[i]);
-      if(b <= 0 || o <= 0) return out;
+      double b, o;
+      if(!PairNow(S[i], b, o))
+        {
+         if(!g_dxyWarned) { g_dxyWarned = true; Print("Bullion Monkey: Dollar-Index fehlt, ", S[i], " ist beim Broker nicht verfügbar oder lädt noch."); }
+         return out;
+        }
       now *= MathPow(b, W[i]); open *= MathPow(o, W[i]);
      }
    return out + (out != "" ? "," : "") + "\"dxy\":{\"p\":" + DoubleToString(now, 3) + ",\"o\":" + DoubleToString(open, 3) + "}";
