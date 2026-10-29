@@ -1096,10 +1096,12 @@ function renderSetList(){
       ["pushPanel","",ic('<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>'),"Benachrichtigungen",pc.on?on("Aktiv · News, Alarme, Sessions"):"<i>Aus</i>"]]],
     ["Trading",[
       ["rkPanel","",ic('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>'),"Risiko-Grenzen",`<i>Tag −${L.day} % · Woche −${L.week} % · ${L.trades} Trades</i>`],
-      ["stratPanel","",ic('<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/>'),"Strategien",`<i>${STRATS.join(", ")}</i>`]]],
+      ["stratPanel","",ic('<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/>'),"Strategien",`<i>${STRATS.join(", ")}</i>`],
+      ["goals","",ic('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.8"/>'),"Ziele",`<i>Monat +${goals().m.ret} % · Trefferquote ${goals().m.win} %</i>`]]],
     ["App",[["lockPanel","",ic('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'),"App-Sperre",`<i>${lockCfg()?(lockCfg().id?"Face ID":"PIN")+" aktiv":"Aus"}</i>`],["share","",ic('<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/>'),"Mit Freunden teilen","<i>Bullion Monkey weitergeben</i>"]]]];
   $("#setList").innerHTML=`<h3 style="margin-top:4px">Einstellungen</h3>`+G.map(([h,rows],gi)=>`${gi?`<h3>${h}</h3>`:""}<div class="grp">${rows.map(([p,d,i,t,sub])=>`<button class="setr" type="button" data-set="${p}" data-det="${d}">${i}<span><b>${t}</b>${sub}</span><i class="chev"></i></button>`).join("")}</div>`).join("");
   $("#setList").querySelectorAll("[data-set]").forEach(b=>b.onclick=()=>{if(b.dataset.set==="share"){$("#shareApp").click();return}
+    if(b.dataset.set==="goals"){goalP="m";show("ana");setTimeout(()=>{renderGoals();$("#goalForm").hidden=true;$("#goalEdit").click();$("#goalPanel").scrollIntoView({behavior:"smooth"})},60);return}
     openSet(b.dataset.set);const d=b.dataset.det&&$("#"+b.dataset.det);if(d)d.open=true});
 }
 $("#setBack").onclick=()=>{openSet("");renderSetList()};
@@ -2204,7 +2206,7 @@ function eqPanel(T,from){
     <p class="note" style="margin-top:8px">${cur>0.05?`Aktuell ${cur.toFixed(1)} % unter deinem Höchststand.`:"Du bist auf deinem Höchststand ✓"} Ein- und Auszahlungen zählen nicht als Gewinn oder Verlust.</p></div>`;
 }
 /* ---------- goals: profit target with a ring, plus rules (min. trades, win rate, max. drawdown) per month / year / overall ---------- */
-const GOAL_DEF={m:{profit:100,trades:15,win:60,dd:10},y:{profit:1200,trades:150,win:60,dd:15},a:{profit:2000,trades:0,win:60,dd:20}};
+var GOAL_DEF={m:{profit:100,ret:6,win:60,dd:10},y:{profit:1200,ret:72,win:60,dd:15},a:{profit:2000,ret:0,win:60,dd:20}};
 const GPER={m:"Monat",y:"Jahr",a:"Gesamt"};
 let goalP=LS.get("goalP","m");
 function goals(){const g=state.settings.goals||{};return {m:{...GOAL_DEF.m,...g.m},y:{...GOAL_DEF.y,...g.y},a:{...GOAL_DEF.a,...g.a}}}
@@ -2218,13 +2220,13 @@ function renderGoals(){
   const T=mt5Trades().filter(t=>t.c>=from),net=T.reduce((a,t)=>a+t.pnl,0),win=T.length?T.filter(t=>t.pnl>0).length/T.length*100:0;
   /* drawdown in the period, deposits move the high */
   const a=state.mt5.account||{},C=cashList().filter(x=>x.c>=from),ev=[...T.map(t=>({c:t.c,v:t.pnl})),...C.map(x=>({c:x.c,v:x.a,cash:1}))].sort((x,y)=>x.c-y.c);
-  let b=+a.balance-ev.reduce((s2,x)=>s2+x.v,0),peak=b,dd=0;for(const x of ev){b+=x.v;if(x.cash)peak+=x.v;peak=Math.max(peak,b);if(peak>0)dd=Math.max(dd,(peak-b)/peak*100)}
+  let b=+a.balance-ev.reduce((s2,x)=>s2+x.v,0),peak=b,dd=0;const b0=b,ret=b0>0?net/b0*100:0;for(const x of ev){b+=x.v;if(x.cash)peak+=x.v;peak=Math.max(peak,b);if(peak>0)dd=Math.max(dd,(peak-b)/peak*100)}
   const pct=G.profit>0?Math.max(0,Math.min(1,net/G.profit)):0,R=50,Cc=2*Math.PI*R;
   const title=goalP==="m"?MON[now.getMonth()]+" "+now.getFullYear():goalP==="y"?"Jahr "+now.getFullYear():"Seit Beginn";
   const left=to?Math.ceil((to-now)/864e5):null;
   const ring=`<svg class="ring" viewBox="0 0 120 120" aria-label="${Math.round(pct*100)} % vom Ziel"><circle cx="60" cy="60" r="${R}" fill="none" stroke="#2a2620" stroke-width="10"/><circle cx="60" cy="60" r="${R}" fill="none" stroke="url(#gRing)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${(Cc*pct).toFixed(1)} ${Cc.toFixed(1)}" transform="rotate(-90 60 60)"/><defs><linearGradient id="gRing" x1="0" x2="1"><stop offset="0" stop-color="#f8cf5c"/><stop offset="1" stop-color="#bf821d"/></linearGradient></defs><text x="60" y="68" text-anchor="middle">${Math.round(pct*100)} %</text></svg>`;
   const rules=[];
-  if(G.trades>0)rules.push([`Min. ${G.trades} Trades`,`${T.length} / ${G.trades}`,T.length>=G.trades?"ok":""]);
+  if(G.ret>0)rules.push([`Rendite ≥ ${G.ret} %`,(ret>=0?"+":"−")+Math.abs(ret).toFixed(1)+" %",ret>=G.ret?"ok":""]);
   if(G.win>0)rules.push([`Trefferquote ≥ ${G.win} %`,T.length?Math.round(win)+" %":"–",!T.length?"":win>=G.win?"ok":"no"]);
   if(G.dd>0)rules.push([`Max. Drawdown < ${G.dd} %`,dd.toFixed(1)+" %",dd<G.dd?"ok":"no"]);
   $("#goalBody").innerHTML=`<div class="goalc"><div><h3>${title}</h3><i>${left!=null?"Noch "+left+" Tag"+(left===1?"":"e"):T.length+" Trades insgesamt"}</i></div>${ring}</div>
@@ -2233,7 +2235,7 @@ function renderGoals(){
     <p class="note" style="margin-top:8px">Beträge in ${cur}.</p>`;
 }
 $("#goalEdit").onclick=()=>{const f=$("#goalForm");if(!f.hidden){f.hidden=true;return}const G=goals()[goalP];
-  f.innerHTML=`<p class="lbl full">Ziele für: ${GPER[goalP]}</p>`+[["profit","Ziel Gewinn"],["trades","Min. Trades"],["win","Trefferquote ≥ %"],["dd","Max. Drawdown < %"]].map(([k,l])=>`<label>${l}<input type="number" inputmode="decimal" min="0" step="any" data-gk="${k}" value="${G[k]}"></label>`).join("")+`<p class="note full">0 schaltet eine Regel aus.</p><button class="btn pri full" type="submit">Speichern</button>`;
+  f.innerHTML=`<p class="lbl full">Ziele für: ${GPER[goalP]}</p>`+[["profit","Ziel Gewinn"],["ret","Rendite-Ziel %"],["win","Trefferquote ≥ %"],["dd","Max. Drawdown < %"]].map(([k,l])=>`<label>${l}<input type="number" inputmode="decimal" min="0" step="any" data-gk="${k}" value="${G[k]}"></label>`).join("")+`<p class="note full">0 schaltet eine Regel aus.</p><button class="btn pri full" type="submit">Speichern</button>`;
   f.hidden=false};
 $("#goalForm").onsubmit=e=>{e.preventDefault();const g=state.settings.goals=state.settings.goals||{},o={...goals()[goalP]};
   $("#goalForm").querySelectorAll("[data-gk]").forEach(i=>{const v=parseFloat(i.value.replace(",","."));if(!isNaN(v)&&v>=0)o[i.dataset.gk]=v});
