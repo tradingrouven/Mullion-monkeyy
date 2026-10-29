@@ -557,7 +557,7 @@ button.hero{cursor:pointer}
 .goalc{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;margin:4px 0 12px}.goalc h3{margin:0;font:700 17px var(--font-ui)}.goalc i{font-style:normal;color:var(--muted);font-size:13px}
 .ring{width:118px;height:118px}.ring text{font:700 22px var(--font-num);fill:var(--accent)}
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}.g3 span{display:block;color:var(--muted);font-size:12px}.g3 b{font:600 15px var(--font-num)}
-.grule{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}.grule .ck{font-style:normal;line-height:1;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;flex:none;background:var(--surface-2);color:var(--muted)}.grule .ck.ok{background:var(--win);color:#08130e}.grule .ck.no{background:var(--loss);color:#1a0706}.grule span{flex:1}.grule b{font:600 14px var(--font-num)}
+.grule{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}.grule .ck{font-style:normal;line-height:1;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;flex:none;background:var(--surface-2);color:var(--muted)}.grule .ck.ok{background:var(--win);color:#08130e}.grule .ck.no{background:var(--loss);color:#1a0706}.grule span{flex:1}.grule b{font:600 14px var(--font-num)}.grule{flex-wrap:wrap}.gbar{flex-basis:100%;height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin-left:32px}.gbar i{display:block;height:100%;border-radius:4px;background:var(--muted);transition:width .4s}.gbar.g i{background:var(--win)}.gbar.o i{background:#f0a030}.gbar.r i{background:var(--loss)}
 .goalf{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.goalf label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}.goalf .full{grid-column:1/-1}
 .setl h3{margin:14px 4px 8px;font:700 15px var(--font-ui)}.setl .grp{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .setr{display:flex;align-items:center;gap:14px;width:100%;padding:13px 14px;background:none;border:0;border-top:1px solid var(--line);color:var(--fg);text-align:left;font:inherit;cursor:pointer}.setr:first-child{border-top:0}
@@ -2226,12 +2226,13 @@ function renderGoals(){
   const left=to?Math.ceil((to-now)/864e5):null;
   const ring=`<svg class="ring" viewBox="0 0 120 120" aria-label="${Math.round(pct*100)} % vom Ziel"><circle cx="60" cy="60" r="${R}" fill="none" stroke="#2a2620" stroke-width="10"/><circle cx="60" cy="60" r="${R}" fill="none" stroke="url(#gRing)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${(Cc*pct).toFixed(1)} ${Cc.toFixed(1)}" transform="rotate(-90 60 60)"/><defs><linearGradient id="gRing" x1="0" x2="1"><stop offset="0" stop-color="#f8cf5c"/><stop offset="1" stop-color="#bf821d"/></linearGradient></defs><text x="60" y="68" text-anchor="middle">${Math.round(pct*100)} %</text></svg>`;
   const rules=[];
-  if(G.ret>0)rules.push([`Rendite ≥ ${G.ret} %`,(ret>=0?"+":"−")+Math.abs(ret).toFixed(1)+" %",ret>=G.ret?"ok":""]);
-  if(G.win>0)rules.push([`Trefferquote ≥ ${G.win} %`,T.length?Math.round(win)+" %":"–",!T.length?"":win>=G.win?"ok":"no"]);
-  if(G.dd>0)rules.push([`Max. Drawdown < ${G.dd} %`,dd.toFixed(1)+" %",dd<G.dd?"ok":"no"]);
+  const bc=q=>q>=1?"g":q>=.5?"o":"r";   /* bar colour: green reached, orange half way, red behind */
+  if(G.ret>0)rules.push([`Rendite ≥ ${G.ret} %`,(ret>=0?"+":"−")+Math.abs(ret).toFixed(1)+" %",ret>=G.ret?"ok":"",ret/G.ret,bc(ret/G.ret)]);
+  if(G.win>0)rules.push([`Trefferquote ≥ ${G.win} %`,T.length?Math.round(win)+" %":"–",!T.length?"":win>=G.win?"ok":"no",T.length?win/G.win:0,!T.length?"":win>=G.win?"g":win>=G.win*.8?"o":"r"]);
+  if(G.dd>0)rules.push([`Max. Drawdown < ${G.dd} %`,dd.toFixed(1)+" %",dd<G.dd?"ok":"no",dd/G.dd,dd<G.dd*.5?"g":dd<G.dd?"o":"r"]);   /* bar = how much of the allowed drawdown is used */
   $("#goalBody").innerHTML=`<div class="goalc"><div><h3>${title}</h3><i>${left!=null?"Noch "+left+" Tag"+(left===1?"":"e"):T.length+" Trades insgesamt"}</i></div>${ring}</div>
     <div class="g3"><div><span>Ziel Gewinn</span><b>${plain(GP)}</b></div><div><span>Aktuell</span><b class="${cls(net)}">${fmt(net)}</b></div><div><span>Verbleibend</span><b>${plain(Math.max(0,GP-net))}</b></div></div>
-    ${rules.map(([l,v,st])=>`<div class="grule"><i class="ck ${st}">${st==="ok"?"✓":st==="no"?"✕":"…"}</i><span>${l}</span><b>${v}</b></div>`).join("")}
+    ${rules.map(([l,v,st,q,c])=>`<div class="grule"><i class="ck ${st}">${st==="ok"?"✓":st==="no"?"✕":"…"}</i><span>${l}</span><b>${v}</b><div class="gbar ${c}"><i style="width:${(Math.max(0,Math.min(1,q))*100).toFixed(0)}%"></i></div></div>`).join("")}
     <p class="note" style="margin-top:8px">${autoP?`Ziel Gewinn = ${G.ret} % von ${plain(base)} (Startkapital der Periode inkl. Einzahlungen), passt sich nur bei Einzahlungen an. `:""}Beträge in ${cur}.</p>`;
 }
 $("#goalEdit").onclick=()=>{const f=$("#goalForm");if(!f.hidden){f.hidden=true;return}const G=goals()[goalP];
