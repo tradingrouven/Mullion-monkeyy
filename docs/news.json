@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-10-29T10:17:05Z",
+  "fetchedAt": "2026-10-29T20:28:34Z",
   "events": [
     {
       "title": "ADP Weekly Employment Change",
@@ -429,7 +429,7 @@
     {
       "title": "Italian 10-y Bond Auction",
       "country": "EUR",
-      "date": "2026-10-29T05:33:00-04:00",
+      "date": "2026-10-29T06:08:00-04:00",
       "impact": "Low",
       "forecast": "",
       "previous": "4.58|1.6"
