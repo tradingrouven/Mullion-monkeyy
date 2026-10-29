@@ -10,7 +10,7 @@
 //| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.53"
+#property version   "1.54"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
@@ -47,6 +47,9 @@ input string TruthWords   = "gold,tariff,china,fed,powell,rate,interest,dollar,i
 string g_gist = "";
 string g_last = "";     // last uploaded trade/balance payload, to skip unchanged uploads
 bool   g_dirty = true;
+bool   g_urgent = false;   // a trade just happened: upload at once
+datetime g_ghWait = 0;     // GitHub said "rate limit": no requests until then
+datetime g_shotAt = 0;     // last picture upload
 datetime g_upAt = 0;    // last upload, for the 5-minute heartbeat
 datetime g_lossDay = 0, g_tradesDay = 0, g_journalDay = 0;   // day of the last limit push, so each fires once a day
 ulong  g_noSl[];                          // positions already warned about a missing stop-loss
@@ -121,6 +124,7 @@ void OnTradeTransaction(const MqlTradeTransaction &trans, const MqlTradeRequest 
       PushDeal(trans.deal);
       TakeShot(trans.deal);
       g_dirty = true;
+      g_urgent = true;
       Sync();
      }
   }
@@ -461,7 +465,9 @@ void Sync()
    // DXY and the gold price change all the time: they don't count as a change, but are refreshed once a minute
    string macro = Macro();
    bool macroDue = (macro != g_macro && TimeLocal() - g_upAt >= 60);
-   if(payload == g_last && !g_dirty && !macroDue && TimeLocal() - g_upAt < 300)
+   // at most every 30 s (trades at once), and every 5 minutes as a heartbeat
+   bool changed = (payload != g_last || g_dirty || macroDue);
+   if(!g_urgent && (!changed || TimeLocal() - g_upAt < 30) && TimeLocal() - g_upAt < 300)
       return;
    string json = "{\"updatedAt\":\"" + IsoUtc(TimeGMT()) + "\"," + (macro != "" ? macro + "," : "") + payload + "}";
    if(Upload(json))
@@ -469,6 +475,7 @@ void Sync()
       g_last = payload;
       g_macro = macro;
       g_dirty = false;
+      g_urgent = false;
       g_upAt = TimeLocal();
      }
   }
@@ -665,8 +672,10 @@ bool Upload(const string json)
    string resHeaders;
    int len = StringToCharArray(body, data, 0, WHOLE_ARRAY, CP_UTF8);
    ArrayResize(data, len - 1);   // drop the trailing zero
+   if(TimeLocal() < g_ghWait) return false;
    ResetLastError();
    int code = WebRequest(method, url, headers, 15000, data, result, resHeaders);
+   if(RateLimited(code, resHeaders, CharArrayToString(result, 0, WHOLE_ARRAY, CP_UTF8))) return false;
    if(code == -1)
      {
       int err = GetLastError();
@@ -909,10 +918,10 @@ void BackfillBars()
 // one waiting picture per timer run, as base64 text into the pictures gist; the app shows it in the journal
 void UploadShot()
   {
+   if(TimeLocal() < g_ghWait || TimeLocal() - g_shotAt < 30) return;   // at most one upload every 30 s
    string name;
    long h = FileFindFirst(SHOT_DIR + "\\*.png", name);
-   if(h == INVALID_HANDLE) h = FileFindFirst(SHOT_DIR + "\\*.json", name);
-   if(h == INVALID_HANDLE) return;
+   if(h == INVALID_HANDLE) { UploadBars(); return; }
    FileFindClose(h);
    bool bars = StringFind(name, ".json") > 0;
    string path = SHOT_DIR + "\\" + name;
@@ -929,7 +938,7 @@ void UploadShot()
    string resp;
    int code = GitHub(g_shotGist == "" ? "POST" : "PATCH", g_shotGist == "" ? API : API + "/" + g_shotGist, body, resp);
    if(code == 404 && g_shotGist != "") { g_shotGist = ""; g_shots = ""; return; }   // gist deleted: start a new one next time
-   if(code < 200 || code >= 300) { Print("Bullion Monkey: Chart-Bild nicht hochgeladen (", code, ")"); return; }
+   if(code < 200 || code >= 300) { if(code != -2) Print("Bullion Monkey: Chart-Bild nicht hochgeladen (", code, ")"); return; }
    if(g_shotGist == "")
      {
       g_shotGist = JsonString(resp, "id");
@@ -943,7 +952,77 @@ void UploadShot()
      }
    FileDelete(path);
    g_dirty = true;
+   g_shotAt = TimeLocal();
    Print("Bullion Monkey: Chart-Bild hochgeladen (", tag, ")");
+  }
+
+// candle files go up together, up to 10 in one request, so the 60-day backfill needs only a few requests
+void UploadBars()
+  {
+   string name, names[], files = "";
+   long h = FileFindFirst(SHOT_DIR + "\\*.json", name);
+   if(h == INVALID_HANDLE) return;
+   do
+     {
+      int f = FileOpen(SHOT_DIR + "\\" + name, FILE_READ | FILE_BIN);
+      if(f == INVALID_HANDLE) continue;
+      uchar u[];
+      FileReadArray(f, u);
+      FileClose(f);
+      if(ArraySize(u) == 0) { FileDelete(SHOT_DIR + "\\" + name); continue; }
+      files += (files == "" ? "" : ",") + "\"" + name + "\":{\"content\":\"" + Esc(CharArrayToString(u, 0, WHOLE_ARRAY, CP_UTF8)) + "\"}";
+      int n = ArraySize(names); ArrayResize(names, n + 1); names[n] = name;
+     }
+   while(ArraySize(names) < 10 && FileFindNext(h, name));
+   FileFindClose(h);
+   if(files == "") return;
+   string body = (g_shotGist == "") ? "{\"description\":\"Bullion Monkey Charts\",\"public\":false,\"files\":{" + files + "}}" : "{\"files\":{" + files + "}}";
+   string resp;
+   int code = GitHub(g_shotGist == "" ? "POST" : "PATCH", g_shotGist == "" ? API : API + "/" + g_shotGist, body, resp);
+   if(code == 404 && g_shotGist != "") { g_shotGist = ""; g_shots = ""; return; }
+   if(code < 200 || code >= 300) { if(code != -2) Print("Bullion Monkey: Kerzen nicht hochgeladen (", code, ")"); return; }
+   if(g_shotGist == "") { g_shotGist = JsonString(resp, "id"); WriteText(SHOT_ID, g_shotGist); }
+   for(int i = 0; i < ArraySize(names); i++)
+     {
+      string tag = StringSubstr(names[i], 0, StringLen(names[i]) - 5);
+      if(StringFind(g_shots, "|" + tag + "|") < 0) g_shots = (g_shots == "" ? "|" : g_shots) + tag + "|";
+      FileDelete(SHOT_DIR + "\\" + names[i]);
+     }
+   if(StringLen(g_shots) > 8000) g_shots = "|" + StringSubstr(g_shots, StringFind(g_shots, "|", 2000) + 1);
+   WriteText(SHOT_DONE, g_shots);
+   g_dirty = true;
+   g_shotAt = TimeLocal();
+   Print("Bullion Monkey: Kerzen hochgeladen (", ArraySize(names), " Trades)");
+  }
+
+// value of one response header (case-insensitive), "" when missing
+string Header(const string headers, const string name)
+  {
+   string h = headers, n = name;
+   StringToLower(h); StringToLower(n);
+   int a = StringFind(h, n + ":");
+   if(a < 0) return "";
+   a += StringLen(n) + 1;
+   int b = StringFind(h, "\n", a);
+   string v = StringSubstr(headers, a, b < 0 ? -1 : b - a);
+   StringTrimLeft(v); StringTrimRight(v);
+   return v;
+  }
+
+// GitHub's rate limit: pause all GitHub requests until it resets instead of retrying every few seconds
+bool RateLimited(const int code, const string headers, const string body)
+  {
+   if(code != 403 && code != 429) return false;
+   if(StringFind(body, "rate limit") < 0 && Header(headers, "x-ratelimit-remaining") != "0") return false;
+   long wait = 120;
+   string ra = Header(headers, "retry-after"), rs = Header(headers, "x-ratelimit-reset");
+   if(ra != "") wait = StringToInteger(ra);
+   else if(Header(headers, "x-ratelimit-remaining") == "0" && rs != "") wait = StringToInteger(rs) - (long)TimeGMT();
+   if(wait < 60) wait = 60;
+   if(wait > 3700) wait = 3700;
+   g_ghWait = TimeLocal() + (datetime)wait;
+   Print("Bullion Monkey: GitHub-Limit erreicht, Pause bis ", TimeToString(g_ghWait, TIME_MINUTES), ". Danach geht es von selbst weiter.");
+   return true;
   }
 
 int GitHub(const string method, const string url, const string body, string &resp)
@@ -956,8 +1035,10 @@ int GitHub(const string method, const string url, const string body, string &res
    string rh;
    int len = StringToCharArray(body, data, 0, WHOLE_ARRAY, CP_UTF8);
    ArrayResize(data, len - 1);
+   if(TimeLocal() < g_ghWait) return -2;
    int code = WebRequest(method, url, headers, 30000, data, result, rh);
    resp = CharArrayToString(result, 0, WHOLE_ARRAY, CP_UTF8);
+   if(RateLimited(code, rh, resp)) return -2;
    return code;
   }
 
