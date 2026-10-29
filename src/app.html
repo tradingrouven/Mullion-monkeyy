@@ -655,7 +655,7 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
     <button class="tab" role="tab" id="tab-news" aria-selected="false" data-view="news"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4.5h12a1.5 1.5 0 0 1 1.5 1.5v12a2 2 0 0 1-2 2H6.5a2 2 0 0 1-2-2V6A1.5 1.5 0 0 1 6 4.5z"/><path d="M8 8.5h8M8 12h8M8 15.5h5"/></svg><span>Markt</span></button>
     <button class="tab" role="tab" id="tab-jour" aria-selected="false" data-view="jour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10.3 5.2 8 4.5 4 4.5v13c4 0 6.3.7 8 2 1.7-1.3 4-2 8-2v-13c-4 0-6.3.7-8 2z"/><path d="M12 6.5v13"/></svg><span>Journal</span></button>
     <button class="tab" role="tab" id="tab-ana" aria-selected="false" data-view="ana"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="12" width="4" height="8" rx="1.2"/><rect x="10" y="5" width="4" height="15" rx="1.2"/><rect x="16" y="9" width="4" height="11" rx="1.2"/></svg><span>Analyse</span></button>
-    <button class="tab" role="tab" id="tab-calc" aria-selected="false" data-view="calc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="2.2"/><path d="M8.5 7.5h7v3h-7zM8.5 14h.01M12 14h.01M15.5 14h.01M8.5 17.2h.01M12 17.2h.01M15.5 17.2h.01"/></svg><span>Tools</span></button>
+    <button class="tab" role="tab" id="tab-calc" aria-selected="false" data-view="calc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Einstellungen</span></button>
   </nav>
   <h1 class="ptitle" id="pageTitle">Dashboard</h1>
   <div class="clock num" id="clock"></div>
@@ -847,7 +847,7 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
 
 <!-- TOOLS -->
 <section id="view-calc" class="grid" hidden>
-  <div class="panel goldb" id="ckPanel">
+  <div class="panel goldb setp" id="ckPanel">
     <div class="ph"><h2>Pre-Trade Check</h2><span class="sp"></span><span class="pill" id="ckProg"></span></div>
     <div class="pc"><span class="hico" id="pcIco"></span><div><b id="pcTitle"></b><span id="pcSub"></span></div></div>
     <div class="pcg" id="pcGrid"></div>
@@ -860,7 +860,7 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
   </div>
 
   <div class="panel goldb">
-    <div class="ph"><h2>Lot-Rechner</h2><span class="sp"></span><span class="pill" id="cSym">XAUUSD</span></div>
+    <div class="ph"><h2>Positionsrechner</h2><span class="sp"></span><span class="pill" id="cSym">XAUUSD</span></div>
     <div class="cf">
       <label class="full">Kontostand<input id="cBal" type="number" inputmode="decimal" step="0.01"></label>
       <div class="full"><span class="flbl">Risiko</span>
@@ -874,11 +874,6 @@ button.dc{font:inherit;color:inherit;cursor:pointer}
     </div>
     <div class="cres" id="cRes"></div>
     <button class="btn sm" id="cClear" type="button" style="margin-top:10px">Felder leeren</button>
-  </div>
-  <div class="panel">
-    <div class="ph"><h2>Schnelltabelle</h2><span class="sp"></span><span class="note" id="cTabNote"></span></div>
-    <div class="tbl" style="margin-top:0"><table><thead><tr><th>SL-Abstand</th><th class="r">Lots</th><th class="r">Risiko</th></tr></thead><tbody id="cTab"></tbody></table></div>
-    <p class="note" id="cSpec"></p>
   </div>
 
   <div class="setl" id="setList"></div>
@@ -1067,7 +1062,7 @@ const SIDE=s=>`<span class="bs ${s==="buy"?"buy":"sell"}">${s==="buy"?"BUY":"SEL
 
 /* ---------- tabs ---------- */
 const VIEWS=["dash","news","jour","ana","calc"];
-const TITLES={dash:"Dashboard",news:"Markt",jour:"Journal",ana:"Analyse",calc:"Tools"};
+const TITLES={dash:"Dashboard",news:"Markt",jour:"Journal",ana:"Analyse",calc:"Einstellungen"};
 function show(v){if(!VIEWS.includes(v))v="dash";window.scrollTo(0,0);$("#pageTitle").textContent=TITLES[v];document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected",t.dataset.view===v));VIEWS.forEach(x=>$("#view-"+x).hidden=x!==v);LS.set("view",v);if(v==="ana")renderAna();if(v==="jour")renderJournal();if(v==="calc"){openSet("");renderSetList();renderCheck();renderRiskForm();renderCalc();renderSync();renderPush()}if(v==="news")heroClock()}
 /* ---------- Tools: settings as a list; a row opens its section on its own ---------- */
 var setOpen="";
@@ -1080,11 +1075,12 @@ function renderSetList(){
       ["syncPanel","cloudPanel",ic('<path d="M7 18a4 4 0 0 1-.6-8A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9z"/>'),"Online-Sicherung",cloud.token&&cloud.gist?on("Aktiv"):"<i>Aus</i>"],
       ["pushPanel","",ic('<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>'),"Benachrichtigungen",pc.on?on("Aktiv · News, Alarme, Sessions"):"<i>Aus</i>"]]],
     ["Trading",[
+      ["ckPanel","",ic('<path d="M9 11l2 2 4-4"/><rect x="4" y="4" width="16" height="16" rx="3"/>'),"Pre-Trade Check",`<i>Checkliste vor jedem Trade</i>`],
       ["rkPanel","",ic('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>'),"Risiko-Grenzen",`<i>Tag −${L.day} % · Woche −${L.week} % · ${L.trades} Trades</i>`],
       ["stratPanel","",ic('<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/>'),"Strategien",`<i>${STRATS.join(", ")}</i>`],
       ["goals","",ic('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.8"/>'),"Ziele",`<i>Monat +${goals().m.ret} % · Trefferquote ${goals().m.win} %</i>`]]],
     ["App",[["lockPanel","",ic('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'),"App-Sperre",`<i>${lockCfg()?(lockCfg().id?"Face ID":"PIN")+" aktiv":"Aus"}</i>`],["share","",ic('<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/>'),"Mit Freunden teilen","<i>Bullion Monkey weitergeben</i>"]]]];
-  $("#setList").innerHTML=`<h3 style="margin-top:4px">Einstellungen</h3>`+G.map(([h,rows],gi)=>`${gi?`<h3>${h}</h3>`:""}<div class="grp">${rows.map(([p,d,i,t,sub])=>`<button class="setr" type="button" data-set="${p}" data-det="${d}">${i}<span><b>${t}</b>${sub}</span><i class="chev"></i></button>`).join("")}</div>`).join("");
+  $("#setList").innerHTML=``+G.map(([h,rows],gi)=>`<h3${gi?"":` style="margin-top:4px"`}>${h}</h3><div class="grp">${rows.map(([p,d,i,t,sub])=>`<button class="setr" type="button" data-set="${p}" data-det="${d}">${i}<span><b>${t}</b>${sub}</span><i class="chev"></i></button>`).join("")}</div>`).join("");
   $("#setList").querySelectorAll("[data-set]").forEach(b=>b.onclick=()=>{if(b.dataset.set==="share"){$("#shareApp").click();return}
     if(b.dataset.set==="goals"){goalP="m";show("ana");setTimeout(()=>{renderGoals();$("#goalForm").hidden=true;$("#goalEdit").click();$("#goalPanel").scrollIntoView({behavior:"smooth"})},60);return}
     openSet(b.dataset.set);const d=b.dataset.det&&$("#"+b.dataset.det);if(d)d.open=true});
@@ -1165,7 +1161,7 @@ function renderRisk(){
   add("Trades heute",d.trades,L.trades,`${d.trades} / ${L.trades}`);
   add("Drawdown",d.dd,d.peak*L.dd/100);
   if(L.open>0)add("Offenes Risiko",d.noSl.length?d.bal:d.openRisk,d.bal*L.open/100,d.noSl.length?`${d.noSl.length}× kein SL`:undefined);
-  $("#riskRows").innerHTML=rows.join("")||`<p class="note">Alle Grenzen sind ausgeschaltet. Stelle sie unter Tools ein.</p>`;
+  $("#riskRows").innerHTML=rows.join("")||`<p class="note">Alle Grenzen sind ausgeschaltet. Stelle sie unter Einstellungen ein.</p>`;
   const st=$("#riskState");st.className="pill "+["ok","warn","stop"][worst];st.textContent=["Alles im grünen Bereich","Vorsicht","Stopp"][worst];
   panel.classList.toggle("stop",worst===2);
   const msgs=[];
@@ -1213,8 +1209,8 @@ function renderToday(){
   const dow=n.getDay(),wk=ymd(monday(n));
   $("#reviewBanner").hidden=!((dow===5&&n.getHours()>=17)||dow===6||dow===0)||!mt5Trades().some(t=>ymd(t.c)>=wk)||LS.get("revSeen","")===wk;
 }
-$("#tdCheck").onclick=()=>show("calc");
-$("#tdHero").onclick=()=>show("calc");
+$("#tdCheck").onclick=()=>{show("calc");openSet("ckPanel")};
+$("#tdHero").onclick=()=>{show("calc");openSet("ckPanel")};
 $("#tdStreak").onclick=()=>{show("ana");setTimeout(()=>$("#discPanel").scrollIntoView({behavior:"smooth"}),50)};
 
 /* ---------- pause after losses: stops revenge trading ---------- */
@@ -1367,7 +1363,7 @@ function renderReview(){
     <li><span class="k">Tagesplan</span><span>an ${planned} von ${Object.keys(days).length} Handelstag${Object.keys(days).length>1?"en":""} gemacht</span></li>
     <li><span class="k">Regeln</span><span>${breaks.length?breaks.map(b=>`<span class="rvbad">✗ ${b}</span>`).join("<br>"):`<span class="rvok">✓ Keine Regelverstösse, stark! 👏</span>`}</span></li>
     ${open?`<li><span class="k">Offen</span><span>${open} Trade${open>1?"s":""} ohne Notiz oder Strategie. <a href="#" id="revJ" style="color:var(--accent)">Im Journal nachtragen →</a></span></li>`:""}
-  </ul><p class="note" style="margin-top:8px">Beträge in ${cur}. Grenzen aus Tools → Risiko-Grenzen.</p>
+  </ul><p class="note" style="margin-top:8px">Beträge in ${cur}. Grenzen aus Einstellungen → Risiko-Grenzen.</p>
   <div class="rvq">${REVQ.map(([k,q,ph])=>`<label><span class="lbl">${q}</span><textarea rows="2" data-rq="${k}" maxlength="500" placeholder="${ph}">${esc(rv[k]||"")}</textarea></label>`).join("")}<p class="note" id="rvSaved">${rv.at?"Gespeichert.":"Wird automatisch gespeichert."}</p></div>`;
   el.querySelectorAll("[data-rq]").forEach(a=>a.oninput=()=>{const R=state.settings.reviews=state.settings.reviews||{},o=R[wk]||{};R[wk]={...o,[a.dataset.rq]:a.value,at:Date.now()};clearTimeout(rvT);rvT=setTimeout(()=>{persist();$("#rvSaved").textContent="Gespeichert."},600)});
   const rj=$("#revJ");if(rj)rj.onclick=e=>{e.preventDefault();show("jour")};
@@ -1458,7 +1454,7 @@ function renderDash(){
       +`<span class="tp num">${t.open!=null&&t.close!=null?`${t.open} → ${t.close}`:`${zt(t.o)} → ${zt(t.c)}`}</span><b class="tv num ${cls(t.pnl)}">${fmt(t.pnl)}</b><span class="tt num">${ymd(t.c)===tdK?zt(t.c):dd(ymd(t.c))}</span>`
       +(nt.setup||nt.text?`<span class="tn2">${nt.setup?`<b>${esc(nt.setup)}</b>`:""}${nt.setup&&nt.text?" · ":""}${esc((nt.text||"").slice(0,70))}</span>`:"")+`</button>`}).join("")
     :own.length?own.map(t=>`<div class="trow"><b class="ta">${esc(t.asset)}</b><span class="tl">${esc(t.lot||"")}</span><span class="tp"></span><b class="tv num ${cls(+t.pnl)}">${fmt(+t.pnl)}</b><span class="tt num">${dd(t.date)}</span><button class="btn sm" data-del="${esc(t.id)}" aria-label="Eintrag löschen">✕</button></div>`).join("")
-    :`<p class="empty">Noch keine Trades. Verbinde MT5 unter Tools → Daten &amp; Sync.</p>`;
+    :`<p class="empty">Noch keine Trades. Verbinde MT5 unter Einstellungen → Daten &amp; Sync.</p>`;
   tb.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>delTrade(b.dataset.del));
   tb.querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openTrade(b.dataset.note));
 }
@@ -1700,7 +1696,7 @@ function renderAlarms(){
   $("#alList").innerHTML=A.map(a=>{const hit=(alHit||[]).includes(a.id),d=g?a.p-g:null;
     return `<div class="alr${hit?" hit":""}"><b>${a.p.toLocaleString("de-CH",{minimumFractionDigits:2,maximumFractionDigits:2})}</b><i>${hit?"✓ ausgelöst":d==null?"":(d>0?"▲ ":"▼ ")+Math.abs(d).toFixed(2)+" entfernt"}${a.note?" · "+esc(a.note):""}</i><button class="btn sm" type="button" data-aldel="${esc(a.id)}" aria-label="Alarm löschen">✕</button></div>`}).join("");
   $("#alList").querySelectorAll("[data-aldel]").forEach(b=>b.onclick=()=>{state.settings.alarms=(state.settings.alarms||[]).filter(x=>x.id!==b.dataset.aldel);persist();renderAlarms();pushSync()});
-  $("#alNote").textContent=!c.on?"Für Alarme zuerst Push einschalten (Tools → Push-Nachrichten) und den PushLink beim EA eintragen.":A.length?"Du bekommst einen Push, sobald Gold den Preis erreicht. MT5 muss dafür laufen (EA ab Version 1.50).":"";
+  $("#alNote").textContent=!c.on?"Für Alarme zuerst Push einschalten (Einstellungen → Push-Nachrichten) und den PushLink beim EA eintragen.":A.length?"Du bekommst einen Push, sobald Gold den Preis erreicht. MT5 muss dafür laufen (EA ab Version 1.50).":"";
 }
 $("#alForm").onsubmit=e=>{e.preventDefault();const p=parseFloat($("#alP").value.replace(",","."));if(!(p>0))return;
   state.settings.alarms=[...(state.settings.alarms||[]),{id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),p,sym:"XAUUSD",note:$("#alN").value.trim()}];
@@ -1987,7 +1983,7 @@ function renderJournal(){
       ["Risiko",risk&&b0>0?(risk/b0*100).toFixed(2)+" %":t.noSl?"kein SL":"–",t.noSl?"neg":""],["Ergebnis",b0>0?fmtR(+t.pnl/b0*100)+" %":"–",cls(+t.pnl)]]
       .map(([a,v,c])=>`<span><i>${a}</i><b class="${c}">${v}</b></span>`).join("")};
   $("#jCount").textContent=L.length?`${Math.min(jLimit,L.length)} von ${L.length}`:"";
-  $("#jList").innerHTML=!state.mt5?`<p class="empty">Verbinde zuerst MT5 unter Tools, dann erscheinen hier deine Trades.</p>`
+  $("#jList").innerHTML=!state.mt5?`<p class="empty">Verbinde zuerst MT5 unter Einstellungen, dann erscheinen hier deine Trades.</p>`
     :!L.length?`<p class="empty">Keine Trades für diesen Filter.</p>`
     :L.slice(0,jLimit).map(t=>{const d=new Date(t.closeUtc),o=t.openUtc?new Date(t.openUtc):null,st=t.nt.setup;return `<button class="jt" type="button" data-note="${esc(t.id)}">
       <span class="jl"><b>${esc(t.asset)}</b><i>${zd(d)}</i><i class="num">${(+t.volume).toFixed(2)} Lot</i></span>${SIDE(t.side)}
@@ -2446,9 +2442,6 @@ function renderCalc(){
     if(lots<sp.min)h+=`<p class="warn">Zu wenig Risiko für das Minimum von ${sp.min.toFixed(2)} Lot. Mit ${sp.min.toFixed(2)} Lot wären es ${plain(sp.min*dist*sp.vpl)} USD.</p>`;
     else if(real<riskUsd*0.98)h+=`<p class="note" style="margin-top:8px">Abgerundet auf ${sp.step} Lot, deshalb etwas weniger als ${plain(riskUsd)} USD.</p>`;
     out.innerHTML=h}
-  $("#cTabNote").textContent="bei "+plain(riskUsd)+" USD Risiko";
-  $("#cTab").innerHTML=[1,2,3,5,7.5,10,15,20,30].map(d=>{const l=lotsFor(riskUsd,d,sp);return `<tr><td class="num">${plain(d)} $</td><td class="r num" style="color:var(--accent)">${l>=sp.min?l.toFixed(2):"–"}</td><td class="r num mut">${l>=sp.min?plain(l*d*sp.vpl):"–"}</td></tr>`}).join("");
-  $("#cSpec").textContent=sp.live?`Kontraktdaten von MT5: ${plain(sp.vpl)} USD pro 1 $ Bewegung und Lot, Schritt ${sp.step} Lot.`:"Annahme: 1 Lot = 100 oz, also 100 USD pro 1 $ Bewegung. Mit dem neuen Expert Advisor kommen die genauen Werte direkt aus MT5.";
 }
 function saveCalc(){LS.set("calc",{mode:calc.mode,risk:calc.risk,bal:calc.bal})}
 $("#cMode").onclick=e=>{const m=e.target.dataset&&e.target.dataset.m;if(!m||m===calc.mode)return;const bal=num("#cBal")||0;
