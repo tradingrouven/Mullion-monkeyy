@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-10-29T20:28:34Z",
+  "fetchedAt": "2026-10-30T10:18:47Z",
   "events": [
     {
       "title": "ADP Weekly Employment Change",
@@ -93,7 +93,7 @@
     {
       "title": "BOJ Outlook Report",
       "country": "JPY",
-      "date": "2026-10-29T22:31:00-04:00",
+      "date": "2026-10-29T23:02:00-04:00",
       "impact": "High",
       "forecast": "",
       "previous": ""
@@ -101,7 +101,7 @@
     {
       "title": "BOJ Policy Rate",
       "country": "JPY",
-      "date": "2026-10-29T22:30:00-04:00",
+      "date": "2026-10-29T23:02:00-04:00",
       "impact": "High",
       "forecast": "<1.25%",
       "previous": "<1.25%"
@@ -109,7 +109,7 @@
     {
       "title": "BOJ Press Conference",
       "country": "JPY",
-      "date": "2026-10-30T01:30:00-04:00",
+      "date": "2026-10-30T02:30:00-04:00",
       "impact": "High",
       "forecast": "",
       "previous": ""
@@ -509,7 +509,7 @@
     {
       "title": "Monetary Policy Statement",
       "country": "JPY",
-      "date": "2026-10-29T22:30:00-04:00",
+      "date": "2026-10-29T23:02:00-04:00",
       "impact": "High",
       "forecast": "",
       "previous": ""
