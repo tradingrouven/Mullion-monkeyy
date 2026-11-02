@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-11-01T19:51:48Z",
+  "fetchedAt": "2026-11-02T11:31:26Z",
   "events": [
     {
       "title": "10-y Bond Auction",
@@ -33,14 +33,6 @@
       "impact": "Low",
       "forecast": "",
       "previous": "0.6%"
-    },
-    {
-      "title": "ANZ Job Advertisements m/m",
-      "country": "AUD",
-      "date": "2026-11-01T19:45:00-05:00",
-      "impact": "Low",
-      "forecast": "",
-      "previous": "2.2%"
     },
     {
       "title": "API Weekly Statistical Bulletin",
@@ -199,7 +191,7 @@
       "country": "USD",
       "date": "2026-11-02T10:00:00-05:00",
       "impact": "Low",
-      "forecast": "0.3%",
+      "forecast": "0.4%",
       "previous": "0.9%"
     },
     {
@@ -527,7 +519,7 @@
       "country": "USD",
       "date": "2026-11-02T10:00:00-05:00",
       "impact": "Medium",
-      "forecast": "54.7",
+      "forecast": "54.5",
       "previous": "54.5"
     },
     {
@@ -821,7 +813,7 @@
     {
       "title": "Retail Sales y/y",
       "country": "CHF",
-      "date": "2026-11-02T02:30:00-05:00",
+      "date": "2026-11-02T02:33:00-05:00",
       "impact": "Low",
       "forecast": "3.0%",
       "previous": "3.2%"
