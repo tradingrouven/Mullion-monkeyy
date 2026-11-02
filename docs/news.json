@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-11-02T11:31:26Z",
+  "fetchedAt": "2026-11-02T23:10:57Z",
   "events": [
     {
       "title": "10-y Bond Auction",
@@ -23,7 +23,7 @@
       "country": "USD",
       "date": "2026-11-04T08:15:00-05:00",
       "impact": "Low",
-      "forecast": "68K",
+      "forecast": "67K",
       "previous": "90K"
     },
     {
@@ -183,7 +183,7 @@
       "country": "GBP",
       "date": "2026-11-05T04:30:00-05:00",
       "impact": "Low",
-      "forecast": "46.5",
+      "forecast": "46.4",
       "previous": "46.1"
     },
     {
@@ -199,7 +199,7 @@
       "country": "USD",
       "date": "2026-11-06T15:00:00-05:00",
       "impact": "Low",
-      "forecast": "12.0B",
+      "forecast": "13.4B",
       "previous": "8.3B"
     },
     {
@@ -255,7 +255,7 @@
       "country": "CAD",
       "date": "2026-11-06T08:30:00-05:00",
       "impact": "High",
-      "forecast": "14.5K",
+      "forecast": "14.6K",
       "previous": "-68.3K"
     },
     {
@@ -407,7 +407,7 @@
       "country": "EUR",
       "date": "2026-11-05T02:45:00-05:00",
       "impact": "Low",
-      "forecast": "0.4%",
+      "forecast": "0.3%",
       "previous": "-0.3%"
     },
     {
@@ -455,7 +455,7 @@
       "country": "EUR",
       "date": "2026-11-05T02:00:00-05:00",
       "impact": "Low",
-      "forecast": "4.9%",
+      "forecast": "4.6%",
       "previous": "-10.6%"
     },
     {
@@ -479,7 +479,7 @@
       "country": "EUR",
       "date": "2026-11-06T02:00:00-05:00",
       "impact": "Low",
-      "forecast": "-0.2%",
+      "forecast": "0.0%",
       "previous": "2.0%"
     },
     {
@@ -495,7 +495,7 @@
       "country": "AUD",
       "date": "2026-11-04T19:30:00-05:00",
       "impact": "Low",
-      "forecast": "0.96B",
+      "forecast": "0.94B",
       "previous": "0.50B"
     },
     {
@@ -535,7 +535,7 @@
       "country": "USD",
       "date": "2026-11-04T10:00:00-05:00",
       "impact": "Medium",
-      "forecast": "54.9",
+      "forecast": "54.8",
       "previous": "54.9"
     },
     {
@@ -551,7 +551,7 @@
       "country": "EUR",
       "date": "2026-11-05T04:00:00-05:00",
       "impact": "Low",
-      "forecast": "0.1%",
+      "forecast": "0.0%",
       "previous": "0.3%"
     },
     {
@@ -559,7 +559,7 @@
       "country": "EUR",
       "date": "2026-11-04T03:45:00-05:00",
       "impact": "Low",
-      "forecast": "51.0",
+      "forecast": "51.4",
       "previous": "51.7"
     },
     {
@@ -575,7 +575,7 @@
       "country": "USD",
       "date": "2026-11-03T10:00:00-05:00",
       "impact": "Medium",
-      "forecast": "7.11M",
+      "forecast": "7.15M",
       "previous": "7.08M"
     },
     {
@@ -597,7 +597,7 @@
     {
       "title": "Loan Officer Survey",
       "country": "USD",
-      "date": "2026-11-02T14:03:00-05:00",
+      "date": "2026-11-02T14:00:00-05:00",
       "impact": "Low",
       "forecast": "",
       "previous": ""
@@ -679,7 +679,7 @@
       "country": "USD",
       "date": "2026-11-06T08:30:00-05:00",
       "impact": "High",
-      "forecast": "63K",
+      "forecast": "65K",
       "previous": "29K"
     },
     {
@@ -695,7 +695,7 @@
       "country": "USD",
       "date": "2026-11-03T10:15:00-05:00",
       "impact": "Low",
-      "forecast": "15.9M",
+      "forecast": "15.8M",
       "previous": "16.0M"
     },
     {
@@ -703,7 +703,7 @@
       "country": "EUR",
       "date": "2026-11-05T05:00:00-05:00",
       "impact": "Low",
-      "forecast": "2.6%",
+      "forecast": "2.5%",
       "previous": "1.9%"
     },
     {
@@ -735,7 +735,7 @@
       "country": "USD",
       "date": "2026-11-06T10:00:00-05:00",
       "impact": "Medium",
-      "forecast": "47.8",
+      "forecast": "48.1",
       "previous": "46.3"
     },
     {
@@ -799,7 +799,7 @@
       "country": "CNY",
       "date": "2026-11-03T20:45:00-05:00",
       "impact": "Low",
-      "forecast": "51.5",
+      "forecast": "51.7",
       "previous": "51.6"
     },
     {
@@ -855,7 +855,7 @@
       "country": "EUR",
       "date": "2026-11-04T03:15:00-05:00",
       "impact": "Low",
-      "forecast": "57.5",
+      "forecast": "57.6",
       "previous": "58.3"
     },
     {
@@ -863,7 +863,7 @@
       "country": "EUR",
       "date": "2026-11-04T03:00:00-05:00",
       "impact": "Low",
-      "forecast": "25.3K",
+      "forecast": "18.7K",
       "previous": "23.6K"
     },
     {
@@ -871,7 +871,7 @@
       "country": "CAD",
       "date": "2026-11-04T08:30:00-05:00",
       "impact": "Low",
-      "forecast": "3.8B",
+      "forecast": "4.8B",
       "previous": "4.2B"
     },
     {
