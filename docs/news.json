@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-11-06T11:15:54Z",
+  "fetchedAt": "2026-11-06T20:59:39Z",
   "events": [
     {
       "title": "10-y Bond Auction",
@@ -270,6 +270,14 @@
       "title": "FOMC Member Bowman Speaks",
       "country": "USD",
       "date": "2026-11-06T12:15:00-05:00",
+      "impact": "Low",
+      "forecast": "",
+      "previous": ""
+    },
+    {
+      "title": "FOMC Member Daly Speaks",
+      "country": "USD",
+      "date": "2026-11-06T13:00:00-05:00",
       "impact": "Low",
       "forecast": "",
       "previous": ""
