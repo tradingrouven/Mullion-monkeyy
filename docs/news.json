@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-11-08T19:52:48Z",
+  "fetchedAt": "2026-11-09T11:55:37Z",
   "events": [
     {
       "title": "10-y Bond Auction",
@@ -573,7 +573,7 @@
     {
       "title": "M2 Money Supply y/y",
       "country": "CNY",
-      "date": "2026-11-09T04:03:00-05:00",
+      "date": "2026-11-10T04:03:00-05:00",
       "impact": "Low",
       "forecast": "7.3%",
       "previous": "7.2%"
@@ -669,7 +669,7 @@
     {
       "title": "New Loans",
       "country": "CNY",
-      "date": "2026-11-09T04:03:00-05:00",
+      "date": "2026-11-10T04:03:00-05:00",
       "impact": "Low",
       "forecast": "80B",
       "previous": "1080B"
