@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-11-12T11:37:29Z",
+  "fetchedAt": "2026-11-12T21:53:18Z",
   "events": [
     {
       "title": "10-y Bond Auction",
@@ -677,7 +677,7 @@
     {
       "title": "Mortgage Delinquencies",
       "country": "USD",
-      "date": "2026-11-12T10:00:00-05:00",
+      "date": "2026-11-13T10:15:00-05:00",
       "impact": "Low",
       "forecast": "",
       "previous": "4.37%"
