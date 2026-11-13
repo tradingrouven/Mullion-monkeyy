@@ -1,11 +1,11 @@
 {
  "source": "U.S. Department of the Treasury, daily par yield curve",
  "yields": {
-  "date": "2026-11-12",
-  "prevDate": "2026-11-10",
-  "y2": 4.86,
-  "y10": 5.1,
-  "prev2": 4.73,
-  "prev10": 4.98
+  "date": "2026-11-13",
+  "prevDate": "2026-11-12",
+  "y2": 4.88,
+  "y10": 5.15,
+  "prev2": 4.86,
+  "prev10": 5.1
  }
 }

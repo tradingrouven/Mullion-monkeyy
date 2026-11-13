@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-11-13T11:21:03Z",
+  "fetchedAt": "2026-11-13T21:31:02Z",
   "events": [
     {
       "title": "10-y Bond Auction",
@@ -673,14 +673,6 @@
       "impact": "Low",
       "forecast": "0.1%",
       "previous": "1.5%"
-    },
-    {
-      "title": "Mortgage Delinquencies",
-      "country": "USD",
-      "date": "2026-11-13T10:15:00-05:00",
-      "impact": "Low",
-      "forecast": "",
-      "previous": "4.37%"
     },
     {
       "title": "NAB Business Confidence",
