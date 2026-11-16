@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-11-15T20:30:02Z",
+  "fetchedAt": "2026-11-16T11:51:11Z",
   "events": [
     {
       "title": "1-y Loan Prime Rate",
@@ -46,7 +46,7 @@
       "title": "BOE Gov Bailey Speaks",
       "country": "GBP",
       "date": "2026-11-18T02:30:00-05:00",
-      "impact": "High",
+      "impact": "Medium",
       "forecast": "",
       "previous": ""
     },
@@ -333,6 +333,14 @@
     {
       "title": "FOMC Member Hammack Speaks",
       "country": "USD",
+      "date": "2026-11-16T14:15:00-05:00",
+      "impact": "Low",
+      "forecast": "",
+      "previous": ""
+    },
+    {
+      "title": "FOMC Member Hammack Speaks",
+      "country": "USD",
       "date": "2026-11-17T09:30:00-05:00",
       "impact": "Low",
       "forecast": "",
@@ -382,7 +390,7 @@
       "title": "FOMC Member Waller Speaks",
       "country": "USD",
       "date": "2026-11-20T08:25:00-05:00",
-      "impact": "Medium",
+      "impact": "Low",
       "forecast": "",
       "previous": ""
     },
