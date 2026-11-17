@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-11-17T12:14:30Z",
+  "fetchedAt": "2026-11-17T23:04:18Z",
   "events": [
     {
       "title": "1-y Loan Prime Rate",
@@ -207,7 +207,7 @@
       "country": "USD",
       "date": "2026-11-18T10:30:00-05:00",
       "impact": "Low",
-      "forecast": "",
+      "forecast": "0.4M",
       "previous": "4.7M"
     },
     {
@@ -509,7 +509,7 @@
     {
       "title": "GDT Price Index",
       "country": "NZD",
-      "date": "2026-11-17T10:50:00-05:00",
+      "date": "2026-11-17T09:29:00-05:00",
       "impact": "Low",
       "forecast": "",
       "previous": "3.0%"
@@ -599,7 +599,7 @@
       "country": "CAD",
       "date": "2026-11-19T08:30:00-05:00",
       "impact": "Low",
-      "forecast": "1.2%",
+      "forecast": "0.4%",
       "previous": "2.0%"
     },
     {
@@ -719,7 +719,7 @@
       "country": "USD",
       "date": "2026-11-19T10:30:00-05:00",
       "impact": "Low",
-      "forecast": "",
+      "forecast": "25B",
       "previous": "61B"
     },
     {
@@ -767,7 +767,7 @@
       "country": "USD",
       "date": "2026-11-18T10:00:00-05:00",
       "impact": "Low",
-      "forecast": "-2.1%",
+      "forecast": "-2.0%",
       "previous": "-7.3%"
     },
     {
@@ -775,7 +775,7 @@
       "country": "USD",
       "date": "2026-11-19T08:30:00-05:00",
       "impact": "Medium",
-      "forecast": "19.2",
+      "forecast": "20.6",
       "previous": "20.9"
     },
     {
@@ -839,7 +839,7 @@
       "country": "CAD",
       "date": "2026-11-19T08:30:00-05:00",
       "impact": "Low",
-      "forecast": "2.0%",
+      "forecast": "0.9%",
       "previous": "4.8%"
     },
     {
@@ -895,7 +895,7 @@
       "country": "USD",
       "date": "2026-11-20T10:00:00-05:00",
       "impact": "Medium",
-      "forecast": "52.1",
+      "forecast": "51.7",
       "previous": "51.0"
     },
     {
@@ -959,7 +959,7 @@
       "country": "USD",
       "date": "2026-11-19T08:30:00-05:00",
       "impact": "Medium",
-      "forecast": "199K",
+      "forecast": "198K",
       "previous": "200K"
     },
     {
