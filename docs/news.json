@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-11-16T23:48:02Z",
+  "fetchedAt": "2026-11-17T12:14:30Z",
   "events": [
     {
       "title": "1-y Loan Prime Rate",
@@ -815,6 +815,14 @@
       "country": "NZD",
       "date": "2026-11-16T15:00:00-05:00",
       "impact": "Low",
+      "forecast": "",
+      "previous": ""
+    },
+    {
+      "title": "RBNZ Gov Breman Speaks",
+      "country": "NZD",
+      "date": "2026-11-16T19:00:00-05:00",
+      "impact": "Medium",
       "forecast": "",
       "previous": ""
     },
