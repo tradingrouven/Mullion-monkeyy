@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-11-18T12:01:41Z",
+  "fetchedAt": "2026-11-18T22:40:09Z",
   "events": [
     {
       "title": "1-y Loan Prime Rate",
@@ -493,7 +493,7 @@
     {
       "title": "Foreign Direct Investment ytd/y",
       "country": "CNY",
-      "date": "2026-11-19T02:02:00-05:00",
+      "date": "2026-11-20T02:02:00-05:00",
       "impact": "Low",
       "forecast": "",
       "previous": "-4.3%"
