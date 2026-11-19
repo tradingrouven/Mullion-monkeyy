@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-11-19T11:57:35Z",
+  "fetchedAt": "2026-11-19T22:44:31Z",
   "events": [
     {
       "title": "1-y Loan Prime Rate",
@@ -677,7 +677,7 @@
     {
       "title": "Mortgage Delinquencies",
       "country": "USD",
-      "date": "2026-11-19T10:15:00-05:00",
+      "date": "2026-11-19T10:46:00-05:00",
       "impact": "Low",
       "forecast": "",
       "previous": "4.37%"
