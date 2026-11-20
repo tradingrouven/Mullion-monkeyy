@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-11-20T11:58:35Z",
+  "fetchedAt": "2026-11-20T22:18:46Z",
   "events": [
     {
       "title": "1-y Loan Prime Rate",
@@ -563,6 +563,14 @@
       "previous": ""
     },
     {
+      "title": "HMRC Payrolls Change",
+      "country": "GBP",
+      "date": "2026-11-17T02:00:00-05:00",
+      "impact": "Low",
+      "forecast": "9K",
+      "previous": "13K"
+    },
+    {
       "title": "HPI y/y",
       "country": "GBP",
       "date": "2026-11-18T04:30:00-05:00",
@@ -785,6 +793,14 @@
       "impact": "Low",
       "forecast": "0.1%",
       "previous": "0.3%"
+    },
+    {
+      "title": "President Trump Speaks",
+      "country": "USD",
+      "date": "2026-11-20T12:00:00-05:00",
+      "impact": "Medium",
+      "forecast": "",
+      "previous": ""
     },
     {
       "title": "Public Sector Net Borrowing",
