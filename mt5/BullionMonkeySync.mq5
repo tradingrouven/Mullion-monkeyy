@@ -10,7 +10,7 @@
 //| MetaQuotes ID from the MT5 app on the phone.                     |
 //+------------------------------------------------------------------+
 #property copyright "Bullion Monkey"
-#property version   "1.54"
+#property version   "1.55"
 
 input string GitHubToken = "";   // GitHub token (classic, only "gist" scope)
 input string GistId      = "";   // leave empty: the EA creates a secret gist
@@ -43,6 +43,7 @@ input string TruthWords   = "gold,tariff,china,fed,powell,rate,interest,dollar,i
 #define SHOT_DIR  "bm-shots"
 #define SHOT_ID   "bullion_monkey_shots_gist.txt"
 #define SHOT_DONE "bullion_monkey_shots.txt"
+#define SL_FILE   "bullion_monkey_sl.txt"   // first stop-loss and every later move per position
 
 string g_gist = "";
 string g_last = "";     // last uploaded trade/balance payload, to skip unchanged uploads
@@ -69,6 +70,7 @@ string g_alSym[]; string g_alNote[];
 string g_macro = "";                      // DXY and gold price, uploaded at most once a minute
 string g_shotGist = "";                   // second secret gist for the chart pictures, so the trade gist stays small
 string g_shots = "";                      // uploaded pictures, "|<position>-in|<position>-out|..."
+long   g_slPos[]; double g_sl0[], g_slLast[]; string g_slLog[];   // per position: first SL, last SL seen, moves "<utc>@<sl>;..."
 
 //+------------------------------------------------------------------+
 // only on a fresh start or new settings, not when the chart just changes timeframe
@@ -90,6 +92,8 @@ int OnInit()
       g_gist = ReadSavedId();
    g_shotGist = ReadText(SHOT_ID);
    g_shots = ReadText(SHOT_DONE);
+   SlLoad();
+   TrackSl();
    BackfillBars();
    EventSetTimer(SyncSeconds < 10 ? 10 : SyncSeconds);
    if(FeedMinutes > 0) FetchNews();
@@ -104,6 +108,7 @@ void OnDeinit(const int reason) { EventKillTimer(); }
 
 void OnTimer()
   {
+   TrackSl();
    CheckNoSl();
    CheckBreakEven();
    CheckAlarms();
@@ -127,6 +132,85 @@ void OnTradeTransaction(const MqlTradeTransaction &trans, const MqlTradeRequest 
       g_urgent = true;
       Sync();
      }
+   else if(trans.type == TRADE_TRANSACTION_POSITION)   // SL or TP of an open position changed
+      TrackSl();
+  }
+
+//+------------------------------------------------------------------+
+//| Stop-loss history: the first SL stays the base for R, every move |
+//| (break-even, trailing) is logged for the journal                 |
+//+------------------------------------------------------------------+
+int SlIdx(const long p)
+  {
+   for(int i = 0; i < ArraySize(g_slPos); i++) if(g_slPos[i] == p) return i;
+   return -1;
+  }
+
+void SlLoad()
+  {
+   string all = ReadText(SL_FILE);
+   string rows[];
+   int n = StringSplit(all, '#', rows);
+   for(int i = 0; i < n; i++)
+     {
+      string f[];
+      if(StringSplit(rows[i], '|', f) < 3) continue;
+      int k = ArraySize(g_slPos);
+      ArrayResize(g_slPos, k + 1); ArrayResize(g_sl0, k + 1); ArrayResize(g_slLast, k + 1); ArrayResize(g_slLog, k + 1);
+      g_slPos[k] = StringToInteger(f[0]); g_sl0[k] = StringToDouble(f[1]); g_slLast[k] = StringToDouble(f[2]);
+      g_slLog[k] = ArraySize(f) > 3 ? f[3] : "";
+     }
+  }
+
+void SlSave()
+  {
+   int n = ArraySize(g_slPos), from = n > 300 ? n - 300 : 0;   // keep the newest 300 positions
+   string all = "";
+   for(int i = from; i < n; i++)
+      all += (all == "" ? "" : "#") + IntegerToString(g_slPos[i]) + "|" + DoubleToString(g_sl0[i], 5) + "|" + DoubleToString(g_slLast[i], 5) + "|" + g_slLog[i];
+   WriteText(SL_FILE, all);
+  }
+
+void TrackSl()
+  {
+   bool changed = false;
+   for(int i = 0; i < PositionsTotal(); i++)
+     {
+      if(PositionGetTicket(i) == 0) continue;
+      long p = PositionGetInteger(POSITION_IDENTIFIER);
+      double s = PositionGetDouble(POSITION_SL);
+      double half = SymbolInfoDouble(PositionGetString(POSITION_SYMBOL), SYMBOL_TRADE_TICK_SIZE) / 2;
+      int k = SlIdx(p);
+      if(k < 0)
+        {
+         k = ArraySize(g_slPos);
+         ArrayResize(g_slPos, k + 1); ArrayResize(g_sl0, k + 1); ArrayResize(g_slLast, k + 1); ArrayResize(g_slLog, k + 1);
+         g_slPos[k] = p; g_sl0[k] = s; g_slLast[k] = s; g_slLog[k] = "";
+         changed = true;
+         continue;
+        }
+      if(MathAbs(s - g_slLast[k]) <= half) continue;
+      if(g_sl0[k] <= 0) g_sl0[k] = s;                // the first SL, set after the entry
+      else g_slLog[k] += (g_slLog[k] == "" ? "" : ";") + IntegerToString((long)TimeGMT()) + "@" + DoubleToString(s, 5);
+      g_slLast[k] = s;
+      changed = true;
+     }
+   if(changed) { SlSave(); g_dirty = true; }
+  }
+
+// the moves as JSON: ,"slMoves":[{"t":"...","sl":...}]
+string SlMovesJson(const int k, const int dg)
+  {
+   if(k < 0 || g_slLog[k] == "") return "";
+   string ev[], out = "";
+   int n = StringSplit(g_slLog[k], ';', ev);
+   for(int i = 0; i < n; i++)
+     {
+      string f[];
+      if(StringSplit(ev[i], '@', f) != 2) continue;
+      out += (out == "" ? "" : ",") + "{\"t\":\"" + IsoUtc((datetime)StringToInteger(f[0])) + "\",\"sl\":" + DoubleToString(StringToDouble(f[1]), dg) + "}";
+     }
+   return out == "" ? "" : ",\"slMoves\":[" + out + "]";
   }
 
 //+------------------------------------------------------------------+
@@ -554,7 +638,9 @@ string BuildPayload()
       if(!closed[k]) continue;
       string r = "null", rk = "";
       int dg = (int)SymbolInfoInteger(sym[k], SYMBOL_DIGITS);
-      // SL/TP set when the trade was opened; if added later, the level at close
+      // SL/TP set when the trade was opened; if added later, the first SL the EA saw, else the level at close
+      int sk = SlIdx(pid[k]);
+      if(sl[k] <= 0 && sk >= 0 && g_sl0[sk] > 0) sl[k] = g_sl0[sk];
       if(sl[k] <= 0) sl[k] = slOut[k];
       if(tp[k] <= 0) tp[k] = tpOut[k];
       if(sl[k] > 0 && entry[k] > 0 && volIn[k] > 0)
@@ -578,6 +664,8 @@ string BuildPayload()
               + (exitP[k] > 0 ? ",\"close\":" + DoubleToString(exitP[k], (int)SymbolInfoInteger(sym[k], SYMBOL_DIGITS)) : "")
               + (sl[k] > 0 ? ",\"sl\":" + DoubleToString(sl[k], dg) : "")
               + (tp[k] > 0 ? ",\"tp\":" + DoubleToString(tp[k], dg) : "")
+              + (slOut[k] > 0 && sl[k] > 0 && MathAbs(slOut[k] - sl[k]) > SymbolInfoDouble(sym[k], SYMBOL_TRADE_TICK_SIZE) / 2 ? ",\"slEnd\":" + DoubleToString(slOut[k], dg) : "")
+              + SlMovesJson(sk, dg)
               + ",\"pnl\":" + DoubleToString(pnl[k], 2)
               + ",\"r\":" + r + rk + "}";
      }
@@ -612,6 +700,8 @@ string BuildPayload()
            + ",\"open\":" + DoubleToString(PositionGetDouble(POSITION_PRICE_OPEN), dg)
            + ",\"price\":" + DoubleToString(PositionGetDouble(POSITION_PRICE_CURRENT), dg)
            + ",\"sl\":" + DoubleToString(PositionGetDouble(POSITION_SL), dg)
+           + (SlIdx(PositionGetInteger(POSITION_IDENTIFIER)) >= 0 && g_sl0[SlIdx(PositionGetInteger(POSITION_IDENTIFIER))] > 0 ? ",\"sl0\":" + DoubleToString(g_sl0[SlIdx(PositionGetInteger(POSITION_IDENTIFIER))], dg) : "")
+           + SlMovesJson(SlIdx(PositionGetInteger(POSITION_IDENTIFIER)), dg)
            + ",\"tp\":" + DoubleToString(PositionGetDouble(POSITION_TP), dg)
            + ",\"pnl\":" + DoubleToString(PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP), 2) + "}";
      }

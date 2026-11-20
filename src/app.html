@@ -1121,7 +1121,7 @@ function renderPositions(){
     +`<span class="pv"><i>Einstand</i><b class="num">${p.open}</b></span><span class="pv"><i>Aktuell</i><b class="num">${p.price}</b></span>`
     +`<span class="plot num">${(+p.volume).toFixed(2)}<i>Lot</i></span>`
     +`<span class="pr"><b class="num ${cls(+p.pnl)}">${fmt(+p.pnl)}</b>${bal?`<i class="num ${cls(+p.pnl)}">${fmtR(+p.pnl/bal*100)} %</i>`:""}</span>`
-    +`<span class="pd">${+p.sl?`SL ${p.sl}`:`<b class="neg">kein Stop-Loss</b>`}${+p.tp?` · TP ${p.tp}`:""} · seit ${tf(new Date(p.openUtc))}${nt.setup?` · <b class="gold">${esc(nt.setup)}</b>`:""}${nt.text?` · ${esc(nt.text.slice(0,60))}`:""}${nt.setup||nt.text?"":` · <span class="gold">＋ Notiz</span>`}</span></button>`}).join("");
+    +`<span class="pd">${+p.sl?`SL ${p.sl}${+p.sl0>0&&Math.abs(+p.sl0-+p.sl)>1e-9?` (Start ${p.sl0})`:""}`:`<b class="neg">kein Stop-Loss</b>`}${+p.tp?` · TP ${p.tp}`:""} · seit ${tf(new Date(p.openUtc))}${nt.setup?` · <b class="gold">${esc(nt.setup)}</b>`:""}${nt.text?` · ${esc(nt.text.slice(0,60))}`:""}${nt.setup||nt.text?"":` · <span class="gold">＋ Notiz</span>`}</span></button>`}).join("");
   $("#posList").querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>openNote(b.dataset.note));
   const up=new Date(state.mt5.updatedAt), age=Math.round((Date.now()-up)/6e4);
   $("#posNote").textContent="Stand "+tf(up)+(age>5?` (vor ${age} Min., läuft MT5 noch?)`:" · aktualisiert sich etwa jede Minute");
@@ -1804,6 +1804,15 @@ function excursion(t,d){
     if(!first&&risk>0){if(adv>=risk&&fav>=risk)first="?";else if(fav>=risk)first="fav";else if(adv>=risk)first="adv"}}
   return {mae,mfe,risk,maeR:risk?mae/risk:null,mfeR:risk?mfe/risk:null,plus1:first==="fav"}
 }
+/* stop-loss moves (EA 1.55): R stays on the first SL, every later move is listed in the journal */
+function slHist(t){
+  const op=+t.open,s0=+t.sl,buy=t.side==="buy";if(!(op>0&&s0>0))return [];
+  const r0=Math.abs(op-s0),tol=r0*.05;let prev=s0;
+  const lab=v=>{const g=buy?v-op:op-v;if(Math.abs(g)<=tol)return ["be","auf Break-even"];if(g>0)return ["pro",`in den Gewinn (+${(g/r0).toFixed(1)} R gesichert)`];return ["mv",Math.abs(v-op)<Math.abs(prev-op)?"enger gesetzt":"weiter weg gesetzt"]};
+  const M=(t.slMoves||[]).map(m=>{const v=+m.sl;if(!(v>0))return {d:new Date(m.t),sl:0,k:"off",txt:"SL entfernt"};const [k,x]=lab(v);prev=v;return {d:new Date(m.t),sl:v,k,txt:x}});
+  if(!M.length&&+t.slEnd>0){const [k,x]=lab(+t.slEnd);M.push({d:null,sl:+t.slEnd,k,txt:x})}
+  return M}
+const SLTAG={be:"SL auf BE",pro:"SL im Gewinn",mv:"SL verschoben",off:"SL entfernt"};
 /* candles with entry, SL, TP and exit as lines */
 function candleSvg(t,d,H){
   const B=d.bars,W=340,R=46,top=8,bot=18,ch=H-top-bot,cw=(W-R)/B.length;
@@ -1840,10 +1849,11 @@ async function renderTrade(){
     const el=body.querySelector("[data-chart]");if(!el)return;
     el.innerHTML=d&&d.bars&&d.bars.length?candleSvg(t,d,H)+`<p class="note" style="margin-top:6px">Kerzen ${d.tf>=60?d.tf/60+" h":d.tf+" Min."} · blau Einstieg, gold Ausstieg</p>`:`<p class="note">Für diesen Trade gibt es noch keinen Chart. Der EA ab Version 1.51 speichert die Kerzen beim Schliessen (und einmal für die letzten 60 Tage).</p>`};
   if(tdTab==="ov"){
-    const rows=[["Einstieg",px(t.open)],["Stop Loss",px(t.sl)],["Take Profit",px(t.tp)],["Ausstieg",px(t.close)],
+    const SH=slHist(t);
+    const rows=[["Einstieg",px(t.open)],[SH.length?"Start-SL":"Stop Loss",px(t.sl)],["Take Profit",px(t.tp)],["Ausstieg",px(t.close)],
       ["Risiko",risk?`${fmt(-risk).replace("−","")}${b0>0?" ("+(risk/b0*100).toFixed(2)+" %)":""}`:"–"],
       ["Ergebnis",`<span class="${cls(+t.pnl)}">${fmt(+t.pnl)}${b0>0?" ("+fmtR(+t.pnl/b0*100)+" %)":""}</span>`]];
-    body.innerHTML=`<div data-chart></div><div class="kvl" style="margin-top:10px">${rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("")}</div><div data-exc></div>`;chartBox(200);
+    body.innerHTML=`<div data-chart></div><div class="kvl" style="margin-top:10px">${rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("")}</div>${SH.length?`<p class="lbl" style="margin:14px 0 6px">SL-Verlauf</p><div class="kvl">${SH.map(m=>`<div><span>${m.d?zt(m.d)+(zd(m.d)!==zd(c)?" "+zd(m.d):""):"bis zum Schluss"}</span><b>${m.sl?px(m.sl)+" · ":""}${m.txt}</b></div>`).join("")}</div><p class="note" style="margin-top:6px">Das R rechnet immer mit deinem Start-SL ${px(t.sl)}.</p>`:""}<div data-exc></div>`;chartBox(200);
     tradeBars(id).then(d=>{const x=excursion(t,d),el=body.querySelector("[data-exc]");if(!x||!el||tdId!==id)return;
       const pr=v=>v.toLocaleString("de-CH",{maximumFractionDigits:2});
       el.innerHTML=`<p class="lbl" style="margin:14px 0 6px">Wie weit lief der Trade?</p><div class="kvl"><div><span>Gegen dich</span><b class="neg">${x.maeR!=null?"−"+x.maeR.toFixed(1)+" R · ":""}${pr(x.mae)}</b></div><div><span>Für dich</span><b class="pos">${x.mfeR!=null?"+"+x.mfeR.toFixed(1)+" R · ":""}${pr(x.mfe)}</b></div></div>
@@ -1988,7 +1998,7 @@ function renderJournal(){
     :!L.length?`<p class="empty">Keine Trades für diesen Filter.</p>`
     :L.slice(0,jLimit).map(t=>{const d=new Date(t.closeUtc),o=t.openUtc?new Date(t.openUtc):null,st=t.nt.setup;return `<button class="jt" type="button" data-note="${esc(t.id)}">
       <span class="jl"><b>${esc(t.asset)}</b><i>${zd(d)}</i><i class="num">${(+t.volume).toFixed(2)} Lot</i></span>${SIDE(t.side)}
-      <span class="jm"><span class="tags"><span class="st${st?"":" none"}">${st?esc(st==="Ichimoku Cloud"?"Ichimoku":st):"Keine Strategie"}</span>${t.nt.grade?`<span class="st emo">Setup ${esc(t.nt.grade)}</span>`:""}${t.nt.emo?`<span class="st emo">${esc(t.nt.emo)}</span>`:""}${t.nt.aud&&t.nt.aud.length?`<span class="st emo">🎙</span>`:""}${t.nt.err&&t.nt.err.length?`<span class="st err">⚠ ${t.nt.err.length===1?esc(t.nt.err[0]):t.nt.err.length+" Fehler"}</span>`:""}${st==="Ichimoku Cloud"&&t.nt.ichi&&t.nt.ichi.length?`<span class="st emo">☁ ${t.nt.ichi.length}/5</span>`:""}</span>
+      <span class="jm"><span class="tags"><span class="st${st?"":" none"}">${st?esc(st==="Ichimoku Cloud"?"Ichimoku":st):"Keine Strategie"}</span>${t.nt.grade?`<span class="st emo">Setup ${esc(t.nt.grade)}</span>`:""}${t.nt.emo?`<span class="st emo">${esc(t.nt.emo)}</span>`:""}${t.nt.aud&&t.nt.aud.length?`<span class="st emo">🎙</span>`:""}${(()=>{const h=slHist(t);return h.length?`<span class="st emo">${SLTAG[h[h.length-1].k]}</span>`:""})()}${t.nt.err&&t.nt.err.length?`<span class="st err">⚠ ${t.nt.err.length===1?esc(t.nt.err[0]):t.nt.err.length+" Fehler"}</span>`:""}${st==="Ichimoku Cloud"&&t.nt.ichi&&t.nt.ichi.length?`<span class="st emo">☁ ${t.nt.ichi.length}/5</span>`:""}</span>
         ${t.open!=null&&t.close!=null?`<span class="px num">${t.open} → ${t.close}</span>`:""}
         <span class="kv num">${kv(t)}</span>
         <span class="tm num">${o?(zd(o)!==zd(d)?zd(o)+" ":"")+zt(o):"–"} → ${zt(d)}${o?` · ${zdur(d-o)}`:""}</span>
