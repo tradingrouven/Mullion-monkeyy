@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-11-22T11:45:57Z",
+  "fetchedAt": "2026-11-22T21:09:48Z",
   "events": [
     {
       "title": "ADP Weekly Employment Change",
@@ -152,7 +152,7 @@
       "date": "2026-11-23T08:30:00-05:00",
       "impact": "Low",
       "forecast": "",
-      "previous": ""
+      "previous": "8.7%"
     },
     {
       "title": "Crude Oil Inventories",
