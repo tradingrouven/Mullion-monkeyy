@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-11-25T00:01:53Z",
+  "fetchedAt": "2026-11-25T13:18:13Z",
   "events": [
     {
       "title": "ADP Weekly Employment Change",
@@ -159,7 +159,7 @@
       "country": "USD",
       "date": "2026-11-25T10:30:00-05:00",
       "impact": "Low",
-      "forecast": "",
+      "forecast": "2.0M",
       "previous": "3.4M"
     },
     {
@@ -341,7 +341,7 @@
     {
       "title": "German 10-y Bond Auction",
       "country": "EUR",
-      "date": "2026-11-25T05:42:00-05:00",
+      "date": "2026-11-25T05:32:00-05:00",
       "impact": "Low",
       "forecast": "",
       "previous": "3.37|1.1"
