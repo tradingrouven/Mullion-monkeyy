@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-11-25T13:18:13Z",
+  "fetchedAt": "2026-11-25T23:44:04Z",
   "events": [
     {
       "title": "ADP Weekly Employment Change",
@@ -447,6 +447,14 @@
       "country": "GBP",
       "date": "2026-11-23T08:00:00-05:00",
       "impact": "Low",
+      "forecast": "",
+      "previous": ""
+    },
+    {
+      "title": "Monetary Policy Report Hearings",
+      "country": "GBP",
+      "date": "2026-11-25T09:15:00-05:00",
+      "impact": "Medium",
       "forecast": "",
       "previous": ""
     },
