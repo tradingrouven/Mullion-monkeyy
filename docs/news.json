@@ -1,6 +1,6 @@
 {
   "source": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-  "fetchedAt": "2026-11-24T14:04:10Z",
+  "fetchedAt": "2026-11-25T00:01:53Z",
   "events": [
     {
       "title": "ADP Weekly Employment Change",
@@ -85,7 +85,7 @@
     {
       "title": "CB Leading Index m/m",
       "country": "CNY",
-      "date": "2026-11-24T09:00:00-05:00",
+      "date": "2026-11-24T08:51:00-05:00",
       "impact": "Low",
       "forecast": "",
       "previous": "-0.1%"
@@ -182,6 +182,14 @@
       "title": "ECB Monetary Policy Meeting Accounts",
       "country": "EUR",
       "date": "2026-11-26T07:30:00-05:00",
+      "impact": "Low",
+      "forecast": "",
+      "previous": ""
+    },
+    {
+      "title": "FOMC Member Bowman Speaks",
+      "country": "USD",
+      "date": "2026-11-25T07:25:00-05:00",
       "impact": "Low",
       "forecast": "",
       "previous": ""
@@ -416,7 +424,7 @@
       "date": "2026-11-27T05:33:00-05:00",
       "impact": "Low",
       "forecast": "",
-      "previous": ""
+      "previous": "4.49|1.6"
     },
     {
       "title": "M3 Money Supply y/y",
